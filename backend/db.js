@@ -10,7 +10,7 @@ const db = new Database(dbPath);
 
 // tabelle erstellen
 db.exec(`
-  CREATE TABLE IF NOT EXISTS defects (
+  CREATE TABLE IF NOT EXISTS maengel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 
 // Define all issue components
 type Issue = {
+  id?: number;
   title: string;
-  description: string;
-  location: string;
+  description: string | null;
+  location: string | null;
+  created_at?: string;
 }
 
 export default function App() {
@@ -17,8 +20,15 @@ export default function App() {
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
 
+  // issues aus db laden
+  useEffect(() => {
+       fetch('http://localhost:3001/api/mangel')
+         .then((res) => res.json())
+         .then((data) => setIssueList(data));
+     }, []);
+
   // Add issue to list
-  const addIssue = (event: React.SubmitEvent) => {
+  const addIssue = async (event: React.SubmitEvent) => {
 
     // Stops refreshing
     event.preventDefault(); 
@@ -33,8 +43,17 @@ export default function App() {
       location: location
     };
 
-    // Add Issue to Array
-    setIssueList([...issueList, newIssue]); 
+    // issue in db speichern und dann neu laden
+    await fetch('http://localhost:3001/api/mangel', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(newIssue),
+     });
+
+    // Reload aus db
+    fetch('http://localhost:3001/api/mangel')
+      .then((res) => res.json())
+      .then((data) => setIssueList(data));
 
     // Clear Input
     setTitle(''); 

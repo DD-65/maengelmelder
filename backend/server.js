@@ -21,7 +21,7 @@ app.get("/api/mangel", (req, res) => {
   try {
     // prepared statement
     const stmt = db.prepare(`
-      SELECT id, title, created_at
+      SELECT id, title, description, location, created_at
       FROM maengel
       ORDER BY created_at DESC
     `);
@@ -38,22 +38,34 @@ app.get("/api/mangel", (req, res) => {
 // neuen Mangel (-> mit post request)
 app.post("/api/mangel", (req, res) => {
   try {
-    const { title } = req.body;
+    const { title } = req.body.title;
+    const location = req.body.location || null;
+    const description = req.body.description || null;
 
     // wenn titel leer -> fehler
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });
     }
-    // TODO: brauchen wir noch mehr validierung? (z.B. max länge, bestimmte (sonder-)zeichen, etc)
+
+    if (location && location.trim().length > 255) {
+      return res.status(400).json({ error: "Fundort darf maximal 255 Zeichen lang sein" });
+    }
+
+    if (description && description.trim().length > 255) {
+      return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
+    }
+
+    
+    // TODO: brauchen wir noch mehr validierung? (z.B. bestimmte (sonder-)zeichen, etc)
 
     // prepared statement für mangelerzeugung
     const stmt = db.prepare(`
-      INSERT INTO maengel (title)
-      VALUES (?)
+      INSERT INTO maengel (title, description, location)
+      VALUES (?, ?, ?)
     `);
-
+      
     // statement ausführen und so erzeugten Datensatz speichern
-    const result = stmt.run(title.trim());
+    const result = stmt.run(title.trim(), description, location);
 
     res.status(201).json({
       message: "Mangel gespeichert!",

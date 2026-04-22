@@ -38,9 +38,7 @@ app.get("/api/mangel", (req, res) => {
 // neuen Mangel (-> mit post request)
 app.post("/api/mangel", (req, res) => {
   try {
-    const { title } = req.body.title;
-    const location = req.body.location || null;
-    const description = req.body.description || null;
+    const { title, description, location } = req.body;
 
     // wenn titel leer -> fehler
     if (!title || !title.trim()) {

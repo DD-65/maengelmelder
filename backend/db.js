@@ -12,16 +12,16 @@ const db = new Database(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS maengel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    // titel des mangels, darf nicht leer sein
+    -- titel des mangels, darf nicht leer sein
     title TEXT NOT NULL,
-    // constraint für location: entweder leer oder max 255 zeichen, also feld leer ist okay aber kein leerer string. 
-    // standardwert ist NULL
+    -- constraint für location: entweder leer oder max 255 zeichen, also feld leer ist okay aber kein leerer string. 
+    -- standardwert ist NULL
     location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),
 
-    // beschreibung des mangels, optional, max 255 zeichen, standardwert NULL (gleiches wie bei location)
+    -- beschreibung des mangels, optional, max 255 zeichen, standardwert NULL (gleiches wie bei location)
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
 
-    // timestamp wann mangel gemeldet wurde, wird automatisch gesetzt bei anlegen
+    -- timestamp wann mangel gemeldet wurde, wird automatisch gesetzt bei anlegen
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);

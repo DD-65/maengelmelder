@@ -60,8 +60,9 @@ export default function App() {
       {/* List of issues */}
       <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
         {issueList.map((issue, index) => (
-          <div style={{border: '2px solid black', margin: '10px', padding: '10px', width: '30%'}} key={index}>
+          <div style={{backgroundColor: '#f0f0f0', margin: '10px', width: '30%', borderRadius: '10px'}} key={index}>
             <li key={index}>
+            <div style={{position: 'relative', top: '-10px', left: '-10px', backgroundColor: 'darkblue', color: 'white', borderRadius: '50%', width: '30px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>{index + 1}</div>
             <h3>{issue.title}</h3>
             <p>{issue.description}</p>
             <p>{issue.location}</p>

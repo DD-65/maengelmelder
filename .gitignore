@@ -1,0 +1,8 @@
+.DS_Store
+*.pdf
+node_modules/
+*/node_modules/
+*.log
+build/
+database/app.db
+

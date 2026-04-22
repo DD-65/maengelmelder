@@ -51,7 +51,7 @@ export default function App() {
       <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
 
         <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
-        <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} rows={4}/>
+        <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
         <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
 
         <button type="submit">Hinzufügen</button>

@@ -45,7 +45,7 @@ export default function App() {
   // UI
   return (
     <div>
-      <h1>Mängelmelder</h1>
+      <h1>RPTU-Mängelmelder</h1>
 
       {/* Input form */}
       <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
@@ -58,13 +58,16 @@ export default function App() {
       </form>
 
       {/* List of issues */}
-      <ul style={{ listStyleType: 'none', padding: 0 }}>
+      <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
         {issueList.map((issue, index) => (
-          <li key={index}>
+          <div style={{border: '2px solid black', margin: '10px', padding: '10px', width: '30%'}} key={index}>
+            <li key={index}>
             <h3>{issue.title}</h3>
             <p>{issue.description}</p>
             <p>{issue.location}</p>
-          </li>
+            </li>
+          </div>
+          
         ))}
       </ul>
 

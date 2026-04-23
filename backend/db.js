@@ -25,7 +25,7 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     -- anzahl der bewertungen/likes/upvotes
-    votes INTEGER DEFAULT 0
+    votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0)
   )
 `);
 

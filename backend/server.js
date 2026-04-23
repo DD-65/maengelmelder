@@ -23,7 +23,7 @@ app.get("/api/mangel", (req, res) => {
     const stmt = db.prepare(`
       SELECT id, title, description, location, created_at, votes
       FROM maengel
-      ORDER BY votes DESC, created_at DESC
+      ORDER BY created_at DESC, votes DESC
     `);
     // statement ausführen
     const maengel = stmt.all();

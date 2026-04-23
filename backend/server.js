@@ -88,6 +88,10 @@ app.patch("/api/mangel/:id/vote", (req, res) => {
       WHERE id = ?
       `);
     const result = incr.run(id);
+    
+    if (result.changes === 0) {
+    return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
+  }
 
     res.json({ message: "Bewertung erfolgreich" });
 

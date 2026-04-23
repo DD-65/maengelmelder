@@ -94,8 +94,8 @@ export default function App() {
             <li key={index}>
             <div style={{position: 'relative', top: '-10px', left: '-10px', backgroundColor: 'darkblue', color: 'white', borderRadius: '50%', width: '30px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>{index + 1}</div>
             <h3>{issue.title}</h3>
+            <p><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'text-bottom', marginRight: '4px' }} aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location}</p>
             <p>{issue.description}</p>
-            <p>{issue.location}</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
               <p>Likes: {issue.votes || 0}</p>
               <button onClick={() => {if (issue.id) upvoteIssue(issue.id);}}> Like </button>

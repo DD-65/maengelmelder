@@ -23,7 +23,7 @@ export default function App() {
 
   // issues aus db laden
   useEffect(() => {
-       fetch('http://localhost:3001/api/mangel')
+       fetch('/api/mangel')
          .then((res) => res.json())
          .then((data) => setIssueList(data));
      }, []);
@@ -45,14 +45,14 @@ export default function App() {
     };
 
     // issue in db speichern und dann neu laden
-    await fetch('http://localhost:3001/api/mangel', {
+    await fetch('/api/mangel', {
        method: 'POST',
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify(newIssue),
      });
 
     // Reload aus db
-    fetch('http://localhost:3001/api/mangel')
+    fetch('/api/mangel')
       .then((res) => res.json())
       .then((data) => setIssueList(data));
 
@@ -64,10 +64,10 @@ export default function App() {
 
   const upvoteIssue = async (id: number) => {
     // request
-    await fetch(`http://localhost:3001/api/mangel/${id}/vote`, {method: 'PATCH',});
+    await fetch(`/api/mangel/${id}/vote`, {method: 'PATCH',});
 
     // reload
-    fetch('http://localhost:3001/api/mangel')
+    fetch('/api/mangel')
       .then((res) => res.json())
       .then((data) => setIssueList(data));
   };

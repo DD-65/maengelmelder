@@ -1,6 +1,12 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import db from "./db.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDistPath = path.join(__dirname, "../frontend/dist");
 
 // app erzeugung
 const app = express();
@@ -12,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // Testen
-app.get("/", (req, res) => {
+app.get("/health", (req, res) => {
   res.send("backend läuft!!");
 });
 
@@ -99,6 +105,12 @@ app.patch("/api/mangel/:id/vote", (req, res) => {
     console.error(error)
     res.status(500).json({ error: "Fehler beim Bewerten"})
   }
+});
+
+app.use(express.static(frontendDistPath));
+
+app.get(/^(?!\/api(?:\/|$)).*/, (req, res) => {
+  res.sendFile(path.join(frontendDistPath, "index.html"));
 });
 
 // backend starten 

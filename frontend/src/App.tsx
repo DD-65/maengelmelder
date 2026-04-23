@@ -8,6 +8,7 @@ type Issue = {
   description: string | null;
   location: string | null;
   created_at?: string;
+  votes?: number;
 }
 
 export default function App() {
@@ -61,6 +62,16 @@ export default function App() {
     setLocation('');
   }
 
+  const upvoteIssue = async (id: number) => {
+    // request
+    await fetch(`http://localhost:3001/api/mangel/${id}/vote`, {method: 'PATCH',});
+
+    // reload
+    fetch('http://localhost:3001/api/mangel')
+      .then((res) => res.json())
+      .then((data) => setIssueList(data));
+  };
+
   // UI
   return (
     <div>
@@ -85,9 +96,12 @@ export default function App() {
             <h3>{issue.title}</h3>
             <p>{issue.description}</p>
             <p>{issue.location}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
+              <p>Likes: {issue.votes || 0}</p>
+              <button onClick={() => {if (issue.id) upvoteIssue(issue.id);}}> Like </button>
+            </div>
             </li>
           </div>
-          
         ))}
       </ul>
 

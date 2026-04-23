@@ -21,9 +21,9 @@ app.get("/api/mangel", (req, res) => {
   try {
     // prepared statement
     const stmt = db.prepare(`
-      SELECT id, title, description, location, created_at
+      SELECT id, title, description, location, created_at, votes
       FROM maengel
-      ORDER BY created_at DESC
+      ORDER BY votes DESC, created_at DESC
     `);
     // statement ausführen
     const maengel = stmt.all();
@@ -73,6 +73,27 @@ app.post("/api/mangel", (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim speichern des Mangels" });
+  }
+});
+
+// fetching number of votes
+app.patch("/api/mangel/:id/vote", (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // incrementing number of votes by 1
+    const incr = db.prepare(`
+      UPDATE maengel
+      SET votes = votes + 1
+      WHERE id = ?
+      `);
+    const result = incr.run(id);
+
+    res.json({ message: "Bewertung erfolgreich" });
+
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Fehler beim Bewerten"})
   }
 });
 

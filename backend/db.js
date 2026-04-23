@@ -22,7 +22,10 @@ db.exec(`
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
 
     -- timestamp wann mangel gemeldet wurde, wird automatisch gesetzt bei anlegen
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    -- anzahl der bewertungen/likes/upvotes
+    votes INTEGER DEFAULT 0
   )
 `);
 

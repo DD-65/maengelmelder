@@ -21,9 +21,9 @@ app.get("/api/mangel", (req, res) => {
   try {
     // prepared statement
     const stmt = db.prepare(`
-      SELECT id, title, created_at
+      SELECT id, title, description, location, created_at, votes
       FROM maengel
-      ORDER BY created_at DESC
+      ORDER BY created_at DESC, votes DESC
     `);
     // statement ausführen
     const maengel = stmt.all();
@@ -38,22 +38,32 @@ app.get("/api/mangel", (req, res) => {
 // neuen Mangel (-> mit post request)
 app.post("/api/mangel", (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, description, location } = req.body;
 
     // wenn titel leer -> fehler
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });
     }
-    // TODO: brauchen wir noch mehr validierung? (z.B. max länge, bestimmte (sonder-)zeichen, etc)
+
+    if (location && location.trim().length > 255) {
+      return res.status(400).json({ error: "Fundort darf maximal 255 Zeichen lang sein" });
+    }
+
+    if (description && description.trim().length > 255) {
+      return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
+    }
+
+    
+    // TODO: brauchen wir noch mehr validierung? (z.B. bestimmte (sonder-)zeichen, etc)
 
     // prepared statement für mangelerzeugung
     const stmt = db.prepare(`
-      INSERT INTO maengel (title)
-      VALUES (?)
+      INSERT INTO maengel (title, description, location)
+      VALUES (?, ?, ?)
     `);
-
+      
     // statement ausführen und so erzeugten Datensatz speichern
-    const result = stmt.run(title.trim());
+    const result = stmt.run(title.trim(), description, location);
 
     res.status(201).json({
       message: "Mangel gespeichert!",
@@ -63,6 +73,31 @@ app.post("/api/mangel", (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim speichern des Mangels" });
+  }
+});
+
+// fetching number of votes
+app.patch("/api/mangel/:id/vote", (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // incrementing number of votes by 1
+    const incr = db.prepare(`
+      UPDATE maengel
+      SET votes = votes + 1
+      WHERE id = ?
+      `);
+    const result = incr.run(id);
+    
+    if (result.changes === 0) {
+    return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
+  }
+
+    res.json({ message: "Bewertung erfolgreich" });
+
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Fehler beim Bewerten"})
   }
 });
 

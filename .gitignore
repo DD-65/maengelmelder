@@ -5,5 +5,5 @@ node_modules/
 *.log
 build/
 database/app.db
-frontend/dist/
+dist/
 

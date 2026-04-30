@@ -6,4 +6,5 @@ node_modules/
 build/
 database/app.db
 dist/
-
+database/app.db-shm
+database/app.db-wal

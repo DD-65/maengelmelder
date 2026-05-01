@@ -8,17 +8,40 @@ const __dirname = path.dirname(__filename);
 // Pfad zur Datenbank relativ zu src/server/db.ts
 const dbPath = path.join(__dirname, "../../database/app.db");
 const db = new Database(dbPath);
+// settings: write-ahead logging aktivieren und foreign keys erzwingen
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
-// Tabelle erstellen
+// Mängel-Tabelle erstellen
 db.exec(`
   CREATE TABLE IF NOT EXISTS maengel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
     title TEXT NOT NULL,
     location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0)
+    votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
+    foreign key (user_id) references users(id) ON DELETE SET NULL
+  )
+`);
+
+// Benutzer-Tabelle erstellen
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// session table für login
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    sid TEXT PRIMARY KEY,
+    sess TEXT NOT NULL,
+    expired INTEGER NOT NULL
   )
 `);
 

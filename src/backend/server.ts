@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import bcrypt from "bcryptjs";
 import { fileURLToPath } from "url";
 import db from "./db.js";
 
@@ -14,11 +15,8 @@ const isProd = process.env.NODE_ENV === "production";
 app.use(cors());
 app.use(express.json());
 
-// API Routes
-app.get("/health", (req, res) => {
-  res.send("backend läuft!!");
-});
-
+// --- API Endpunkte
+// Mängel laden
 app.get("/api/mangel", (req, res) => {
   try {
     const stmt = db.prepare(`
@@ -34,6 +32,7 @@ app.get("/api/mangel", (req, res) => {
   }
 });
 
+// neuen Mangel anlegen
 app.post("/api/mangel", (req, res) => {
   try {
     const { title, description, location } = req.body;
@@ -67,6 +66,7 @@ app.post("/api/mangel", (req, res) => {
   }
 });
 
+// voten
 app.patch("/api/mangel/:id/vote", (req, res) => {
   try {
     const id = req.params.id;
@@ -87,6 +87,67 @@ app.patch("/api/mangel/:id/vote", (req, res) => {
     res.status(500).json({ error: "Fehler beim Bewerten"})
   }
 });
+
+// -- Login & Registrierung zeugs
+
+// registrieren
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // falls email oder passwort fehlen, fehler zurückgeben
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email und Passwort erforderlich" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    // falls email schon existiert, fehler zurückgeben
+    const existingUser = db.prepare("SELECT id FROM users WHERE email = ?").get(normalizedEmail);
+    if (existingUser) {
+      return res.status(400).json({ error: "Email bereits registriert" });
+    }
+
+    // passwort hashen (bycrypt mit salt länge 12)
+    const passwordHash = await bcrypt.hash(password, 12);
+    const stmt = db.prepare("INSERT INTO users (email, password_hash) VALUES (?, ?)");
+    // neuen Nutzer in db speichern
+    const result = stmt.run(normalizedEmail, passwordHash);
+
+    // Erfolg zurückgeben
+    res.status(201).json({ message: "Registrierung erfolgreich", userId: result.lastInsertRowid });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler bei der Registrierung" });
+  }
+});
+
+// login
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email und Passwort erforderlich" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = db.prepare("SELECT id, password_hash FROM users WHERE email = ?").get(normalizedEmail);
+    if (!user) {
+      return res.status(400).json({ error: "Ungültige Anmeldedaten" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Ungültige Anmeldedaten" });
+    }
+
+    res.json({ message: "Login erfolgreich", userId: user.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Login" });
+  }
+}); 
 
 // Vite Integration
 if (!isProd) {

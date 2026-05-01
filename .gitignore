@@ -4,5 +4,7 @@ node_modules/
 */node_modules/
 *.log
 build/
-database/app.db*
+database/app.db
+database/app.db-shm
+database/app.db-wal
 dist/

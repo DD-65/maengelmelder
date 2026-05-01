@@ -9,6 +9,7 @@ type Issue = {
   location: string | null;
   created_at?: string;
   votes?: number;
+  kategorie: string;
 }
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [kategorie, setKategorie] = useState('');
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
@@ -41,7 +43,8 @@ export default function App() {
     const newIssue: Issue = {
       title: title,
       description: description,
-      location: location
+      location: location,
+      kategorie: kategorie
     };
 
     // issue in db speichern und dann neu laden
@@ -60,6 +63,7 @@ export default function App() {
     setTitle(''); 
     setDescription(''); 
     setLocation('');
+    setKategorie('');
   }
 
   const upvoteIssue = async (id: number) => {
@@ -77,13 +81,22 @@ export default function App() {
     <div>
       <h1>RPTU-Mängelmelder</h1>
 
-      {/* Input form */}
+      {/* Input form 
+      
+      */}
       <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
 
         <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
         <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
+        {/*<input type= />*/}
         <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
-
+        <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
+          <option value=''></option>
+          <option value="Steckdose">Steckdose</option>
+          <option value="Schlagloch">Schlagloch</option>
+          <option value="WLAN">WLAN</option>
+          <option value="Mobiliar">Mobiliar</option>
+        </select>
         <button type="submit">Hinzufügen</button>
       </form>
 
@@ -98,6 +111,7 @@ export default function App() {
             <p>{issue.description}</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
               <p>Likes: {issue.votes || 0}</p>
+              <p>Kategorie: {issue.kategorie || '-' }</p>
               <button onClick={() => {if (issue.id) upvoteIssue(issue.id);}}> Like </button>
             </div>
             </li>

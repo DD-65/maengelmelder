@@ -22,7 +22,7 @@ app.get("/health", (req, res) => {
 app.get("/api/mangel", (req, res) => {
   try {
     const stmt = db.prepare(`
-      SELECT id, title, description, location, created_at, votes
+      SELECT id, title, description, location, kategorie, created_at, votes
       FROM maengel
       ORDER BY created_at DESC, votes DESC
     `);
@@ -36,7 +36,7 @@ app.get("/api/mangel", (req, res) => {
 
 app.post("/api/mangel", (req, res) => {
   try {
-    const { title, description, location } = req.body;
+    const { title, description, location, kategorie } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });
@@ -49,13 +49,17 @@ app.post("/api/mangel", (req, res) => {
     if (description && description.trim().length > 255) {
       return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
     }
+    /*if (kategorie.length < 2){
+      kategorie = null;
+    }*/
+
 
     const stmt = db.prepare(`
-      INSERT INTO maengel (title, description, location)
-      VALUES (?, ?, ?)
+      INSERT INTO maengel (title, description, location, kategorie)
+      VALUES (?, ?, ?, ?)
     `);
 
-    const result = stmt.run(title.trim(), description, location);
+    const result = stmt.run(title.trim(), description, location, kategorie);
 
     res.status(201).json({
       message: "Mangel gespeichert!",

@@ -17,6 +17,7 @@ db.exec(`
     title TEXT NOT NULL,
     location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
+    kategorie TEXT CHECK(kategorie IS '' OR kategorie IN ('Steckdose','Schlagloch', 'WLAN', 'Mobiliar')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0)
   )

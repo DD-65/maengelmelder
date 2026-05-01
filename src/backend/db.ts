@@ -12,20 +12,6 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-// Mängel-Tabelle erstellen
-db.exec(`
-  CREATE TABLE IF NOT EXISTS maengel (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    title TEXT NOT NULL,
-    location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
-    description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
-    foreign key (user_id) references users(id) ON DELETE SET NULL
-  )
-`);
-
 // Benutzer-Tabelle erstellen
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -36,12 +22,17 @@ db.exec(`
   )
 `);
 
-// session table für login
+// Mängel-Tabelle erstellen
 db.exec(`
-  CREATE TABLE IF NOT EXISTS sessions (
-    sid TEXT PRIMARY KEY,
-    sess TEXT NOT NULL,
-    expired INTEGER NOT NULL
+  CREATE TABLE IF NOT EXISTS maengel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    title TEXT NOT NULL,
+    location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
+    description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   )
 `);
 

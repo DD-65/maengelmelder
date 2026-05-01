@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import bcrypt from "bcryptjs";
+import session from "express-session";
 import { fileURLToPath } from "url";
 import db from "./db.js";
 
@@ -14,6 +15,19 @@ const isProd = process.env.NODE_ENV === "production";
 
 app.use(cors());
 app.use(express.json());
+
+// session config: 
+app.use(session({
+  secret: process.env.SESSION_SECRET || "sehr-geheimes-session-cookie-secret-zum-signieren",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isProd,
+    maxAge: 1000 * 60 * 60 * 24
+  }
+}));
 
 // --- API Endpunkte
 // Mängel laden
@@ -33,7 +47,7 @@ app.get("/api/mangel", (req, res) => {
 });
 
 // neuen Mangel anlegen
-app.post("/api/mangel", (req, res) => {
+app.post("/api/mangel", requireAuth, (req, res) => {
   try {
     const { title, description, location } = req.body;
 
@@ -48,13 +62,15 @@ app.post("/api/mangel", (req, res) => {
     if (description && description.trim().length > 255) {
       return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
     }
-
+    // userid aus sessioncookie (Durch login endpunkt gesetzt)
+    const userId = req.session.userId;
+    
     const stmt = db.prepare(`
-      INSERT INTO maengel (title, description, location)
-      VALUES (?, ?, ?)
+      INSERT INTO maengel (user_id, title, description, location)
+      VALUES (?, ?, ?, ?)
     `);
 
-    const result = stmt.run(title.trim(), description, location);
+    const result = stmt.run(userId, title.trim(), description, location);
 
     res.status(201).json({
       message: "Mangel gespeichert!",
@@ -66,8 +82,8 @@ app.post("/api/mangel", (req, res) => {
   }
 });
 
-// voten
-app.patch("/api/mangel/:id/vote", (req, res) => {
+// voten (braucht login)
+app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
   try {
     const id = req.params.id;
     const incr = db.prepare(`
@@ -99,10 +115,10 @@ app.post("/api/auth/register", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email und Passwort erforderlich" });
     }
-
+    // email normalisieren
     const normalizedEmail = email.trim().toLowerCase();
     // falls email schon existiert, fehler zurückgeben
-    const existingUser = db.prepare("SELECT id FROM users WHERE email = ?").get(normalizedEmail);
+    const existingUser = db.prepare<{ id: number }>("SELECT id FROM users WHERE email = ?").get(normalizedEmail);
     if (existingUser) {
       return res.status(400).json({ error: "Email bereits registriert" });
     }
@@ -132,7 +148,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = db.prepare("SELECT id, password_hash FROM users WHERE email = ?").get(normalizedEmail);
+    const user = db.prepare<{ id: number; password_hash: string }>("SELECT id, password_hash FROM users WHERE email = ?").get(normalizedEmail);
     if (!user) {
       return res.status(400).json({ error: "Ungültige Anmeldedaten" });
     }
@@ -141,6 +157,8 @@ app.post("/api/auth/login", async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ error: "Ungültige Anmeldedaten" });
     }
+    // session speichern
+    req.session.userId = user.id;
 
     res.json({ message: "Login erfolgreich", userId: user.id });
   } catch (error) {
@@ -148,6 +166,38 @@ app.post("/api/auth/login", async (req, res) => {
     res.status(500).json({ error: "Fehler beim Login" });
   }
 }); 
+
+// endpunkt um zu prüfen ob man angemeldet ist (via sessions)
+app.get("/api/auth/me", (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Nicht angemeldet" });
+  }
+  
+  res.json({ userId: req.session.userId });
+});
+
+// logout endpunkt
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      return res.status(500).json({ error: "Fehler beim Logout" });
+    }
+    
+    res.clearCookie("connect.sid");
+    res.json({ message: "Logout erfolgreich" });
+  });
+});
+
+// helper um routes login brauchen zu lassen
+import type { Request, Response, NextFunction } from "express";
+
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Nicht angemeldet" });
+  }
+  
+  next();
+}
 
 // Vite Integration
 if (!isProd) {

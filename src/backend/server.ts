@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
+const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 app.use(cors());
 app.use(express.json());
@@ -117,8 +118,22 @@ app.post("/api/auth/register", async (req, res) => {
     }
     // email normalisieren
     const normalizedEmail = email.trim().toLowerCase();
+
+    // email mit regex validieren
+    if (!emailPattern.test(normalizedEmail)) {
+      return res.status(400).json({ error: "Ungültiges Email-Format" });
+    }
+    
+    // passwortlänge (wollen wir da einen check?)
+    if (password.length < 5) {
+      return res.status(400).json({ error: "Passwort muss mindestens 5 Zeichen lang sein" });
+    }
+
     // falls email schon existiert, fehler zurückgeben
-    const existingUser = db.prepare<{ id: number }>("SELECT id FROM users WHERE email = ?").get(normalizedEmail);
+    const existingUser = db
+      .prepare("SELECT id FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number } | undefined;
+
     if (existingUser) {
       return res.status(400).json({ error: "Email bereits registriert" });
     }
@@ -148,14 +163,17 @@ app.post("/api/auth/login", async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = db.prepare<{ id: number; password_hash: string }>("SELECT id, password_hash FROM users WHERE email = ?").get(normalizedEmail);
+    const user = db
+      .prepare("SELECT id, password_hash FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; password_hash: string } | undefined;
+
     if (!user) {
-      return res.status(400).json({ error: "Ungültige Anmeldedaten" });
+      return res.status(401).json({ error: "Ungültige Anmeldedaten" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(400).json({ error: "Ungültige Anmeldedaten" });
+      return res.status(401).json({ error: "Ungültige Anmeldedaten" });
     }
     // session speichern
     req.session.userId = user.id;

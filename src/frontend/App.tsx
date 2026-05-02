@@ -17,6 +17,7 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  // hier muss eine liste mit allen räumen aus dem kis hin und filter für autocomplete
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
@@ -42,6 +43,7 @@ export default function App() {
       title: title,
       description: description,
       location: location
+      // hier wahrscheinlich location aus einem room select
     };
 
     // issue in db speichern und dann neu laden
@@ -83,7 +85,7 @@ export default function App() {
         <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
         <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
         <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
-
+        {/* hier muss die raumliste ausgegeben werden, wahrscheinlich besser autocomplete als dropdown weils so viele sind, filter basierend auf dem input und dass der klick auf den raum die location automatisch setzt */}
         <button type="submit">Hinzufügen</button>
       </form>
 

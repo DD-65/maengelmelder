@@ -109,3 +109,8 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Titel der Mängel in der Hauptliste */
+.issue-title {
+  margin: 4px 0 8px;
+}

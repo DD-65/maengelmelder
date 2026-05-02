@@ -35,9 +35,10 @@ app.use(session({
 app.get("/api/mangel", (req, res) => {
   try {
     const stmt = db.prepare(`
-      SELECT id, title, description, location, created_at, votes
+      SELECT maengel.id, maengel.title, maengel.description, maengel.location, maengel.created_at, maengel.votes, users.email AS user_email
       FROM maengel
-      ORDER BY created_at DESC, votes DESC
+      LEFT JOIN users ON maengel.user_id = users.id
+      ORDER BY maengel.created_at DESC, maengel.votes DESC
     `);
     const maengel = stmt.all();
     res.json(maengel);
@@ -169,8 +170,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, password_hash FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; password_hash: string } | undefined;
+      .prepare("SELECT id, email, password_hash FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -183,7 +184,7 @@ app.post("/api/auth/login", async (req, res) => {
     // session speichern
     req.session.userId = user.id;
 
-    res.json({ message: "Login erfolgreich", userId: user.id });
+    res.json({ message: "Login erfolgreich", userId: user.id, email: user.email });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Login" });
@@ -195,8 +196,17 @@ app.get("/api/auth/me", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Nicht angemeldet" });
   }
+
+  const user = db
+    .prepare("SELECT id, email FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string } | undefined;
+
+  if (!user) {
+    req.session.destroy(() => {});
+    return res.status(401).json({ error: "Nicht angemeldet" });
+  }
   
-  res.json({ userId: req.session.userId });
+  res.json({ userId: user.id, email: user.email });
 });
 
 // logout endpunkt

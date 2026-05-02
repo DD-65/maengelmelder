@@ -9,6 +9,7 @@ type Issue = {
   location: string | null;
   created_at?: string;
   votes?: number;
+  user_email?: string | null;
 }
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
 
   // Views für Registrierung und Login
   const [userId, setUserId] = useState<number | null>(null);
+  const [userEmail, setUserEmail] = useState("");
   const [authView, setAuthView] = useState<"login" | "register" | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -35,10 +37,20 @@ export default function App() {
           return res.json();
         } else {
           setUserId(null);
+          setUserEmail("");
+          return null;
         }
       })
-      .then((data) => setUserId(data.userId))
-      .catch(() => setUserId(null));
+      .then((data) => {
+        if (data) {
+          setUserId(data.userId);
+          setUserEmail(data.email);
+        }
+      })
+      .catch(() => {
+        setUserId(null);
+        setUserEmail("");
+      });
   }, []);
 
   // login handler
@@ -63,6 +75,7 @@ export default function App() {
     }
     
     setUserId(data.userId);
+    setUserEmail(data.email);
     setAuthEmail("");
     setAuthPassword("");
     setAuthView(null);
@@ -98,6 +111,7 @@ export default function App() {
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUserId(null);
+    setUserEmail("");
   };
 
   // issues aus db laden
@@ -159,7 +173,7 @@ export default function App() {
       {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div>
-        <span>Eingeloggt als {authEmail}</span>
+        <span>Eingeloggt als {userEmail}</span>
         <button onClick={logout}>Logout</button>
         </div>
       ) : (
@@ -220,10 +234,23 @@ export default function App() {
         {issueList.map((issue, index) => (
           <div style={{backgroundColor: '#f0f0f0', margin: '10px', width: '30%', borderRadius: '10px'}} key={index}>
             <li key={index}>
+            
+            {/* Nutzername (email) */}
+            <p style={{marginTop: '9px', fontSize: '16px'}}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'middle', marginRight: '4px'}} aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
+            
+            {/* ID des Mangels */}
             <div style={{position: 'relative', top: '-10px', left: '-10px', backgroundColor: 'darkblue', color: 'white', borderRadius: '50%', width: '30px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>{index + 1}</div>
-            <h3>{issue.title}</h3>
+            
+            {/* Titel */}
+            <h3 className="issue-title">{issue.title}</h3>
+            
+            {/* Standort des Mangels */}
             <p><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'text-bottom', marginRight: '4px' }} aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location}</p>
+            
+            {/* Beschreibung */}
             <p>{issue.description}</p>
+            
+            {/* Container für Voting-zeug */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
               <p>Likes: {issue.votes || 0}</p>
               {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}

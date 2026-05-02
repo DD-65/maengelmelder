@@ -152,24 +152,6 @@ export default function App() {
       .then((data) => setIssueList(data));
   };
 
-  //demo
-  const registrierungTest = async () => {
-    await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'daniel.cairoli@icloud.com', password: 'testpassword2' }),
-    });
-  };
-
-  // demo login
-  const loginTest = async () => {
-    await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'daniel.cairoli@icloud.com', password: 'testpassword2' }),
-    });
-  };
-
   // UI
   return (
     <div>
@@ -183,8 +165,8 @@ export default function App() {
         </div>
       ) : (
         <div>
-        <button onClick={() => setAuthView("login")}>Login</button>
-        <button onClick={() => setAuthView("register")}>Registrieren</button>
+        <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
+        <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
         </div>
       )} 
 
@@ -255,10 +237,6 @@ export default function App() {
             </li>
           </div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
-        <button onClick={registrierungTest}>Registrierung Test</button>
-        <button onClick={loginTest}>Login Test</button>
-        </div>
       </ul>
 
     </div>

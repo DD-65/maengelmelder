@@ -21,7 +21,6 @@ export default function App() {
   const [issueList, setIssueList] = useState<Issue[]>([]);
 
   // Views für Registrierung und Login
-  const [view, setView] = useState<"main" | "login" | "register">("main");
   const [userId, setUserId] = useState<number | null>(null);
   const [authView, setAuthView] = useState<"login" | "register" | null>(null);
   const [authEmail, setAuthEmail] = useState("");

@@ -163,6 +163,11 @@ app.post("/api/auth/login", async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    // wenn man schon eingeloggt ist darf man nicht
+    if (req.session.userId) {
+      return res.status(400).json({ error: "Bereits eingeloggt" });
+    }
+
     const user = db
       .prepare("SELECT id, password_hash FROM users WHERE email = ?")
       .get(normalizedEmail) as { id: number; password_hash: string } | undefined;

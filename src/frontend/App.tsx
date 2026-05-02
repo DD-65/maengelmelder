@@ -1,3 +1,4 @@
+import { Hash } from 'node:crypto';
 import { useEffect, useState } from 'react';
 
 // Define all issue components
@@ -19,6 +20,38 @@ export default function App() {
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
+
+
+  // Variablen für Filter und Filterwerte + Funktionen um diese zu setten
+  const [currentFilter, setCurrentFilter] = useState("");
+  const [currentFilterValue, setCurrentFilterValue] = useState("");
+  const possibleFilters = [
+          // "Kategorie", //zur Zeit noch nicht implementiert
+          "Ort", 
+          "User"
+        ];
+  const possibleFilterValues: Record<string, string[]> = {
+  //Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => x !== null))), //zur Zeit noch nicht implementiert
+  Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => x !== null))), //Design-Entscheidung: Filter nur mit Werten befüllen die auch tatsächlich in den Issues vorkommen, könnte man auch anders machen
+  User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => x !== null))),
+};
+
+// dedizierte Funktionnen um nur gültige Filter und Werte setzbar zu machen
+  function chooseFilterFromPossibleFilters(chosenFilter: string) {
+    if (possibleFilters.includes(chosenFilter)) {
+      setCurrentFilter(chosenFilter);
+    } else {
+      setCurrentFilter("");
+    }
+  }
+
+  function chooseFilterValueFromPossibleValues(filter: string, chosenValue: string) {
+    if (possibleFilterValues[filter]?.includes(chosenValue)) {
+      setCurrentFilterValue(chosenValue);
+    } else {
+      setCurrentFilterValue("");
+    }
+  }
 
   // Views für Registrierung und Login
   const [userId, setUserId] = useState<number | null>(null);
@@ -227,9 +260,40 @@ export default function App() {
       <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}
 
-      {/* List of issues */}
-      <ul className="issue-list">
-        {issueList.map((issue, index) => (
+
+      <div className='issue-toolbar'>
+      {/* Filter Auswahl, Filter wird in einem Select-Feld gewählt */}
+      
+        <select value={currentFilter} onChange={(event) => chooseFilterFromPossibleFilters(event.target.value)}>
+          <option value="" disabled>Wählen Sie einen Filter</option>
+          {possibleFilters.map((filter) => (
+            <option key={filter} value={filter}>{filter}</option>
+          ))}
+          <option value="">  - Kein Filter - </option>
+        </select>
+
+      {/* in zweitem Select-Feld kann dann dynamisch einer der verfügbaren Werte gewählt werden. 
+      Die verfügbaren Werte werden aus der Issue-Liste unique rekonstruiert. MAN KÖNNTE DIESE NOCH SORTIEREN (nach Alphabet oder Häufigkeit)*/}
+
+      {currentFilter ? (
+        <select value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
+          <option value="" disabled>Wählen Sie einen Wert</option>
+          {possibleFilterValues[currentFilter]?.map((value) => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      ): null}
+      </div>
+        {/* List of issues */}
+        <ul className="issue-list">
+        {issueList.filter(issue => { //die Issue-List wird gefiltert bevor sie 
+          if (!currentFilter || !currentFilterValue) return true;
+          //if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
+          if (currentFilter === "Ort") return issue.location === currentFilterValue;
+          if (currentFilter === "User") return issue.user_email === currentFilterValue;
+          return true;
+          })
+          .map((issue, index) => (
             <li className="card issue-card" key={issue.id || index}>
             
             {/* Nutzername (email) */}

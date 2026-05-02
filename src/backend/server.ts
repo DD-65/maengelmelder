@@ -12,7 +12,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
-// eslint-disable-next-line no-useless-escape damit das regex beim linting ok ist
+// Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
+// eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 app.use(cors());
@@ -142,7 +143,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     // passwort hashen (bycrypt mit salt länge 12)
     const passwordHash = await bcrypt.hash(password, 12);
-    const stmt = db.prepare("INSERT INTO users (email, password_hash) VALUES (?, ?)");
+    const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'user')");
     // neuen Nutzer in db speichern
     const result = stmt.run(normalizedEmail, passwordHash);
 

@@ -9,6 +9,7 @@ type Issue = {
   created_at?: string;
   votes?: number;
   user_email?: string | null;
+  has_voted?: number | boolean;
 }
 
 export default function App() {
@@ -27,6 +28,13 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
+  const [voteError, setVoteError] = useState("");
+
+  const loadIssues = () => {
+    fetch('/api/mangel')
+      .then((res) => res.json())
+      .then((data) => setIssueList(data));
+  };
 
   // beim laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
@@ -44,6 +52,7 @@ export default function App() {
         if (data) {
           setUserId(data.userId);
           setUserEmail(data.email);
+          loadIssues();
         }
       })
       .catch(() => {
@@ -78,6 +87,7 @@ export default function App() {
     setAuthEmail("");
     setAuthPassword("");
     setAuthView(null);
+    loadIssues();
   };
 
   // Registrierungs-handler
@@ -111,13 +121,12 @@ export default function App() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUserId(null);
     setUserEmail("");
+    loadIssues();
   };
 
   // issues aus db laden
   useEffect(() => {
-       fetch('/api/mangel')
-         .then((res) => res.json())
-         .then((data) => setIssueList(data));
+       loadIssues();
      }, []);
 
   // Add issue to list
@@ -144,9 +153,7 @@ export default function App() {
      });
 
     // Reload aus db
-    fetch('/api/mangel')
-      .then((res) => res.json())
-      .then((data) => setIssueList(data));
+    loadIssues();
 
     // Clear Input
     setTitle(''); 
@@ -155,13 +162,20 @@ export default function App() {
   }
 
   const upvoteIssue = async (id: number) => {
+    setVoteError("");
+
     // request
-    await fetch(`/api/mangel/${id}/vote`, {method: 'PATCH',});
+    const res = await fetch(`/api/mangel/${id}/vote`, {method: 'PATCH',});
+    const data = await res.json();
+
+    if (!res.ok) {
+      setVoteError(data.error || "Fehler beim Bewerten");
+      loadIssues();
+      return;
+    }
 
     // reload
-    fetch('/api/mangel')
-      .then((res) => res.json())
-      .then((data) => setIssueList(data));
+    loadIssues();
   };
 
   // UI
@@ -173,7 +187,7 @@ export default function App() {
       {userId ? (
         <div className="auth-bar">
         <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong></span>
-        <button onClick={logout}>Logout</button>
+        <button className='logout-button' onClick={logout}>Logout</button>
         </div>
       ) : (
         <div className="auth-bar">
@@ -221,15 +235,19 @@ export default function App() {
           <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
           <input type="text" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
 
-          <button type="submit">Hinzufügen</button>
+          <button type="submit">Posten</button>
         </form>
       ) : (
       <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}
 
       {/* List of issues */}
+      {voteError && <p className="error-text vote-error">{voteError}</p>}
       <ul className="issue-list">
-        {issueList.map((issue, index) => (
+        {issueList.map((issue, index) => {
+          const hasVoted = Boolean(issue.has_voted);
+
+          return (
             <li className="card issue-card" key={issue.id || index}>
             
             {/* Nutzername (email) */}
@@ -252,13 +270,14 @@ export default function App() {
               <p>Likes: {issue.votes || 0}</p>
               {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
               {userId ? (
-              <button onClick={() => {if (issue.id) upvoteIssue(issue.id);}}> Like </button>
+              <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => {if (issue.id) upvoteIssue(issue.id);}}>{hasVoted ? "Geliked" : "Liken"}</button>
               ) : (
               <button disabled>Like</button>
               )}
             </div>
             </li>
-        ))}
+          );
+        })}
       </ul>
 
     </div>

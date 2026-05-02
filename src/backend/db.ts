@@ -37,4 +37,16 @@ db.exec(`
   )
 `);
 
+// Tabelle für votes, damit ein Nutzer nur einmal voten kann
+db.exec(`
+  CREATE TABLE IF NOT EXISTS mangel_votes (
+    user_id INTEGER NOT NULL,
+    mangel_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, mangel_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
+  )
+`);
+
 export default db;

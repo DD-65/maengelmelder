@@ -111,6 +111,22 @@ button:disabled {
   opacity: 0.45;
 }
 
+button.voted-button {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.95), rgba(75, 85, 99, 0.95));
+  color: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.logout-button {
+  background-image: linear-gradient(to right, #D31027 0%, #EA384D 51%, #D31027 100%);
+}
+
+.logout-button:hover {
+  background-position: right center;
+  color: #fff;
+  text-decoration: none;
+}
+
 input {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -187,6 +203,11 @@ code {
 .error-text {
   color: var(--danger);
   font-weight: 700;
+}
+
+.vote-error {
+  text-align: center;
+  margin: 0 0 12px;
 }
 
 .issue-list {

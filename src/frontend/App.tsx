@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Define all issue components
 type Issue = {
@@ -167,17 +166,17 @@ export default function App() {
 
   // UI
   return (
-    <div>
+    <div className="app-shell">
       <h1>RPTU-Mängelmelder</h1>
 
       {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
-        <div>
-        <span>Eingeloggt als {userEmail}</span>
+        <div className="auth-bar">
+        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong></span>
         <button onClick={logout}>Logout</button>
         </div>
       ) : (
-        <div>
+        <div className="auth-bar">
         <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
         <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
         </div>
@@ -187,9 +186,8 @@ export default function App() {
       {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
       {authView && (
         <form
+        className="auth-card"
         onSubmit={authView === "login" ? login : register}
-        style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "300px", margin:
-          "20px auto" }}
           >
           <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
           
@@ -207,7 +205,7 @@ export default function App() {
           onChange={(event) => setAuthPassword(event.target.value)}
           />
           
-          {authError && <p style={{ color: "red" }}>{authError}</p>}
+          {authError && <p className="error-text">{authError}</p>}
           
           <button type="submit">
           {authView === "login" ? "Einloggen" : "Registrieren"}
@@ -217,41 +215,40 @@ export default function App() {
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
       {userId ? (
-        <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
+        <form className="issue-form" onSubmit={addIssue}>
 
-          <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
-          <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
+          <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)}/>
           <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
+          <input type="text" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
 
           <button type="submit">Hinzufügen</button>
         </form>
       ) : (
-      <p>Bitte einloggen, um einen Mangel zu melden.</p>
+      <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}
 
       {/* List of issues */}
-      <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+      <ul className="issue-list">
         {issueList.map((issue, index) => (
-          <div style={{backgroundColor: '#f0f0f0', margin: '10px', width: '30%', borderRadius: '10px'}} key={index}>
-            <li key={index}>
+            <li className="card issue-card" key={issue.id || index}>
             
             {/* Nutzername (email) */}
-            <p style={{marginTop: '9px', fontSize: '16px'}}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'middle', marginRight: '4px'}} aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
+            <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
             
             {/* ID des Mangels */}
-            <div style={{position: 'relative', top: '-10px', left: '-10px', backgroundColor: 'darkblue', color: 'white', borderRadius: '50%', width: '30px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>{index + 1}</div>
+            <div className="issue-index">{index + 1}</div>
             
             {/* Titel */}
             <h3 className="issue-title">{issue.title}</h3>
             
             {/* Standort des Mangels */}
-            <p><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'text-bottom', marginRight: '4px' }} aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location}</p>
+            <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
             
             {/* Beschreibung */}
-            <p>{issue.description}</p>
+            <p className="issue-description">{issue.description}</p>
             
             {/* Container für Voting-zeug */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
+            <div className="issue-actions">
               <p>Likes: {issue.votes || 0}</p>
               {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
               {userId ? (
@@ -261,7 +258,6 @@ export default function App() {
               )}
             </div>
             </li>
-          </div>
         ))}
       </ul>
 

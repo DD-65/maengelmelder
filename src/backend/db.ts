@@ -12,7 +12,7 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-// Benutzer-Tabelle erstellen
+// Benutzer-Tabelle erstellen (falls sie noch nicht existiert)
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,7 +22,7 @@ db.exec(`
   )
 `);
 
-// Mängel-Tabelle erstellen
+// Mängel-Tabelle erstellen (falls sie noch nicht existiert)
 db.exec(`
   CREATE TABLE IF NOT EXISTS maengel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

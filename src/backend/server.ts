@@ -213,12 +213,10 @@ app.post("/api/auth/logout", (req, res) => {
 
 // helper um routes login brauchen zu lassen
 import type { Request, Response, NextFunction } from "express";
-
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Nicht angemeldet" });
   }
-  
   next();
 }
 

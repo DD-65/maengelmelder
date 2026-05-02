@@ -21,6 +21,25 @@ export default function App() {
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
 
+  // Views für Registrierung und Login
+  const [view, setView] = useState<"main" | "login" | "register">("main");
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // beim laden der Seite checken ob man eingeloggt ist um userID zu setzen
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          setUserId(null);
+        }
+      })
+      .then((data) => setUserId(data.userId))
+      .catch(() => setUserId(null));
+  }, []);
+
+
   // issues aus db laden
   useEffect(() => {
        fetch('/api/mangel')

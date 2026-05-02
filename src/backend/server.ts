@@ -232,9 +232,6 @@ app.post("/api/auth/login", async (req, res) => {
     // session speichern
     req.session.userId = user.id;
 
-    console.log("LOGIN sessionID:", req.sessionID);
-    console.log("LOGIN session:", req.session);
-
     res.json({ message: "Login erfolgreich", userId: user.id, email: user.email });
   } catch (error) {
     console.error(error);
@@ -244,10 +241,6 @@ app.post("/api/auth/login", async (req, res) => {
 
 // endpunkt um zu prüfen ob man angemeldet ist (via sessions)
 app.get("/api/auth/me", (req, res) => {
-  console.log("ME cookie:", req.headers.cookie);
-  console.log("ME sessionID:", req.sessionID);
-  console.log("ME session:", req.session);
-
   if (!req.session.userId) {
     return res.status(401).json({ error: "Nicht angemeldet" });
   }

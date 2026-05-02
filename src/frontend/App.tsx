@@ -12,7 +12,6 @@ type Issue = {
 }
 
 export default function App() {
-
   // Input
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -24,6 +23,10 @@ export default function App() {
   // Views für Registrierung und Login
   const [view, setView] = useState<"main" | "login" | "register">("main");
   const [userId, setUserId] = useState<number | null>(null);
+  const [authView, setAuthView] = useState<"login" | "register" | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
 
   // beim laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
@@ -39,6 +42,64 @@ export default function App() {
       .catch(() => setUserId(null));
   }, []);
 
+  // login handler
+  const login = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAuthError("");
+    
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: authEmail,
+        password: authPassword,
+      }),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      setAuthError(data.error || "Login fehlgeschlagen");
+      return;
+    }
+    
+    setUserId(data.userId);
+    setAuthEmail("");
+    setAuthPassword("");
+    setAuthView(null);
+  };
+
+  // Registrierungs-handler
+  const register = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAuthError("");
+
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: authEmail,
+        password: authPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setAuthError(data.error || "Registrierung fehlgeschlagen");
+      return;
+    }
+
+    setAuthEmail("");
+    setAuthPassword("");
+    setAuthView("login");
+  };
+
+  // logout handler
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUserId(null);
+  };
 
   // issues aus db laden
   useEffect(() => {
@@ -114,15 +175,64 @@ export default function App() {
     <div>
       <h1>RPTU-Mängelmelder</h1>
 
-      {/* Input form */}
-      <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
+      {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+      {userId ? (
+        <div>
+        <span>Eingeloggt als {authEmail}</span>
+        <button onClick={logout}>Logout</button>
+        </div>
+      ) : (
+        <div>
+        <button onClick={() => setAuthView("login")}>Login</button>
+        <button onClick={() => setAuthView("register")}>Registrieren</button>
+        </div>
+      )} 
 
-        <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
-        <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
-        <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
 
-        <button type="submit">Hinzufügen</button>
-      </form>
+      {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
+      {authView && (
+        <form
+        onSubmit={authView === "login" ? login : register}
+        style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "300px", margin:
+          "20px auto" }}
+          >
+          <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
+          
+          <input
+          type="email"
+          placeholder="Email"
+          value={authEmail}
+          onChange={(event) => setAuthEmail(event.target.value)}
+          />
+          
+          <input
+          type="password"
+          placeholder="Passwort"
+          value={authPassword}
+          onChange={(event) => setAuthPassword(event.target.value)}
+          />
+          
+          {authError && <p style={{ color: "red" }}>{authError}</p>}
+          
+          <button type="submit">
+          {authView === "login" ? "Einloggen" : "Registrieren"}
+          </button>
+          </form>
+        )}
+
+      {/* Input form nur sichtbar wenn man eingeloggt ist*/}
+      {userId ? (
+        <form onSubmit={addIssue} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px', margin: '0 auto' }}>
+
+          <input type="text" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
+          <input type="text" placeholder="Beschreibung" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
+          <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
+
+          <button type="submit">Hinzufügen</button>
+        </form>
+      ) : (
+      <p>Bitte einloggen, um einen Mangel zu melden.</p>
+      )}
 
       {/* List of issues */}
       <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -135,7 +245,12 @@ export default function App() {
             <p>{issue.description}</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
               <p>Likes: {issue.votes || 0}</p>
+              {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
+              {userId ? (
               <button onClick={() => {if (issue.id) upvoteIssue(issue.id);}}> Like </button>
+              ) : (
+              <button disabled>Like</button>
+              )}
             </div>
             </li>
           </div>

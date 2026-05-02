@@ -19,6 +19,8 @@ const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+
 app.use(cors());
 app.use(express.json());
 
+app.set("trust proxy", 1);
+
 // session config: 
 app.use(session({
   secret: process.env.SESSION_SECRET || "sehr-geheimes-session-cookie-secret-zum-signieren",

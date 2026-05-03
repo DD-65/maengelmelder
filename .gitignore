@@ -5,6 +5,6 @@ node_modules/
 *.log
 build/
 database/app.db
-dist/
 database/app.db-shm
 database/app.db-wal
+dist/

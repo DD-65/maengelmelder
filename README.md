@@ -6,7 +6,7 @@ Frontend und Backend in einem Projekt. Ein Befehl startet die gesamte App.
 - `src/frontend`: React (Frontend)
 - `src/backend`: Express + SQLite (Backend)
 - `public`: Statische Assets
-- `database`: SQLite DB-File
+- `database`: SQLite DB-Files
 
 ## Setup & Befehle
 Alle Befehle im Projekt-Root ausführen.

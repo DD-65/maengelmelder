@@ -46,6 +46,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.title,
         maengel.description,
         maengel.location,
+        maengel.status,
         maengel.created_at,
         maengel.votes,
         users.email AS user_email,
@@ -67,6 +68,39 @@ app.get("/api/mangel", (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim laden der Mängel" });
+  }
+});
+
+// Status eines Mangels aktualisieren (nur Admin)
+app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
+    const { status } = req.body;
+
+    // Prüfen, ob der Nutzer Admin ist
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    }
+
+    // Status validieren
+    const allowedStatus = ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung", "Behoben"];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ error: "Ungültiger Status" });
+    }
+
+    const stmt = db.prepare("UPDATE maengel SET status = ? WHERE id = ?");
+    const result = stmt.run(status, mangelId);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    }
+
+    res.json({ message: "Status erfolgreich aktualisiert" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Aktualisieren des Status" });
   }
 });
 

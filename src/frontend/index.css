@@ -279,6 +279,75 @@ code {
   margin: 12px 0 8px;
 }
 
+.status-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.status-gemeldet {
+  color: var(--muted);
+}
+
+.status-akzeptiert {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.status-abgelehnt {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(255, 107, 138, 0.1);
+}
+
+.status-in-bearbeitung {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.status-behoben {
+  color: #48bb78; 
+  border-color: #48bb78;
+  background: rgba(72, 187, 120, 0.1);
+}
+
+.status-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+}
+
+.status-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.status-select:focus {
+  border-color: var(--accent);
+}
+
 .meta-line {
   display: flex;
   align-items: center;

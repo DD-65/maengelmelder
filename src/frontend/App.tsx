@@ -6,6 +6,7 @@ type Issue = {
   title: string;
   description: string | null;
   location: string | null;
+  status: string;
   created_at?: string;
   votes?: number;
   user_email?: string | null;
@@ -187,6 +188,24 @@ export default function App() {
     loadIssues();
   };
 
+  /**
+   * Sendet eine Anfrage an das Backend, um den Status eines Mangels zu aktualisieren.
+   * Wird nur von Administratoren aufgerufen.
+   */
+  const updateStatus = async (id: number, newStatus: string) => {
+    const res = await fetch(`/api/mangel/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || "Fehler beim Aktualisieren des Status");
+    }
+    loadIssues();
+  };
+
   // UI
   return (
     <div className="app-shell">
@@ -277,6 +296,28 @@ export default function App() {
             
             {/* Titel */}
             <h3 className="issue-title">{issue.title}</h3>
+
+            {/* Status Anzeige */}
+            <div className="status-container">
+              <span className={`status-badge status-${issue.status.toLowerCase().replace(/\s/g, "-")}`}>
+                {issue.status}
+              </span>
+              
+              {/* Admin-Steuerung für den Status */}
+              {userRole === "admin" && (
+                <select 
+                  className="status-select"
+                  value={issue.status} 
+                  onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
+                >
+                  <option value="Gemeldet">Gemeldet</option>
+                  <option value="Akzeptiert">Akzeptiert</option>
+                  <option value="Abgelehnt">Abgelehnt</option>
+                  <option value="In Bearbeitung">In Bearbeitung</option>
+                  <option value="Behoben">Behoben</option>
+                </select>
+              )}
+            </div>
             
             {/* Standort des Mangels */}
             <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>

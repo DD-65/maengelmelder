@@ -12,11 +12,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
-// eslint-disable-next-line no-useless-escape damit das regex beim linting ok ist
+// Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
+// eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 app.use(cors());
 app.use(express.json());
+
+app.set("trust proxy", 1);
 
 // session config: 
 app.use(session({
@@ -35,13 +38,31 @@ app.use(session({
 // Mängel laden
 app.get("/api/mangel", (req, res) => {
   try {
+    const userId = req.session.userId ?? null;
+    // statement um mängel zu laden, join auf der votes tabelle um die votes zu laden / zu prüfen ob nutzer schon gevotet haben
     const stmt = db.prepare(`
-      SELECT maengel.id, maengel.title, maengel.description, maengel.location, maengel.created_at, maengel.votes, users.email AS user_email
+      SELECT
+        maengel.id,
+        maengel.title,
+        maengel.description,
+        maengel.location,
+        maengel.created_at,
+        maengel.votes,
+        users.email AS user_email,
+        CASE
+          WHEN ? IS NULL THEN 0
+          ELSE EXISTS (
+            SELECT 1
+            FROM mangel_votes
+            WHERE mangel_votes.user_id = ?
+              AND mangel_votes.mangel_id = maengel.id
+          )
+        END AS has_voted
       FROM maengel
       LEFT JOIN users ON maengel.user_id = users.id
-      ORDER BY maengel.created_at DESC, maengel.votes DESC
+      ORDER BY maengel.votes DESC, maengel.created_at DESC
     `);
-    const maengel = stmt.all();
+    const maengel = stmt.all(userId, userId);
     res.json(maengel);
   } catch (error) {
     console.error(error);
@@ -88,20 +109,46 @@ app.post("/api/mangel", requireAuth, (req, res) => {
 // voten (braucht login)
 app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
   try {
-    const id = req.params.id;
-    const incr = db.prepare(`
-      UPDATE maengel
-      SET votes = votes + 1
-      WHERE id = ?
-    `);
-    const result = incr.run(id);
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
 
-    if (result.changes === 0) {
+    if (!userId) {
+      return res.status(401).json({ error: "Nicht angemeldet" });
+    }
+
+    if (!Number.isInteger(mangelId)) {
+      return res.status(400).json({ error: "Ungültige Mangel-ID" });
+    }
+
+    const mangel = db
+      .prepare("SELECT id FROM maengel WHERE id = ?")
+      .get(mangelId) as { id: number } | undefined;
+
+    if (!mangel) {
       return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });    
     }
 
+    const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
+      db.prepare(`
+        INSERT INTO mangel_votes (user_id, mangel_id)
+        VALUES (?, ?)
+      `).run(transactionUserId, transactionMangelId);
+
+      db.prepare(`
+        UPDATE maengel
+        SET votes = votes + 1
+        WHERE id = ?
+      `).run(transactionMangelId);
+    });
+
+    voteTransaction(userId, mangelId);
+
     res.json({ message: "Bewertung erfolgreich" });
   } catch (error) {
+    if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE_CONSTRAINT")) {
+      return res.status(409).json({ error: "Du hast diesen Mangel bereits bewertet" });
+    }
+
     console.error(error)
     res.status(500).json({ error: "Fehler beim Bewerten"})
   }
@@ -142,7 +189,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     // passwort hashen (bycrypt mit salt länge 12)
     const passwordHash = await bcrypt.hash(password, 12);
-    const stmt = db.prepare("INSERT INTO users (email, password_hash) VALUES (?, ?)");
+    const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'user')");
     // neuen Nutzer in db speichern
     const result = stmt.run(normalizedEmail, passwordHash);
 

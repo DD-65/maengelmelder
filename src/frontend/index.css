@@ -139,7 +139,23 @@ select:disabled {
   opacity: 0.45;
 }
 
-input {
+button.voted-button {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.95), rgba(75, 85, 99, 0.95));
+  color: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.logout-button {
+  background-image: linear-gradient(to right, #D31027 0%, #EA384D 51%, #D31027 100%);
+}
+
+.logout-button:hover {
+  background-position: right center;
+  color: #fff;
+  text-decoration: none;
+}
+
+input, textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -149,13 +165,18 @@ input {
   font-size: 15px;
 }
 
-input::placeholder {
+input::placeholder, textarea::placeholder {
   color: var(--muted);
 }
 
-input:focus {
+input:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.beschreibung-input {
+  min-height: 3em;
+  resize: vertical;
 }
 
 form {
@@ -230,6 +251,11 @@ code {
 .error-text {
   color: var(--danger);
   font-weight: 700;
+}
+
+.vote-error {
+  text-align: center;
+  margin: 0 0 12px;
 }
 
 .issue-list {
@@ -314,6 +340,7 @@ code {
   margin-top: 10px;
   color: var(--text);
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .issue-actions {

@@ -60,7 +60,7 @@ app.get("/api/mangel", (req, res) => {
         END AS has_voted
       FROM maengel
       LEFT JOIN users ON maengel.user_id = users.id
-      ORDER BY maengel.created_at DESC, maengel.votes DESC
+      ORDER BY maengel.votes DESC, maengel.created_at DESC
     `);
     const maengel = stmt.all(userId, userId);
     res.json(maengel);

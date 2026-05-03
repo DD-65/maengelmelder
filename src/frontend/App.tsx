@@ -233,7 +233,7 @@ export default function App() {
 
           <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)}/>
           <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
-          <input type="text" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200}/>
+          <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
 
           <button type="submit">Posten</button>
         </form>
@@ -254,7 +254,7 @@ export default function App() {
             <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
             
             {/* ID des Mangels */}
-            <div className="issue-index">{index + 1}</div>
+            <div className="issue-index">{issue.id}</div>
             
             {/* Titel */}
             <h3 className="issue-title">{issue.title}</h3>

@@ -127,7 +127,7 @@ button.voted-button {
   text-decoration: none;
 }
 
-input {
+input, textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -137,13 +137,18 @@ input {
   font-size: 15px;
 }
 
-input::placeholder {
+input::placeholder, textarea::placeholder {
   color: var(--muted);
 }
 
-input:focus {
+input:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.beschreibung-input {
+  min-height: 3em;
+  resize: vertical;
 }
 
 form {
@@ -292,6 +297,7 @@ code {
   margin-top: 10px;
   color: var(--text);
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .issue-actions {

@@ -24,9 +24,11 @@ export default function App() {
   // Views für Registrierung und Login
   const [userId, setUserId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState("");
-  const [authView, setAuthView] = useState<"login" | "register" | null>(null);
+  const [userRole, setUserRole] = useState("");
+  const [authView, setAuthView] = useState<"login" | "register" | "registerAdmin" | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [voteError, setVoteError] = useState("");
 
@@ -45,6 +47,7 @@ export default function App() {
         } else {
           setUserId(null);
           setUserEmail("");
+          setUserRole("");
           return null;
         }
       })
@@ -52,12 +55,14 @@ export default function App() {
         if (data) {
           setUserId(data.userId);
           setUserEmail(data.email);
+          setUserRole(data.role || "user");
           loadIssues();
         }
       })
       .catch(() => {
         setUserId(null);
         setUserEmail("");
+        setUserRole("");
       });
   }, []);
 
@@ -84,6 +89,7 @@ export default function App() {
     
     setUserId(data.userId);
     setUserEmail(data.email);
+    setUserRole(data.role || "user");
     setAuthEmail("");
     setAuthPassword("");
     setAuthView(null);
@@ -101,6 +107,7 @@ export default function App() {
       body: JSON.stringify({
         email: authEmail,
         password: authPassword,
+        adminSecret: authView === "registerAdmin" ? adminCode : undefined,
       }),
     });
 
@@ -113,6 +120,7 @@ export default function App() {
 
     setAuthEmail("");
     setAuthPassword("");
+    setAdminCode("");
     setAuthView("login");
   };
 
@@ -121,6 +129,7 @@ export default function App() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUserId(null);
     setUserEmail("");
+    setUserRole("");
     loadIssues();
   };
 
@@ -186,13 +195,14 @@ export default function App() {
       {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
-        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong></span>
+        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Verwaltung" : "Bürger"})</span>
         <button className='logout-button' onClick={logout}>Logout</button>
         </div>
       ) : (
         <div className="auth-bar">
         <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
         <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+        <button onClick={() => setAuthView(authView === "registerAdmin" ? null : "registerAdmin")}>Admin-Registrierung</button>
         </div>
       )} 
 
@@ -203,7 +213,7 @@ export default function App() {
         className="auth-card"
         onSubmit={authView === "login" ? login : register}
           >
-          <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
+          <h2>{authView === "login" ? "Login" : authView === "registerAdmin" ? "Admin Registrierung" : "Registrieren"}</h2>
           
           <input
           type="email"
@@ -218,6 +228,15 @@ export default function App() {
           value={authPassword}
           onChange={(event) => setAuthPassword(event.target.value)}
           />
+
+          {authView === "registerAdmin" && (
+            <input
+            type="password"
+            placeholder="Admin-Code"
+            value={adminCode}
+            onChange={(event) => setAdminCode(event.target.value)}
+            />
+          )}
           
           {authError && <p className="error-text">{authError}</p>}
           

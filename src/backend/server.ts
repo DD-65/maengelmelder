@@ -159,7 +159,7 @@ app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
 // registrieren
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, adminSecret } = req.body;
     
     // falls email oder passwort fehlen, fehler zurückgeben
     if (!email || !password) {
@@ -173,9 +173,9 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ error: "Ungültiges Email-Format" });
     }
     
-    // passwortlänge (wollen wir da einen check?)
-    if (password.length < 5) {
-      return res.status(400).json({ error: "Passwort muss mindestens 5 Zeichen lang sein" });
+    // passwortlänge (mindestens 8 Zeichen laut neuen Regeln)
+    if (password.length < 8) {
+      return res.status(400).json({ error: "Passwort muss mindestens 8 Zeichen lang sein" });
     }
 
     // falls email schon existiert, fehler zurückgeben
@@ -187,11 +187,15 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ error: "Email bereits registriert" });
     }
 
+    // Bestimme die Rolle basierend auf dem adminSecret
+    const ADMIN_REGISTRATION_SECRET = "IchBinAdmin";
+    const role = adminSecret === ADMIN_REGISTRATION_SECRET ? "admin" : "user";
+
     // passwort hashen (bycrypt mit salt länge 12)
     const passwordHash = await bcrypt.hash(password, 12);
-    const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'user')");
+    const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)");
     // neuen Nutzer in db speichern
-    const result = stmt.run(normalizedEmail, passwordHash);
+    const result = stmt.run(normalizedEmail, passwordHash, role);
 
     // Erfolg zurückgeben
     res.status(201).json({ message: "Registrierung erfolgreich", userId: result.lastInsertRowid });
@@ -218,8 +222,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string } | undefined;
+      .prepare("SELECT id, email, password_hash, role FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -232,7 +236,7 @@ app.post("/api/auth/login", async (req, res) => {
     // session speichern
     req.session.userId = user.id;
 
-    res.json({ message: "Login erfolgreich", userId: user.id, email: user.email });
+    res.json({ message: "Login erfolgreich", userId: user.id, email: user.email, role: user.role });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Login" });
@@ -246,15 +250,15 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string } | undefined;
+    .prepare("SELECT id, email, role FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
     return res.status(401).json({ error: "Nicht angemeldet" });
   }
   
-  res.json({ userId: user.id, email: user.email });
+  res.json({ userId: user.id, email: user.email, role: user.role });
 });
 
 // logout endpunkt

@@ -58,7 +58,8 @@ export default function App() {
     "Kategorie",
     "Ort",
     "User",
-    "Status"
+    "Status",
+
   ];
   const possibleFilterValues: Record<string, string[]> = {
     Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
@@ -84,6 +85,91 @@ export default function App() {
       setCurrentFilterValue("");
     }
   }
+
+// Variablen und Funktionen für Sortierung
+  const [currentSorting, setCurrentSorting] = useState("");
+  const [currentSortingMode, setCurrentSortingMode] = useState("");
+  const possibleSortings = [
+    "Votes",
+    "Erstellungsdatum",
+    "Status"
+  ];
+  const possibleSortingModes: Record<string, string[]> = {
+    Votes: ["Aufsteigend", "Absteigend"],
+    Erstellungsdatum: ["Neueste zuerst", "Älteste zuerst"],
+    Status: ["Aufsteigend", "Absteigend"]
+  };
+
+    // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
+  function chooseSortingFromPossibleSortings(chosenFilter: string) {
+    if (possibleSortings.includes(chosenFilter)) {
+      setCurrentSorting(chosenFilter);
+    } else {
+      setCurrentSorting("");
+    }
+    setCurrentSortingMode("");
+  }
+
+  function chooseSortingModeFromPossibleSortingModes(filter: string, chosenValue: string) {
+    if (possibleSortingModes[filter]?.includes(chosenValue)) {
+      setCurrentSortingMode(chosenValue);
+    } else {
+      setCurrentSortingMode("");
+    }
+  }
+
+  function currentComparator(a: Issue, b: Issue): number {
+    if (!currentSorting || !currentSortingMode) return 0;
+
+    if (currentSorting === "Votes") {
+      const votesA = a.votes || 0;
+      const votesB = b.votes || 0;
+      if(currentSortingMode === "Aufsteigend") {
+        if (votesA - votesB < 0) return -1;
+        if (votesA - votesB > 0) return 1;
+        return 0; 
+      }
+      else {
+        if (votesB - votesA < 0) return -1;
+        if (votesB - votesA > 0) return 1;
+        return 0; 
+      }
+    }
+    
+    if (currentSorting === "Erstellungsdatum") {
+      const dateA = new Date(a.created_at || "");
+      const dateB = new Date(b.created_at || "");
+      if(currentSortingMode === "Neueste zuerst") {
+        if (dateA > dateB) return -1;
+        if (dateA < dateB) return 1;
+        return 0; 
+      }
+      else {
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        return 0; 
+      }
+    }
+    
+    if (currentSorting === "Status") {
+      const statusOrder = ["Gemeldet", "Akzeptiert", "In Bearbeitung", "Behoben", "Abgelehnt"];
+      const indexA = statusOrder.indexOf(a.status || "");
+      const indexB = statusOrder.indexOf(b.status || "");
+      
+      if(currentSortingMode === "Aufsteigend") {
+        if (indexA - indexB < 0) return -1;
+        if (indexA - indexB > 0) return 1;
+        return 0; 
+      }
+      else {
+        if (indexB - indexA < 0) return -1;
+        if (indexB - indexA > 0) return 1;
+        return 0; 
+      }
+    }
+    return 0;
+  }
+
 
   // Views fuer Registrierung und Login
   const [userId, setUserId] = useState<number | null>(null);
@@ -374,8 +460,8 @@ export default function App() {
 
       <div className='issue-toolbar'>
         {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-        <select value={currentFilter} onChange={(event) => chooseFilterFromPossibleFilters(event.target.value)}>
-          <option value="" disabled>Wählen Sie einen Filter</option>
+        <select className='issue-filter-select' value={currentFilter} onChange={(event) => chooseFilterFromPossibleFilters(event.target.value)}>
+          <option value="" disabled>Filter wählen</option>
           {possibleFilters.map((filter) => (
             <option key={filter} value={filter}>{filter}</option>
           ))}
@@ -384,13 +470,33 @@ export default function App() {
 
         {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
         {currentFilter ? (
-          <select value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
-            <option value="" disabled>Wählen Sie einen Wert</option>
+          <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
+            <option value="" disabled>Wert wählen</option>
             {possibleFilterValues[currentFilter]?.map((value) => (
               <option key={value} value={value}>{value}</option>
             ))}
           </select>
         ) : null}
+        <div className='divider'></div>
+        {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
+        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSortingFromPossibleSortings(event.target.value)}>
+          <option value="" disabled>Sortierung wählen</option>
+          {possibleSortings.map((sorting) => (
+            <option key={sorting} value={sorting}>{sorting}</option>
+          ))}
+          <option value=""> - Kein Sortierung - </option>
+        </select>
+
+        {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
+        {currentSorting ? (
+          <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingModeFromPossibleSortingModes(currentSorting, event.target.value)}>
+            <option value="" disabled>Modus wählen</option>
+            {possibleSortingModes[currentSorting]?.map((mode) => (
+              <option key={mode} value={mode}>{mode}</option>
+            ))}
+          </select>
+        ) : null}
+
       </div>
 
       {/* List of issues */}
@@ -403,7 +509,7 @@ export default function App() {
           if (currentFilter === "User") return issue.user_email === currentFilterValue;
           if (currentFilter === "Status") return issue.status === currentFilterValue;
           return true;
-        })
+        }).sort(currentComparator)
           .map((issue, index) => {
             const hasVoted = Boolean(issue.has_voted);
 

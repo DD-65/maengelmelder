@@ -32,6 +32,7 @@ db.exec(`
     location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
     status TEXT NOT NULL DEFAULT 'Gemeldet' CHECK (status IN ('Gemeldet', 'Akzeptiert', 'Abgelehnt', 'In Bearbeitung', 'Behoben')),
+    kategorie TEXT DEFAULT NULL CHECK (kategorie IS NULL OR kategorie = '' OR kategorie IN ('Steckdose', 'Schlagloch', 'WLAN', 'Mobiliar')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -41,7 +42,14 @@ db.exec(`
 // Migration: status Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
   db.exec("ALTER TABLE maengel ADD COLUMN status TEXT NOT NULL DEFAULT 'Gemeldet' CHECK (status IN ('Gemeldet', 'Akzeptiert', 'Abgelehnt', 'In Bearbeitung', 'Behoben'))");
-} catch (error) {
+} catch {
+  // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
+}
+
+// Migration: kategorie Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN kategorie TEXT DEFAULT NULL CHECK (kategorie IS NULL OR kategorie = '' OR kategorie IN ('Steckdose', 'Schlagloch', 'WLAN', 'Mobiliar'))");
+} catch {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
 

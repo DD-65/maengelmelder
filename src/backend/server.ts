@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
+const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar"];
 // Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
 // eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -47,6 +48,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.description,
         maengel.location,
         maengel.status,
+        maengel.kategorie,
         maengel.created_at,
         maengel.votes,
         users.email AS user_email,
@@ -107,7 +109,7 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
 // neuen Mangel anlegen
 app.post("/api/mangel", requireAuth, (req, res) => {
   try {
-    const { title, description, location } = req.body;
+    const { title, description, location, kategorie } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });
@@ -120,15 +122,23 @@ app.post("/api/mangel", requireAuth, (req, res) => {
     if (description && description.trim().length > 255) {
       return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
     }
+
+    const normalizedKategorie =
+      typeof kategorie === "string" && kategorie.trim() ? kategorie.trim() : null;
+
+    if (normalizedKategorie && !allowedKategorien.includes(normalizedKategorie)) {
+      return res.status(400).json({ error: "Ungültige Kategorie" });
+    }
+
     // userid aus sessioncookie (Durch login endpunkt gesetzt)
     const userId = req.session.userId;
-    
+
     const stmt = db.prepare(`
-      INSERT INTO maengel (user_id, title, description, location)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO maengel (user_id, title, description, location, kategorie)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
-    const result = stmt.run(userId, title.trim(), description, location);
+    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie);
 
     res.status(201).json({
       message: "Mangel gespeichert!",

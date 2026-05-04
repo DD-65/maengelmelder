@@ -1,4 +1,3 @@
-import { Hash } from 'node:crypto';
 import { useEffect, useState } from 'react';
 
 // Define all issue components
@@ -12,6 +11,7 @@ type Issue = {
   votes?: number;
   user_email?: string | null;
   has_voted?: number | boolean;
+  kategorie?: string | null;
 }
 
 export default function App() {
@@ -19,6 +19,7 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [kategorie, setKategorie] = useState('');
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
@@ -28,25 +29,26 @@ export default function App() {
   const [currentFilter, setCurrentFilter] = useState("");
   const [currentFilterValue, setCurrentFilterValue] = useState("");
   const possibleFilters = [
-          // "Kategorie", //zur Zeit noch nicht implementiert
-          "Ort", 
-          "User",
-          "Status"
-        ];
+    "Kategorie",
+    "Ort",
+    "User",
+    "Status"
+  ];
   const possibleFilterValues: Record<string, string[]> = {
-  //Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => x !== null))), //zur Zeit noch nicht implementiert
-  Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => x !== null))), //Design-Entscheidung: Filter nur mit Werten befüllen die auch tatsächlich in den Issues vorkommen, könnte man auch anders machen
-  User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => x !== null))),
-  Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => x !== null))),
-};
+    Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
+    Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => Boolean(x)))), //Design-Entscheidung: Filter nur mit Werten befüllen die auch tatsächlich in den Issues vorkommen, könnte man auch anders machen
+    User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => Boolean(x)))),
+    Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => Boolean(x)))),
+  };
 
-// dedizierte Funktionnen um nur gültige Filter und Werte setzbar zu machen
+  // dedizierte Funktionnen um nur gültige Filter und Werte setzbar zu machen
   function chooseFilterFromPossibleFilters(chosenFilter: string) {
     if (possibleFilters.includes(chosenFilter)) {
       setCurrentFilter(chosenFilter);
     } else {
       setCurrentFilter("");
     }
+    setCurrentFilterValue("");
   }
 
   function chooseFilterValueFromPossibleValues(filter: string, chosenValue: string) {
@@ -187,7 +189,8 @@ export default function App() {
     const newIssue: Issue = {
       title: title,
       description: description,
-      location: location
+      location: location,
+      kategorie: kategorie
     };
 
     // issue in db speichern und dann neu laden
@@ -204,6 +207,7 @@ export default function App() {
     setTitle(''); 
     setDescription(''); 
     setLocation('');
+    setKategorie('');
   }
 
   const upvoteIssue = async (id: number) => {
@@ -306,6 +310,13 @@ export default function App() {
 
           <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)}/>
           <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
+          <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
+            <option value="">Kategorie wählen</option>
+            <option value="Steckdose">Steckdose</option>
+            <option value="Schlagloch">Schlagloch</option>
+            <option value="WLAN">WLAN</option>
+            <option value="Mobiliar">Mobiliar</option>
+          </select>
           <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
 
           <button type="submit">Posten</button>
@@ -343,7 +354,7 @@ export default function App() {
       <ul className="issue-list">
         {issueList.filter(issue => { //die Issue-List wird gefiltert bevor sie 
           if (!currentFilter || !currentFilterValue) return true;
-          //if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
+          if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
           if (currentFilter === "Ort") return issue.location === currentFilterValue;
           if (currentFilter === "User") return issue.user_email === currentFilterValue;
           if (currentFilter === "Status") return issue.status === currentFilterValue;
@@ -395,6 +406,7 @@ export default function App() {
             {/* Container für Voting-zeug */}
             <div className="issue-actions">
               <p>Likes: {issue.votes || 0}</p>
+              <p>Kategorie: {issue.kategorie || '-' }</p>
               {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
               {userId ? (
               <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => {if (issue.id) upvoteIssue(issue.id);}}>{hasVoted ? "Geliked" : "Liken"}</button>

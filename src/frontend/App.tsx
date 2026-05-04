@@ -1,5 +1,21 @@
 import { useEffect, useState } from 'react';
 
+const rooms = [
+  "01-006", "01-019", "01-106", "01-160",
+  "11-201", "11-205", "11-207", "11-220", "11-222", "11-241", "11-243", "11-260", "11-262",
+  "13-222", "13-305", "13-370",
+  "24-102",
+  "32-439",
+  "36-265",
+  "42-105", "42-110", "42-115",
+  "44-380", "44-465", "44-482",
+  "46-110", "46-210", "46-215", "46-220", "46-260", "46-267", "46-268", "46-280", "46-387", "46-388",
+  "48-208", "48-210", "48-438", "48-582",
+  "52-203", "52-204", "52-206", "52-207",
+  "56-230", "56-232",
+  "57-315", "57-508"
+];
+
 // Define all issue components
 type Issue = {
   id?: number;
@@ -20,12 +36,12 @@ export default function App() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [kategorie, setKategorie] = useState('');
+  const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
 
-
-  // Variablen für Filter und Filterwerte + Funktionen um diese zu setten
+  // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
   const [currentFilter, setCurrentFilter] = useState("");
   const [currentFilterValue, setCurrentFilterValue] = useState("");
   const possibleFilters = [
@@ -36,12 +52,12 @@ export default function App() {
   ];
   const possibleFilterValues: Record<string, string[]> = {
     Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
-    Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => Boolean(x)))), //Design-Entscheidung: Filter nur mit Werten befüllen die auch tatsächlich in den Issues vorkommen, könnte man auch anders machen
+    Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => Boolean(x)))), // Design-Entscheidung: Filter nur mit Werten befuellen die auch tatsaechlich in den Issues vorkommen
     User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => Boolean(x)))),
     Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => Boolean(x)))),
   };
 
-  // dedizierte Funktionnen um nur gültige Filter und Werte setzbar zu machen
+  // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
   function chooseFilterFromPossibleFilters(chosenFilter: string) {
     if (possibleFilters.includes(chosenFilter)) {
       setCurrentFilter(chosenFilter);
@@ -59,7 +75,7 @@ export default function App() {
     }
   }
 
-  // Views für Registrierung und Login
+  // Views fuer Registrierung und Login
   const [userId, setUserId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("");
@@ -76,7 +92,7 @@ export default function App() {
       .then((data) => setIssueList(data));
   };
 
-  // beim laden der Seite checken ob man eingeloggt ist um userID zu setzen
+  // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => {
@@ -108,7 +124,7 @@ export default function App() {
   const login = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError("");
-    
+
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,14 +133,14 @@ export default function App() {
         password: authPassword,
       }),
     });
-    
+
     const data = await res.json();
-    
+
     if (!res.ok) {
       setAuthError(data.error || "Login fehlgeschlagen");
       return;
     }
-    
+
     setUserId(data.userId);
     setUserEmail(data.email);
     setUserRole(data.role || "user");
@@ -173,17 +189,16 @@ export default function App() {
 
   // issues aus db laden
   useEffect(() => {
-       loadIssues();
-     }, []);
+    loadIssues();
+  }, []);
 
   // Add issue to list
   const addIssue = async (event: React.SubmitEvent) => {
-
     // Stops refreshing
-    event.preventDefault(); 
+    event.preventDefault();
 
     // Dont add empty issue to Array
-    if (title === '') return; 
+    if (title === '') return;
 
     // Combine into new Issue
     const newIssue: Issue = {
@@ -195,17 +210,17 @@ export default function App() {
 
     // issue in db speichern und dann neu laden
     await fetch('/api/mangel', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify(newIssue),
-     });
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newIssue),
+    });
 
     // Reload aus db
     loadIssues();
 
     // Clear Input
-    setTitle(''); 
-    setDescription(''); 
+    setTitle('');
+    setDescription('');
     setLocation('');
     setKategorie('');
   }
@@ -214,7 +229,7 @@ export default function App() {
     setVoteError("");
 
     // request
-    const res = await fetch(`/api/mangel/${id}/vote`, {method: 'PATCH',});
+    const res = await fetch(`/api/mangel/${id}/vote`, { method: 'PATCH' });
     const data = await res.json();
 
     if (!res.ok) {
@@ -250,66 +265,85 @@ export default function App() {
     <div className="app-shell">
       <h1>RPTU-Mängelmelder</h1>
 
-      {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+      {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
-        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Verwaltung" : "Bürger"})</span>
-        <button className='logout-button' onClick={logout}>Logout</button>
+          <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Verwaltung" : "Bürger"})</span>
+          <button className='logout-button' onClick={logout}>Logout</button>
         </div>
       ) : (
         <div className="auth-bar">
-        <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
-        <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
-        <button onClick={() => setAuthView(authView === "registerAdmin" ? null : "registerAdmin")}>Admin-Registrierung</button>
+          <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
+          <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+          <button onClick={() => setAuthView(authView === "registerAdmin" ? null : "registerAdmin")}>Admin-Registrierung</button>
         </div>
-      )} 
-
+      )}
 
       {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
       {authView && (
         <form
-        className="auth-card"
-        onSubmit={authView === "login" ? login : register}
-          >
+          className="auth-card"
+          onSubmit={authView === "login" ? login : register}
+        >
           <h2>{authView === "login" ? "Login" : authView === "registerAdmin" ? "Admin Registrierung" : "Registrieren"}</h2>
-          
+
           <input
-          type="email"
-          placeholder="Email"
-          value={authEmail}
-          onChange={(event) => setAuthEmail(event.target.value)}
+            type="email"
+            placeholder="Email"
+            value={authEmail}
+            onChange={(event) => setAuthEmail(event.target.value)}
           />
-          
+
           <input
-          type="password"
-          placeholder="Passwort"
-          value={authPassword}
-          onChange={(event) => setAuthPassword(event.target.value)}
+            type="password"
+            placeholder="Passwort"
+            value={authPassword}
+            onChange={(event) => setAuthPassword(event.target.value)}
           />
 
           {authView === "registerAdmin" && (
             <input
-            type="password"
-            placeholder="Admin-Code"
-            value={adminCode}
-            onChange={(event) => setAdminCode(event.target.value)}
+              type="password"
+              placeholder="Admin-Code"
+              value={adminCode}
+              onChange={(event) => setAdminCode(event.target.value)}
             />
           )}
-          
+
           {authError && <p className="error-text">{authError}</p>}
-          
+
           <button type="submit">
-          {authView === "login" ? "Einloggen" : "Registrieren"}
+            {authView === "login" ? "Einloggen" : "Registrieren"}
           </button>
-          </form>
-        )}
+        </form>
+      )}
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
       {userId ? (
         <form className="issue-form" onSubmit={addIssue}>
+          <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
 
-          <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)}/>
-          <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)}/>
+          <div className="location-wrapper">
+            <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
+
+            {location.length > 0 && filteredRooms.length > 0 && (
+              <div className="room-suggestions">
+                {filteredRooms
+                  .filter(room => room !== location)
+                  .slice(0, 6)
+                  .map((room) => (
+                    <div
+                      key={room}
+                      className="room-item"
+                      onClick={() => setLocation(room)}
+                    >
+                      {room}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+
           <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
             <option value="">Kategorie wählen</option>
             <option value="Steckdose">Steckdose</option>
@@ -322,106 +356,98 @@ export default function App() {
           <button type="submit">Posten</button>
         </form>
       ) : (
-      <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
+        <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}
 
-
       <div className='issue-toolbar'>
-      {/* Filter Auswahl, Filter wird in einem Select-Feld gewählt */}
-      
+        {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
         <select value={currentFilter} onChange={(event) => chooseFilterFromPossibleFilters(event.target.value)}>
           <option value="" disabled>Wählen Sie einen Filter</option>
           {possibleFilters.map((filter) => (
             <option key={filter} value={filter}>{filter}</option>
           ))}
-          <option value="">  - Kein Filter - </option>
+          <option value=""> - Kein Filter - </option>
         </select>
 
-      {/* in zweitem Select-Feld kann dann dynamisch einer der verfügbaren Werte gewählt werden. 
-      Die verfügbaren Werte werden aus der Issue-Liste unique rekonstruiert. MAN KÖNNTE DIESE NOCH SORTIEREN (nach Alphabet oder Häufigkeit)*/}
-
-      {currentFilter ? (
-        <select value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
-          <option value="" disabled>Wählen Sie einen Wert</option>
-          {possibleFilterValues[currentFilter]?.map((value) => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      ): null}
+        {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
+        {currentFilter ? (
+          <select value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
+            <option value="" disabled>Wählen Sie einen Wert</option>
+            {possibleFilterValues[currentFilter]?.map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </select>
+        ) : null}
       </div>
-        {/* List of issues */}
-        {voteError && <p className="error-text vote-error">{voteError}</p>}
+
+      {/* List of issues */}
+      {voteError && <p className="error-text vote-error">{voteError}</p>}
       <ul className="issue-list">
-        {issueList.filter(issue => { //die Issue-List wird gefiltert bevor sie 
+        {issueList.filter(issue => {
           if (!currentFilter || !currentFilterValue) return true;
           if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
           if (currentFilter === "Ort") return issue.location === currentFilterValue;
           if (currentFilter === "User") return issue.user_email === currentFilterValue;
           if (currentFilter === "Status") return issue.status === currentFilterValue;
           return true;
-          })
+        })
           .map((issue, index) => {
-          const hasVoted = Boolean(issue.has_voted);
+            const hasVoted = Boolean(issue.has_voted);
 
-          return (
-            <li className="card issue-card" key={issue.id || index}>
-            
-            {/* Nutzername (email) */}
-            <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
-            
-            {/* ID des Mangels */}
-            <div className="issue-index">{issue.id}</div>
-            
-            {/* Titel */}
-            <h3 className="issue-title">{issue.title}</h3>
+            return (
+              <li className="card issue-card" key={issue.id || index}>
+                {/* Nutzername (email) */}
+                <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
 
-            {/* Status Anzeige */}
-            <div className="status-container">
-              <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
-                {issue.status}
-              </span>
-              
-              {/* Admin-Steuerung für den Status */}
-              {userRole === "admin" && (
-                <select 
-                  className="status-select"
-                  value={issue.status} 
-                  onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
-                >
-                  <option value="Gemeldet">Gemeldet</option>
-                  <option value="Akzeptiert">Akzeptiert</option>
-                  <option value="Abgelehnt">Abgelehnt</option>
-                  <option value="In Bearbeitung">In Bearbeitung</option>
-                  <option value="Behoben">Behoben</option>
-                </select>
-              )}
-            </div>
-            
-            {/* Standort des Mangels */}
-            <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
-            
-            {/* Beschreibung */}
-            <p className="issue-description">{issue.description}</p>
-            
-            {/* Container für Voting-zeug */}
-            <div className="issue-actions">
-              <p>Likes: {issue.votes || 0}</p>
-              <p>Kategorie: {issue.kategorie || '-' }</p>
-              {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
-              {userId ? (
-              <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => {if (issue.id) upvoteIssue(issue.id);}}>{hasVoted ? "Geliked" : "Liken"}</button>
-              ) : (
-              <button disabled>Like</button>
-              )}
-            </div>
-            </li>
-          );
-        })}
+                {/* ID des Mangels */}
+                <div className="issue-index">{issue.id}</div>
+
+                {/* Titel */}
+                <h3 className="issue-title">{issue.title}</h3>
+
+                {/* Status Anzeige */}
+                <div className="status-container">
+                  <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
+                    {issue.status}
+                  </span>
+
+                  {/* Admin-Steuerung fuer den Status */}
+                  {userRole === "admin" && (
+                    <select
+                      className="status-select"
+                      value={issue.status}
+                      onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
+                    >
+                      <option value="Gemeldet">Gemeldet</option>
+                      <option value="Akzeptiert">Akzeptiert</option>
+                      <option value="Abgelehnt">Abgelehnt</option>
+                      <option value="In Bearbeitung">In Bearbeitung</option>
+                      <option value="Behoben">Behoben</option>
+                    </select>
+                  )}
+                </div>
+
+                {/* Standort des Mangels */}
+                <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
+
+                {/* Beschreibung */}
+                <p className="issue-description">{issue.description}</p>
+
+                {/* Container fuer Voting-zeug */}
+                <div className="issue-actions">
+                  <p>Likes: {issue.votes || 0}</p>
+                  <p>Kategorie: {issue.kategorie || '-'}</p>
+                  {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
+                  {userId ? (
+                    <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => { if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
+                  ) : (
+                    <button disabled>Like</button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
       </ul>
-
     </div>
-
-
   );
-
 }

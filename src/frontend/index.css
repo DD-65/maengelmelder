@@ -233,14 +233,52 @@ code {
   display: flex;
   justify-content: center;
   gap: 12px;
-  
 }
 
 .issue-toolbar select {
   flex: 1;
-  min-width: 0;         
+  min-width: 0;
   text-align: center;
-  text-align-last: center;          
+  text-align-last: center;
+}
+
+.issue-form {
+  position: relative;
+}
+
+.location-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.location-wrapper input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.room-suggestions {
+  position: absolute;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #0f1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+
+.room-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s ease;
+}
+
+.room-item:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .login-hint {
@@ -366,7 +404,7 @@ code {
 }
 
 .status-behoben {
-  color: #48bb78; 
+  color: #48bb78;
   border-color: #48bb78;
   background: rgba(72, 187, 120, 0.1);
 }

@@ -7,7 +7,7 @@ type Issue = {
   title: string;
   description: string | null;
   location: string | null;
-  status: string;
+  status?: string;
   created_at?: string;
   votes?: number;
   user_email?: string | null;
@@ -30,12 +30,14 @@ export default function App() {
   const possibleFilters = [
           // "Kategorie", //zur Zeit noch nicht implementiert
           "Ort", 
-          "User"
+          "User",
+          "Status"
         ];
   const possibleFilterValues: Record<string, string[]> = {
   //Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => x !== null))), //zur Zeit noch nicht implementiert
   Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => x !== null))), //Design-Entscheidung: Filter nur mit Werten befüllen die auch tatsächlich in den Issues vorkommen, könnte man auch anders machen
   User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => x !== null))),
+  Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => x !== null))),
 };
 
 // dedizierte Funktionnen um nur gültige Filter und Werte setzbar zu machen
@@ -344,6 +346,7 @@ export default function App() {
           //if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
           if (currentFilter === "Ort") return issue.location === currentFilterValue;
           if (currentFilter === "User") return issue.user_email === currentFilterValue;
+          if (currentFilter === "Status") return issue.status === currentFilterValue;
           return true;
           })
           .map((issue, index) => {
@@ -363,7 +366,7 @@ export default function App() {
 
             {/* Status Anzeige */}
             <div className="status-container">
-              <span className={`status-badge status-${issue.status.toLowerCase().replace(/\s/g, "-")}`}>
+              <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
                 {issue.status}
               </span>
               

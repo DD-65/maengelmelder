@@ -8,3 +8,4 @@ database/app.db
 database/app.db-shm
 database/app.db-wal
 dist/
+uploads/

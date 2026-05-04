@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import session from "express-session";
 import { fileURLToPath } from "url";
 import db from "./db.js";
+import multer from "multer";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +37,27 @@ app.use(session({
   }
 }));
 
+// Multer Setup für Dateiuploads
+const upDir = path.join(__dirname, "../../uploads");
+if (!fs.existsSync(upDir)) {
+  fs.mkdirSync(upDir);
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, upDir);},
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + "-" + unique + ext);
+  }
+}); 
+
+const upload = multer({ storage });
+
+app.use("/uploads", express.static(upDir));
+
+
 // --- API Endpunkte
 // Mängel laden
 app.get("/api/mangel", (req, res) => {
@@ -51,6 +74,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.kategorie,
         maengel.created_at,
         maengel.votes,
+        maengel.image_url,
         users.email AS user_email,
         CASE
           WHEN ? IS NULL THEN 0
@@ -107,9 +131,12 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
 });
 
 // neuen Mangel anlegen
-app.post("/api/mangel", requireAuth, (req, res) => {
+app.post("/api/mangel", requireAuth, upload.single("image"), (req, res) => {
   try {
     const { title, description, location, kategorie } = req.body;
+
+    // Image Pathing
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });
@@ -134,11 +161,11 @@ app.post("/api/mangel", requireAuth, (req, res) => {
     const userId = req.session.userId;
 
     const stmt = db.prepare(`
-      INSERT INTO maengel (user_id, title, description, location, kategorie)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO maengel (user_id, title, description, location, kategorie, image_url)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
-    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie);
+    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl);
 
     res.status(201).json({
       message: "Mangel gespeichert!",

@@ -53,6 +53,13 @@ try {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
 
+// Migration: image_url Spalte hinzufügen, falls sie fehlt
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN image_url TEXT DEFAULT NULL");
+} catch {
+  // Falls die Spalte schon existiert, ignorieren
+}
+
 // Tabelle für votes, damit ein Nutzer nur einmal voten kann
 db.exec(`
   CREATE TABLE IF NOT EXISTS mangel_votes (
@@ -64,5 +71,6 @@ db.exec(`
     FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
   )
 `);
+
 
 export default db;

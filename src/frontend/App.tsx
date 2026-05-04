@@ -28,6 +28,7 @@ type Issue = {
   user_email?: string | null;
   has_voted?: number | boolean;
   kategorie?: string | null;
+  image_url?: string | null;
 }
 
 export default function App() {
@@ -36,10 +37,19 @@ export default function App() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [kategorie, setKategorie] = useState('');
+  const [image, setImage] = useState<File | null>(null);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
 
   // List of issues
   const [issueList, setIssueList] = useState<Issue[]>([]);
+
+  // State of Image Expansion
+  const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
+
+  // Toggle Image Expansion
+  const toggleImage = (id: number) => {
+    setExpandedImageId(prevId => (prevId === id ? null : id));
+  };
 
   // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
   const [currentFilter, setCurrentFilter] = useState("");
@@ -201,18 +211,19 @@ export default function App() {
     if (title === '') return;
 
     // Combine into new Issue
-    const newIssue: Issue = {
-      title: title,
-      description: description,
-      location: location,
-      kategorie: kategorie
-    };
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("location", location);
+    formData.append("kategorie", kategorie);
+    if (image) {
+      formData.append("image", image);
+    }
 
     // issue in db speichern und dann neu laden
     await fetch('/api/mangel', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newIssue),
+      body: formData,
     });
 
     // Reload aus db
@@ -223,6 +234,7 @@ export default function App() {
     setDescription('');
     setLocation('');
     setKategorie('');
+    setImage(null);
   }
 
   const upvoteIssue = async (id: number) => {
@@ -351,6 +363,7 @@ export default function App() {
             <option value="WLAN">WLAN</option>
             <option value="Mobiliar">Mobiliar</option>
           </select>
+          <input type="file" accept="image/png, image/jpeg" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
           <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
 
           <button type="submit">Posten</button>
@@ -432,6 +445,14 @@ export default function App() {
 
                 {/* Beschreibung */}
                 <p className="issue-description">{issue.description}</p>
+
+                {/* Image */}
+                {issue.image_url && (
+                  <div>
+                    <button onClick={() => {if (issue.id) toggleImage(issue.id)}}>{issue.id && expandedImageId === issue.id ? 'Ausblenden' : 'Ansehen'}</button>
+                    {issue.id && expandedImageId === issue.id && (<img src={issue.image_url} alt={issue.title} style={{maxWidth: "100%", height: "auto", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}} className={`issue-image ${expandedImageId === issue.id ? "expanded" : ""}`} />)}
+                  </div>
+                )}
 
                 {/* Container fuer Voting-zeug */}
                 <div className="issue-actions">

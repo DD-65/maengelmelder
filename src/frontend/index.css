@@ -10,7 +10,7 @@
   --danger: #ff6b8a;
 
   --accent: #7c5cff;
-  --accent-2: #00d4ff;
+  --accent-2: #3999a3; /*#00d4ff;*/
   --accent-soft: rgba(124, 92, 255, 0.15);
 
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.25);
@@ -24,7 +24,7 @@
   color: var(--text);
   background: radial-gradient(circle at top, #1a1c25, var(--bg));
   letter-spacing: 0.2px;
-  font-synthesis: none;
+  font-synthesis:style;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -43,6 +43,11 @@
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
   }
+}
+
+@font-face {
+  font-family: RPTU-Font; /* set name */
+  src: url(../../public/RPTU-Brand/Red_Hat_Text/RedHatText-VariableFont_wght.ttf); /* url of the font */
 }
 
 body {
@@ -70,6 +75,24 @@ h1 {
   letter-spacing: -1px;
   text-shadow: var(--shadow-glow);
   text-align: center;
+}
+
+.RPTU-Font {
+  font-family: RPTU-Font;
+  font-weight: 800;
+  font-size: 16px/1.2 var(--sans);
+}
+
+.RPTU-U::after{
+  content:url(../../public/RPTU-Brand/RPTU\ U_1cschwarz.svg);
+  display: inline-block;
+  width: 60px;
+  height: 75px;
+  margin-left: -20px;
+  margin-right: -20px;
+  margin-bottom: -11px;
+  position: relative;
+  top: 13px;
 }
 
 h2 {
@@ -240,12 +263,12 @@ code {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 2px 1fr;
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: 1fr 1fr 1fr;
   gap: 10px;
 }
 .divider {
   background: rgba(0, 0, 0, 0.0);
-  grid-row: 1 / -1;   /* über alle Zeilen */
+  grid-row: 1 / 3;   /* über alle Zeilen */
   grid-column: 2;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -255,6 +278,19 @@ code {
 .issue-filter-value-select { grid-area: 2 / 1 / 3 / 2; }
 .issue-sorting-select { grid-area: 1 / 3 / 2 / 4; }
 .issue-sorting-mode-select { grid-area: 2 / 3 / 3 / 4; }
+.issue-filter-only-own { grid-area: 3 / 1 / 4 / 4; display: flex; align-items: center; justify-content: center; gap: 6px;}
+.issue-filter-only-own-label {border: 2px solid; border-image: linear-gradient(135deg, var(--accent), var(--accent-2)) 1; color: black; font-weight:600; padding-left: 10px; padding-right: 10px; padding: 1px 10px; }
+.issue-filter-only-own:has(input[type="checkbox"]:checked){
+  border-color: transparent;
+  border-image: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+}
+
+input:checked {
+  accent-color: var(--accent-2);
+  size: 18px;
+}
 
 .issue-toolbar select {
   width: 100%;

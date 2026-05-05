@@ -51,6 +51,10 @@ export default function App() {
     setExpandedImageId(prevId => (prevId === id ? null : id));
   };
 
+  //Bool für Filter "nur eigene Mängel anzeigen"
+  const [filterOnlyOwnIssues, setFilterOnlyOwnIssues] = useState(false);
+
+
   // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
   const [currentFilter, setCurrentFilter] = useState("");
   const [currentFilterValue, setCurrentFilterValue] = useState("");
@@ -361,7 +365,9 @@ export default function App() {
   // UI
   return (
     <div className="app-shell">
-      <h1>RPTU-Mängelmelder</h1>
+      <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1>
+
+
 
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
@@ -496,7 +502,10 @@ export default function App() {
             ))}
           </select>
         ) : null}
-
+        <div className='issue-filter-only-own'>
+        <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwnIssues} onChange={(e) => setFilterOnlyOwnIssues(e.target.checked)} />
+        <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
+        </div>
       </div>
 
       {/* List of issues */}
@@ -509,7 +518,11 @@ export default function App() {
           if (currentFilter === "User") return issue.user_email === currentFilterValue;
           if (currentFilter === "Status") return issue.status === currentFilterValue;
           return true;
-        }).sort(currentComparator)
+        }).filter(issue => {
+          if (filterOnlyOwnIssues){return issue.user_email === userEmail}
+          return true;
+        })
+          .sort(currentComparator)
           .map((issue, index) => {
             const hasVoted = Boolean(issue.has_voted);
 

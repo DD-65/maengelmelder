@@ -491,7 +491,7 @@ export default function App() {
         ) : null}
         <div className='issue-filter-only-own'>
         <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwnIssues} onChange={(e) => setFilterOnlyOwnIssues(e.target.checked)} />
-        <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'>Nur eigene Mängel anzeigen</label>
+        <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
         </div>
       </div>
 

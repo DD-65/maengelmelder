@@ -503,7 +503,7 @@ export default function App() {
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchView("search")}
           />
-          <button onClick={() => setSearchView(null)}>
+          <button onClick={(e) => {e.stopPropagation();setSearchView(null)}}>
             X
             </button>
       </div>

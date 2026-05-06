@@ -342,6 +342,12 @@ export default function App() {
     setImage(null);
   }
 
+  // Delete issue
+  const deleteIssue = async (id: number) => {
+    await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
+    loadIssues();
+  };
+
   const upvoteIssue = async (id: number) => {
     setVoteError("");
 
@@ -612,6 +618,14 @@ export default function App() {
                     <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => { if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
                   ) : (
                     <button disabled>Like</button>
+                  )}
+
+                  {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
+                  {userRole === "admin" && (
+                    <button onClick={() => issue.id && deleteIssue(issue.id)}> Meldung Löschen</button>
+                    /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
+                  
+
                   )}
                 </div>
               </li>

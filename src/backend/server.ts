@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import db from "./db.js";
 import multer from "multer";
 import fs from "fs";
+import sharp from "sharp";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,17 +44,10 @@ if (!fs.existsSync(upDir)) {
   fs.mkdirSync(upDir);
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, upDir);},
-  filename: (req, file, cb) => {
-    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + unique + ext);
-  }
-}); 
+const storage = multer.memoryStorage();
 
-const upload = multer({ storage });
+// Storage size limit of 10MB for initial upload
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024} });
 
 app.use("/uploads", express.static(upDir));
 
@@ -131,12 +125,24 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
 });
 
 // neuen Mangel anlegen
-app.post("/api/mangel", requireAuth, upload.single("image"), (req, res) => {
+app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {
   try {
     const { title, description, location, kategorie } = req.body;
 
     // Image Pathing
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let imageUrl = null;
+
+    // Image Processing
+    if (req.file) {
+      const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
+      const filePath = path.join(upDir, fileName);
+
+      await sharp(req.file.buffer).resize({width: 720, height: 720, fit: "contain"}).jpeg().toFile(filePath);
+
+      imageUrl = `/uploads/${fileName}`;
+
+    }
+
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "Titel darf nicht leer sein" });

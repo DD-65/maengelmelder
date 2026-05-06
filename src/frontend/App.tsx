@@ -485,7 +485,7 @@ export default function App() {
             <option value="WLAN">WLAN</option>
             <option value="Mobiliar">Mobiliar</option>
           </select>
-          <input type="file" accept="image/png, image/jpeg" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
+          <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
           <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
 
           <button type="submit">Posten</button>

@@ -534,10 +534,11 @@ export default function App() {
         ) : null}
         <div className='divider'></div>
         {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
-        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSortingFromPossibleSortings(event.target.value)}>
+        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSortingFromPossibleSortings(event.target.value)} >
           <option value="" disabled>Sortierung wählen</option>
           {possibleSortings.map((sorting) => (
             <option key={sorting} value={sorting}>{sorting}</option>
+
           ))}
           <option value=""> - Kein Sortierung - </option>
         </select>
@@ -545,10 +546,13 @@ export default function App() {
         {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
         {currentSorting ? (
           <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingModeFromPossibleSortingModes(currentSorting, event.target.value)}>
-            <option value="" disabled>Modus wählen</option>
+
             {possibleSortingModes[currentSorting]?.map((mode) => (
-              <option key={mode} value={mode}>{mode}</option>
+              <option key={mode} value={mode} selected={mode === possibleSortingModes[currentSorting][0]}>
+                {mode}
+              </option>
             ))}
+
           </select>
         ) : null}
         <div className='issue-filter-only-own'>

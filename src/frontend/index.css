@@ -235,6 +235,12 @@ code {
 .app-shell {
   width: min(100%, 800px);
 }
+.search-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px auto 10px;
+}
 
 .auth-bar {
   display: flex;

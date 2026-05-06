@@ -1,6 +1,6 @@
 import e from 'cors';
 import { useEffect, useState } from 'react';
-import {compareTwoStrings} from 'string-similarity';
+import Fuse from 'fuse.js';
 
 const rooms = [
   "01-006", "01-019", "01-106", "01-160",
@@ -203,14 +203,24 @@ export default function App() {
   const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [voteError, setVoteError] = useState("");
-  // View und Zeug für Sortierung
+  // View und Query für Suche
   const [searchView, setSearchView] = useState<"search" | null>(null);
-  var stringSimilarity = require("string-similarity");
   const [query, setQuery] = useState('');
-
-  stringSimilarity.compareTwoStrings(query,userEmail);
-  stringSimilarity.compareTwoStrings(query,description); // Schleifen benötigt
-  stringSimilarity.compareTwoStrings(query,location);
+  // Fuse erstellen, für Suche benötigt
+  const fuse = new Fuse(issueList, {
+    includeScore: true,
+    ignoreLocation: true,
+    threshold: 0.3,
+    minMatchCharLength: 3,
+    keys: [
+      { name: "location", weight: 0.4 },
+      //{ name: "title", weight: 0.25 },
+      { name: "description", weight: 0.25 },
+      { name: "user_email", weight: 0.1 },
+    ],
+  });
+// Issues mit fuzzy search mit score belegen 0 ist exacte übereinstimmung 1 das Gegenteil
+  const fuseResult = fuse.search(query);
 
 
   const loadIssues = () => {
@@ -482,21 +492,124 @@ export default function App() {
         </form>
       )}
 
-      {/* Suchleiste */}
-      <div className="search-bar" onChange={setSearchView="search"}>
+      {/* Suchleiste 
+      Buttons noch nicht auf Johannes Stand gesetzt
+      */}
+      <div className="search-bar" >
           <input
               type="text"
               placeholder="Suche..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setSearchView("search")}
           />
-          <button onClick={setSearchView=Null}>X</button>
+          <button onClick={() => setSearchView(null)}>
+            X
+            </button>
       </div>
+
       {searchView && (
-       // TODO 
-      )
-        
-      }
+            <ul className="issue-list">
+        {issueList.filter(issue => {
+          if (!currentFilter || !currentFilterValue) return true;
+          if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
+          if (currentFilter === "Ort") return issue.location === currentFilterValue;
+          if (currentFilter === "User") return issue.user_email === currentFilterValue;
+          if (currentFilter === "Status") return issue.status === currentFilterValue;
+          return true;
+        }).filter(issue => {
+          if (filterOnlyOwnIssues){return issue.user_email === userEmail}
+          return true;
+        })
+
+        .map(issue => {
+                const onefuseResult = fuseResult.find(result => result.item.id === issue.id);
+              return {
+                issue,
+                score: onefuseResult?.score ?? 1, 
+              };})
+            .sort((a, b) => a.score - b.score)
+            .sort((a, b) => {
+              if (currentComparator) {
+                return currentComparator(a.issue, b.issue);
+             }
+             return 0;
+           })
+           .map(({ issue }, index) => {
+             const hasVoted = Boolean(issue.has_voted);
+
+            return (
+              <li className="card issue-card" key={issue.id || index}>
+                {/* Nutzername (email) */}
+                <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
+
+                {/* ID des Mangels */}
+                <div className="issue-index">{issue.id}</div>
+
+                {/* Titel */}
+                <h3 className="issue-title">{issue.title}</h3>
+
+                {/* Status Anzeige */}
+                <div className="status-container">
+                  <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
+                    {issue.status}
+                  </span>
+
+                  {/* Admin-Steuerung fuer den Status */}
+                  {userRole === "admin" && (
+                    <select
+                      className="status-select"
+                      value={issue.status}
+                      onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
+                    >
+                      <option value="Gemeldet">Gemeldet</option>
+                      <option value="Akzeptiert">Akzeptiert</option>
+                      <option value="Abgelehnt">Abgelehnt</option>
+                      <option value="In Bearbeitung">In Bearbeitung</option>
+                      <option value="Behoben">Behoben</option>
+                    </select>
+                  )}
+                </div>
+
+                {/* Standort des Mangels */}
+                <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
+
+                {/* Beschreibung */}
+                <p className="issue-description">{issue.description}</p>
+
+                {/* Image */}
+                {issue.image_url && (
+                  <div>
+                    <button onClick={() => {if (issue.id) toggleImage(issue.id)}}>{issue.id && expandedImageId === issue.id ? 'Ausblenden' : 'Ansehen'}</button>
+                    {issue.id && expandedImageId === issue.id && (<img src={issue.image_url} alt={issue.title} style={{maxWidth: "100%", height: "auto", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}} className={`issue-image ${expandedImageId === issue.id ? "expanded" : ""}`} />)}
+                  </div>
+                )}
+
+                {/* Container fuer Voting-zeug */}
+                <div className="issue-actions">
+                  <p>Likes: {issue.votes || 0}</p>
+                  <p>Kategorie: {issue.kategorie || '-'}</p>
+
+                  {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
+                  {userRole === "admin" && (
+                    <button onClick={() => issue.id && deleteIssue(issue.id)}> Meldung Löschen</button>
+                    /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
+                  
+
+                  )}
+                  {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
+                  {userId ? (
+                    <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => { if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
+                  ) : (
+                    <button disabled>Like</button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
       {userId ? (

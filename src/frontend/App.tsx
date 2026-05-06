@@ -377,21 +377,21 @@ export default function App() {
     loadIssues();
   };
   const [randomRptuLogo] = useState(() => { // random rptu logo für den Titel, wird einmalig beim Laden der Seite geladen
-    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches; // light oder dark mode
     const allowedLogos = rptuLogoUrls.filter((url) =>
-      isLightMode
+      isLightMode // matchen ob es sich um ein weißes oder schwarzes Logo handelt und entsprechend mit dem dark / light mode filtern
         ? !url.includes('RPTU U12.png')
         : !url.includes('RPTU U11.png'),
     );
 
-    return allowedLogos[Math.floor(Math.random() * allowedLogos.length)];
+    return allowedLogos[Math.floor(Math.random() * allowedLogos.length)]; // zufälliges U wählen
   });
 
   // UI
   return (
     <div className="app-shell" style={
         {
-          '--random-rptu-logo': `url("${randomRptuLogo}")`,
+          '--random-rptu-logo': `url("${randomRptuLogo}")`, // logo in CSS einfügen
         } as React.CSSProperties
       }>
       <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1>

@@ -209,6 +209,8 @@ app.delete("/api/mangel/:id", requireAuth, (req, res) => {
     const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
     const result = stmt.run(mangelId);
 
+    res.json({ message: "Mangel erfolgreich gelöscht" });
+
     if (result.changes === 0) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
     }

@@ -492,9 +492,7 @@ export default function App() {
         </form>
       )}
 
-      {/* Suchleiste 
-      Buttons noch nicht auf Johannes Stand gesetzt
-      */}
+      {/* Suchleiste */}
       <div className="search-bar" >
           <input
               type="text"
@@ -503,11 +501,11 @@ export default function App() {
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchView("search")}
           />
-          <button onClick={(e) => {e.stopPropagation();setSearchView(null)}}>
+          <button onClick={(e) => {e.stopPropagation();setSearchView(null);}}>
             X
             </button>
       </div>
-
+      {/* Anzeige der Suchergebnisse */}
       {searchView && (
             <ul className="issue-list">
         {issueList.filter(issue => {

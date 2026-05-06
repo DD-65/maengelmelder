@@ -1,5 +1,6 @@
 import e from 'cors';
 import { useEffect, useState } from 'react';
+import {compareTwoStrings} from 'string-similarity';
 
 const rooms = [
   "01-006", "01-019", "01-106", "01-160",
@@ -202,6 +203,15 @@ export default function App() {
   const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [voteError, setVoteError] = useState("");
+  // View und Zeug für Sortierung
+  const [searchView, setSearchView] = useState<"search" | null>(null);
+  var stringSimilarity = require("string-similarity");
+  const [query, setQuery] = useState('');
+
+  stringSimilarity.compareTwoStrings(query,userEmail);
+  stringSimilarity.compareTwoStrings(query,description); // Schleifen benötigt
+  stringSimilarity.compareTwoStrings(query,location);
+
 
   const loadIssues = () => {
     fetch('/api/mangel')
@@ -471,6 +481,22 @@ export default function App() {
           </button>
         </form>
       )}
+
+      {/* Suchleiste */}
+      <div className="search-bar" onChange={setSearchView="search"}>
+          <input
+              type="text"
+              placeholder="Suche..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+          />
+          <button onClick={setSearchView=Null}>X</button>
+      </div>
+      {searchView && (
+       // TODO 
+      )
+        
+      }
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
       {userId ? (

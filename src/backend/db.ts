@@ -23,6 +23,14 @@ db.exec(`
   )
 `);
 
+// Benutzer-Tabelle erstellen (falls sie noch nicht existiert)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS kategorien (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kategorie TEXT NOT NULL
+  )
+`);
+
 // Mängel-Tabelle erstellen (falls sie noch nicht existiert)
 db.exec(`
   CREATE TABLE IF NOT EXISTS maengel (

@@ -16,6 +16,21 @@ const rooms = [
   "57-315", "57-508"
 ];
 
+const rptuLogoUrls = [
+  '/RPTU-Brand/U_Farben/RPTU U.png',
+  '/RPTU-Brand/U_Farben/RPTU U2.png',
+  '/RPTU-Brand/U_Farben/RPTU U3.png',
+  '/RPTU-Brand/U_Farben/RPTU U4.png',
+  '/RPTU-Brand/U_Farben/RPTU U5.svg',
+  '/RPTU-Brand/U_Farben/RPTU U6.png',
+  '/RPTU-Brand/U_Farben/RPTU U7.png',
+  '/RPTU-Brand/U_Farben/RPTU U8.png',
+  '/RPTU-Brand/U_Farben/RPTU U9.png',
+  '/RPTU-Brand/U_Farben/RPTU U10.png',
+  '/RPTU-Brand/U_Farben/RPTU U11.png',
+  '/RPTU-Brand/U_Farben/RPTU U12.png',
+];
+
 // Define all issue components
 type Issue = {
   id?: number;
@@ -361,11 +376,26 @@ export default function App() {
     }
     loadIssues();
   };
+  const [randomRptuLogo] = useState(() => { // random rptu logo für den Titel, wird einmalig beim Laden der Seite geladen
+    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const allowedLogos = rptuLogoUrls.filter((url) =>
+      isLightMode
+        ? !url.includes('RPTU U12.png')
+        : !url.includes('RPTU U11.png'),
+    );
+
+    return allowedLogos[Math.floor(Math.random() * allowedLogos.length)];
+  });
 
   // UI
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={
+        {
+          '--random-rptu-logo': `url("${randomRptuLogo}")`,
+        } as React.CSSProperties
+      }>
       <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1>
+      
 
 
 

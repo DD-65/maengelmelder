@@ -177,6 +177,38 @@ app.post("/api/mangel", requireAuth, upload.single("image"), (req, res) => {
   }
 });
 
+// Mangel löschen (nur Admin oder Ersteller)
+app.delete("/api/mangel/:id", requireAuth, (req, res) => {
+
+
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
+
+    if (!Number.isInteger(mangelId)) {
+      return res.status(400).json({ error: "Ungültige Mangel-ID" });
+    }
+    
+    const mangel = db
+      .prepare("SELECT user_id, image_url FROM maengel WHERE id = ?")
+      .get(mangelId) as { user_id: number; image_url: string | null } | undefined;
+    if (!mangel) {
+      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    }
+    // Prüfen, ob der Nutzer Admin ist
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    }
+
+    const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
+    const result = stmt.run(mangelId);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    }
+    // Falls ein Bild existiert, könnte man dieses ebenfalls löschen
+});
+
 // voten (braucht login)
 app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
   try {

@@ -630,12 +630,6 @@ export default function App() {
                 <div className="issue-actions">
                   <p>Likes: {issue.votes || 0}</p>
                   <p>Kategorie: {issue.kategorie || '-'}</p>
-                  {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
-                  {userId ? (
-                    <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => { if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
-                  ) : (
-                    <button disabled>Like</button>
-                  )}
 
                   {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
                   {userRole === "admin" && (
@@ -643,6 +637,12 @@ export default function App() {
                     /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
                   
 
+                  )}
+                  {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
+                  {userId ? (
+                    <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={() => { if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
+                  ) : (
+                    <button disabled>Like</button>
                   )}
                 </div>
               </li>

@@ -76,7 +76,7 @@ export default function App() {
   const possibleFilters = [
     "Kategorie",
     "Ort",
-    "User",
+    //"User", war nicht gefordert, dann eben nicht.
     "Status",
 
   ];

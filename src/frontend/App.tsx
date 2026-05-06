@@ -407,7 +407,7 @@ export default function App() {
       
 
 
-
+      <div className='header-container'>
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
@@ -561,7 +561,9 @@ export default function App() {
         <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
         </div>
       </div>
+      </div>
 
+      <div className='list-container'>
       {/* List of issues */}
       {voteError && <p className="error-text vote-error">{voteError}</p>}
       <ul className="issue-list">
@@ -665,6 +667,8 @@ export default function App() {
             );
           })}
       </ul>
+      </div>
     </div>
+  
   );
 }

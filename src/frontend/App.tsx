@@ -21,7 +21,7 @@ const rptuLogoUrls = [
   '/RPTU-Brand/U_Farben/RPTU U2.png',
   '/RPTU-Brand/U_Farben/RPTU U3.png',
   '/RPTU-Brand/U_Farben/RPTU U4.png',
-  '/RPTU-Brand/U_Farben/RPTU U5.svg',
+  '/RPTU-Brand/U_Farben/RPTU U5.png',
   '/RPTU-Brand/U_Farben/RPTU U6.png',
   '/RPTU-Brand/U_Farben/RPTU U7.png',
   '/RPTU-Brand/U_Farben/RPTU U8.png',

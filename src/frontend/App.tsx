@@ -194,9 +194,10 @@ export default function App() {
   const [userId, setUserId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("");
-  const [authView, setAuthView] = useState<"login" | "register" | "registerAdmin" | null>(null);
+  const [authView, setAuthView] = useState<"login" | "register" | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
   const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [voteError, setVoteError] = useState("");
@@ -276,7 +277,7 @@ export default function App() {
       body: JSON.stringify({
         email: authEmail,
         password: authPassword,
-        adminSecret: authView === "registerAdmin" ? adminCode : undefined,
+        adminSecret: registerAsAdmin ? adminCode : undefined,
       }),
     });
 
@@ -290,6 +291,7 @@ export default function App() {
     setAuthEmail("");
     setAuthPassword("");
     setAdminCode("");
+    setRegisterAsAdmin(false);
     setAuthView("login");
   };
 
@@ -408,14 +410,13 @@ export default function App() {
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
-          <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Verwaltung" : "Bürger"})</span>
+          <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
           <button className='logout-button' onClick={logout}>Logout</button>
         </div>
       ) : (
         <div className="auth-bar">
           <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
           <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
-          <button onClick={() => setAuthView(authView === "registerAdmin" ? null : "registerAdmin")}>Admin-Registrierung</button>
         </div>
       )}
 
@@ -425,7 +426,7 @@ export default function App() {
           className="auth-card"
           onSubmit={authView === "login" ? login : register}
         >
-          <h2>{authView === "login" ? "Login" : authView === "registerAdmin" ? "Admin Registrierung" : "Registrieren"}</h2>
+          <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
 
           <input
             type="email"
@@ -441,7 +442,19 @@ export default function App() {
             onChange={(event) => setAuthPassword(event.target.value)}
           />
 
-          {authView === "registerAdmin" && (
+          {authView === "register" && (
+            <div className="admin-checkbox">
+              <input
+                type="checkbox"
+                id="registerAsAdmin"
+                checked={registerAsAdmin}
+                onChange={(e) => setRegisterAsAdmin(e.target.checked)}
+              />
+              <label htmlFor="registerAsAdmin">als Admin registrieren</label>
+            </div>
+          )}
+
+          {authView === "register" && registerAsAdmin && (
             <input
               type="password"
               placeholder="Admin-Code"

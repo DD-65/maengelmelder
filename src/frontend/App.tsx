@@ -122,13 +122,14 @@ export default function App() {
   };
 
     // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
-  function chooseSortingFromPossibleSortings(chosenFilter: string) {
-    if (possibleSortings.includes(chosenFilter)) {
-      setCurrentSorting(chosenFilter);
+  function chooseSortingFromPossibleSortings(chosenSorting: string) {
+    if (possibleSortings.includes(chosenSorting)) {
+      setCurrentSorting(chosenSorting);
+      setCurrentSortingMode(possibleSortingModes[chosenSorting][0]);
     } else {
       setCurrentSorting("");
+      setCurrentSortingMode("");
     }
-    setCurrentSortingMode("");
   }
 
   function chooseSortingModeFromPossibleSortingModes(filter: string, chosenValue: string) {
@@ -686,7 +687,7 @@ export default function App() {
           <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingModeFromPossibleSortingModes(currentSorting, event.target.value)}>
 
             {possibleSortingModes[currentSorting]?.map((mode) => (
-              <option key={mode} value={mode} selected={mode === possibleSortingModes[currentSorting][0]}>
+              <option key={mode} value={mode}>
                 {mode}
               </option>
             ))}

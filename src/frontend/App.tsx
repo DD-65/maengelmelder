@@ -220,8 +220,53 @@ export default function App() {
       { name: "user_email", weight: 0.1 },
     ],
   });
-// Issues mit fuzzy search mit score belegen 0 ist exacte übereinstimmung 1 das Gegenteil
-  const fuseResult = fuse.search(query);
+  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQueryForNumberSearch = normalizedQuery.replace(/\D/g, "");
+
+  function normalizeNumberSearchValue(value?: string | null) {
+    return value?.toLowerCase().replace(/\D/g, "") ?? "";
+  }
+
+  function issueMatchesShortSearch(issue: Issue) {
+    const searchableValues = [
+      issue.location,
+      issue.title,
+      issue.description,
+      issue.user_email,
+      issue.kategorie,
+      issue.status,
+    ];
+    const matchesText = searchableValues.some(value =>
+      value?.toLowerCase().includes(normalizedQuery)
+    );
+    const matchesNumberPattern = Boolean(normalizedQueryForNumberSearch) && searchableValues.some(value =>
+      normalizeNumberSearchValue(value).includes(normalizedQueryForNumberSearch)
+    );
+
+    return matchesText || matchesNumberPattern;
+  }
+
+  const searchIssueList = !normalizedQuery
+    ? issueList
+    : normalizedQuery.length < 3
+      ? issueList.filter(issueMatchesShortSearch)
+      // Issues mit fuzzy search mit score belegen 0 ist exacte übereinstimmung 1 das Gegenteil
+      : fuse.search(normalizedQuery).map(result => result.item);
+  const issuesToDisplay = searchView ? searchIssueList : issueList;
+
+  function issueMatchesCurrentFilter(issue: Issue) {
+    if (!currentFilter || !currentFilterValue) return true;
+    if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
+    if (currentFilter === "Ort") return issue.location === currentFilterValue;
+    if (currentFilter === "User") return issue.user_email === currentFilterValue;
+    if (currentFilter === "Status") return issue.status === currentFilterValue;
+    return true;
+  }
+
+  function issueMatchesOnlyOwnFilter(issue: Issue) {
+    if (filterOnlyOwnIssues) return issue.user_email === userEmail;
+    return true;
+  }
 
 
   const loadIssues = () => {
@@ -582,41 +627,10 @@ export default function App() {
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchView("search")}
           />
-          <button onClick={(e) => {e.stopPropagation();setSearchView(null);}}>
+          <button className="search-clear-button" aria-label="Suche schließen" onClick={(e) => {e.stopPropagation();setQuery("");setSearchView(null);}}>
             X
-            </button>
+          </button>
       </div>
-      {/* Anzeige der Suchergebnisse */}
-      {searchView && (
-            <ul className="issue-list">
-        {issueList.filter(issue => {
-          if (!currentFilter || !currentFilterValue) return true;
-          if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
-          if (currentFilter === "Ort") return issue.location === currentFilterValue;
-          if (currentFilter === "User") return issue.user_email === currentFilterValue;
-          if (currentFilter === "Status") return issue.status === currentFilterValue;
-          return true;
-        }).filter(issue => {
-          if (filterOnlyOwnIssues){return issue.user_email === userEmail}
-          return true;
-        })
-
-        .map(issue => {
-                const onefuseResult = fuseResult.find(result => result.item.id === issue.id);
-              return {
-                issue,
-                score: onefuseResult?.score ?? 1, 
-              };})
-            .sort((a, b) => a.score - b.score)
-            .sort((a, b) => {
-              if (currentComparator) {
-                return currentComparator(a.issue, b.issue);
-             }
-             return 0;
-           })
-           .map(({ issue }, index) => renderIssueCard(issue, index))}
-        </ul>
-      )}
       
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
@@ -714,17 +728,9 @@ export default function App() {
       {/* List of issues */}
       {voteError && <p className="error-text vote-error">{voteError}</p>}
       <ul className="issue-list">
-        {issueList.filter(issue => {
-          if (!currentFilter || !currentFilterValue) return true;
-          if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
-          if (currentFilter === "Ort") return issue.location === currentFilterValue;
-          if (currentFilter === "User") return issue.user_email === currentFilterValue;
-          if (currentFilter === "Status") return issue.status === currentFilterValue;
-          return true;
-        }).filter(issue => {
-          if (filterOnlyOwnIssues){return issue.user_email === userEmail}
-          return true;
-        })
+        {issuesToDisplay
+          .filter(issueMatchesCurrentFilter)
+          .filter(issueMatchesOnlyOwnFilter)
           .sort(currentComparator)
           .map(renderIssueCard)}
       </ul>

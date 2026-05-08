@@ -28,6 +28,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+
+  /* Standard Sizes*/
+  --header-width: 720px;
+  --issue-width: 720px;
 }
 
 @media (prefers-color-scheme: light) {
@@ -240,7 +245,7 @@ code {
   justify-content: center;
   align-items: center;
   position: relative;
-  width: min(100%, 360px);
+  width: min(100%, var(--header-width));
   margin: 10px auto 10px;
 }
 
@@ -294,7 +299,7 @@ code {
 
 .auth-card,
 .issue-form {
-  width: min(100%, 360px);
+  width: min(100%, var(--header-width));
   margin: 0 auto 30px;
   padding: 16px;
   background: var(--surface);
@@ -306,7 +311,7 @@ code {
 }
 
 .issue-toolbar{
-  width: min(100%, 360px);
+  width: min(100%, var(--header-width));
   margin: 0 auto 30px;
   padding: 16px;
   background: var(--surface);
@@ -415,7 +420,7 @@ input:checked {
 }
 
 .issue-list {
-  width: min(100%, 720px);
+  width: min(100%, var(--issue-width));
   list-style-type: none;
   padding: 0;
   margin: 0 auto;

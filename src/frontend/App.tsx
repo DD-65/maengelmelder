@@ -626,10 +626,15 @@ export default function App() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchView("search")}
+              onBlur={() => {
+                if (query.length === 0) setSearchView(null);
+              }}
           />
-          <button className="search-clear-button" aria-label="Suche schließen" onClick={(e) => {e.stopPropagation();setQuery("");setSearchView(null);}}>
-            X
-          </button>
+          {(query.length > 0 || searchView === "search") && (
+            <button className="search-clear-button" aria-label="Suche schließen" onClick={(e) => {e.stopPropagation();setQuery("");setSearchView(null);}}>
+              X
+            </button>
+          )}
       </div>
       
 

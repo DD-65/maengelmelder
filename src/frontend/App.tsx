@@ -1,6 +1,8 @@
 import e from 'cors';
 import { useEffect, useState } from 'react';
 import Fuse from 'fuse.js';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const rooms = [
   "01-006", "01-019", "01-106", "01-160",
@@ -67,6 +69,9 @@ export default function App() {
   const toggleImage = (id: number) => {
     setExpandedImageId(prevId => (prevId === id ? null : id));
   };
+
+  // State of Viewing (List or Map)
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   //Bool für Filter "nur eigene Mängel anzeigen"
   const [filterOnlyOwnIssues, setFilterOnlyOwnIssues] = useState(false);
@@ -732,16 +737,34 @@ export default function App() {
       </div>
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
+        <button onClick={() => setViewMode('list')}>Liste</button>
+        <button onClick={() => setViewMode('map')}>Karte</button>
+      </div>
+
       <div className='list-container'>
-      {/* List of issues */}
-      {voteError && <p className="error-text vote-error">{voteError}</p>}
-      <ul className="issue-list">
-        {issuesToDisplay
-          .filter(issueMatchesCurrentFilter)
-          .filter(issueMatchesOnlyOwnFilter)
-          .sort(currentComparator)
-          .map(renderIssueCard)}
-      </ul>
+        {/* BEDINGTES RENDERN: Liste ODER Karte */}
+        {viewMode === 'list' ? (
+          /* Liste wird angezeigt */
+          <div>
+            {/* List of issues */}
+            {voteError && <p className="error-text vote-error">{voteError}</p>}
+            <ul className="issue-list">
+              {issuesToDisplay
+                .filter(issueMatchesCurrentFilter)
+                .filter(issueMatchesOnlyOwnFilter)
+                .sort(currentComparator)
+                .map(renderIssueCard)}
+            </ul>
+          </div>
+        ) : (
+          /* Karte wird angezeigt */
+          <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
+            <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+            </MapContainer>
+          </div>
+        )}
       </div>
     </div>
   

@@ -1,10 +1,14 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import path from "path";
 import bcrypt from "bcryptjs";
 import session from "express-session";
+import crypto from "node:crypto";
 import { fileURLToPath } from "url";
+import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
+import { sendVerificationEmail } from "./mailer.js";
 import multer from "multer";
 import fs from "fs";
 import sharp from "sharp";
@@ -16,6 +20,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
 const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar"];
+const emailTokenTtlMinutes = Number(process.env.EMAIL_TOKEN_TTL_MINUTES || 60);
+const emailVerificationResendDelayMs = 60 * 1000;
 // Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
 // eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -50,6 +56,69 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024} });
 
 app.use("/uploads", express.static(upDir));
+
+function hashEmailVerificationToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function getAppBaseUrl(req: Request) {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+  const baseUrl = configuredBaseUrl || `${req.protocol}://${req.get("host")}`;
+  return baseUrl.replace(/\/$/, "");
+}
+
+function createEmailVerificationToken(userId: number) {
+  const now = new Date();
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashEmailVerificationToken(rawToken);
+  const expiresAt = new Date(now.getTime() + emailTokenTtlMinutes * 60 * 1000).toISOString();
+
+  const result = db.prepare(`
+    INSERT INTO email_verification_tokens (user_id, token_hash, expires_at, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(userId, tokenHash, expiresAt, now.toISOString());
+
+  return {
+    id: Number(result.lastInsertRowid),
+    rawToken,
+  };
+}
+
+function markOtherEmailVerificationTokensUsed(userId: number, currentTokenId: number) {
+  db.prepare(`
+    UPDATE email_verification_tokens
+    SET used_at = ?
+    WHERE user_id = ?
+      AND id <> ?
+      AND used_at IS NULL
+  `).run(new Date().toISOString(), userId, currentTokenId);
+}
+
+async function issueEmailVerificationMail(userId: number, email: string, req: Request) {
+  const token = createEmailVerificationToken(userId);
+  const verifyUrl = `${getAppBaseUrl(req)}/verify-email?token=${encodeURIComponent(token.rawToken)}`;
+
+  await sendVerificationEmail({
+    to: email,
+    verifyUrl,
+  });
+
+  markOtherEmailVerificationTokensUsed(userId, token.id);
+}
+
+function canSendVerificationMail(userId: number) {
+  const lastToken = db.prepare(`
+    SELECT created_at
+    FROM email_verification_tokens
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(userId) as { created_at: string } | undefined;
+
+  if (!lastToken) return true;
+
+  return Date.now() - new Date(lastToken.created_at).getTime() >= emailVerificationResendDelayMs;
+}
 
 
 // --- API Endpunkte
@@ -308,11 +377,124 @@ app.post("/api/auth/register", async (req, res) => {
     // neuen Nutzer in db speichern
     const result = stmt.run(normalizedEmail, passwordHash, role);
 
+    const userId = Number(result.lastInsertRowid);
+    let verificationEmailSent = true;
+
+    try {
+      await issueEmailVerificationMail(userId, normalizedEmail, req);
+    } catch (mailError) {
+      verificationEmailSent = false;
+      console.error("Verifizierungs-E-Mail konnte nicht gesendet werden:", mailError);
+    }
+
     // Erfolg zurückgeben
-    res.status(201).json({ message: "Registrierung erfolgreich", userId: result.lastInsertRowid });
+    res.status(201).json({
+      message: verificationEmailSent
+        ? "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse."
+        : "Registrierung erfolgreich, aber die Verifizierungs-E-Mail konnte nicht gesendet werden.",
+      userId,
+      verificationEmailSent,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler bei der Registrierung" });
+  }
+});
+
+// email verifizieren
+app.get("/api/auth/verify-email", (req, res) => {
+  try {
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+
+    if (!token) {
+      return res.status(400).json({ error: "Verifizierungstoken fehlt" });
+    }
+
+    const tokenHash = hashEmailVerificationToken(token);
+    const tokenRow = db.prepare(`
+      SELECT
+        email_verification_tokens.id,
+        email_verification_tokens.user_id,
+        email_verification_tokens.expires_at,
+        email_verification_tokens.used_at,
+        users.email_verified_at
+      FROM email_verification_tokens
+      JOIN users ON users.id = email_verification_tokens.user_id
+      WHERE email_verification_tokens.token_hash = ?
+    `).get(tokenHash) as {
+      id: number;
+      user_id: number;
+      expires_at: string;
+      used_at: string | null;
+      email_verified_at: string | null;
+    } | undefined;
+
+    if (!tokenRow || tokenRow.used_at) {
+      return res.status(400).json({ error: "Verifizierungstoken ist ungültig" });
+    }
+
+    if (new Date(tokenRow.expires_at).getTime() < Date.now()) {
+      db.prepare("UPDATE email_verification_tokens SET used_at = ? WHERE id = ?")
+        .run(new Date().toISOString(), tokenRow.id);
+      return res.status(400).json({ error: "Verifizierungstoken ist abgelaufen" });
+    }
+
+    const now = new Date().toISOString();
+    const verifyTransaction = db.transaction(() => {
+      db.prepare(`
+        UPDATE users
+        SET email_verified_at = COALESCE(email_verified_at, ?)
+        WHERE id = ?
+      `).run(now, tokenRow.user_id);
+
+      db.prepare(`
+        UPDATE email_verification_tokens
+        SET used_at = ?
+        WHERE user_id = ?
+          AND used_at IS NULL
+      `).run(now, tokenRow.user_id);
+    });
+
+    verifyTransaction();
+
+    res.json({ message: "E-Mail-Adresse erfolgreich verifiziert" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler bei der E-Mail-Verifizierung" });
+  }
+});
+
+// verifizierungs-email erneut senden
+app.post("/api/auth/resend-verification-email", requireAuth, async (req, res) => {
+  try {
+    const user = db.prepare(`
+      SELECT id, email, email_verified_at
+      FROM users
+      WHERE id = ?
+    `).get(req.session.userId) as {
+      id: number;
+      email: string;
+      email_verified_at: string | null;
+    } | undefined;
+
+    if (!user) {
+      return res.status(401).json({ error: "Nicht angemeldet" });
+    }
+
+    if (user.email_verified_at) {
+      return res.json({ message: "E-Mail-Adresse ist bereits verifiziert", emailVerified: true });
+    }
+
+    if (!canSendVerificationMail(user.id)) {
+      return res.status(429).json({ error: "Bitte warte kurz, bevor du erneut eine E-Mail anforderst" });
+    }
+
+    await issueEmailVerificationMail(user.id, user.email, req);
+
+    res.json({ message: "Verifizierungs-E-Mail wurde gesendet", emailVerified: false });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Verifizierungs-E-Mail konnte nicht gesendet werden" });
   }
 });
 
@@ -333,8 +515,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash, role FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string } | undefined;
+      .prepare("SELECT id, email, password_hash, role, email_verified_at FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; email_verified_at: string | null } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -347,7 +529,13 @@ app.post("/api/auth/login", async (req, res) => {
     // session speichern
     req.session.userId = user.id;
 
-    res.json({ message: "Login erfolgreich", userId: user.id, email: user.email, role: user.role });
+    res.json({
+      message: "Login erfolgreich",
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      emailVerified: Boolean(user.email_verified_at),
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Login" });
@@ -361,15 +549,20 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string } | undefined;
+    .prepare("SELECT id, email, role, email_verified_at FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
     return res.status(401).json({ error: "Nicht angemeldet" });
   }
   
-  res.json({ userId: user.id, email: user.email, role: user.role });
+  res.json({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    emailVerified: Boolean(user.email_verified_at),
+  });
 });
 
 // logout endpunkt
@@ -385,7 +578,6 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 // helper um routes login brauchen zu lassen
-import type { Request, Response, NextFunction } from "express";
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Nicht angemeldet" });

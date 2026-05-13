@@ -319,6 +319,8 @@ export default function App() {
 
     if (window.location.pathname !== "/verify-email" || !token) return;
 
+    window.history.replaceState({}, "", "/");
+
     fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
       .then(async (res) => {
         const data = await res.json();
@@ -333,26 +335,21 @@ export default function App() {
         setVerificationMessageType("success");
         setEmailVerified(true);
 
-        if (userId) {
-          fetch('/api/auth/me')
-            .then((meRes) => meRes.ok ? meRes.json() : null)
-            .then((meData) => {
-              if (!meData) return;
-              setUserId(meData.userId);
-              setUserEmail(meData.email);
-              setUserRole(meData.role || "user");
-              setEmailVerified(Boolean(meData.emailVerified));
-            });
-        }
+        fetch('/api/auth/me')
+          .then((meRes) => meRes.ok ? meRes.json() : null)
+          .then((meData) => {
+            if (!meData) return;
+            setUserId(meData.userId);
+            setUserEmail(meData.email);
+            setUserRole(meData.role || "user");
+            setEmailVerified(Boolean(meData.emailVerified));
+          });
       })
       .catch(() => {
         setVerificationMessage("E-Mail-Verifizierung fehlgeschlagen");
         setVerificationMessageType("error");
-      })
-      .finally(() => {
-        window.history.replaceState({}, "", "/");
       });
-  }, [userId]);
+  }, []);
 
   // login handler
   const login = async (event: React.FormEvent) => {

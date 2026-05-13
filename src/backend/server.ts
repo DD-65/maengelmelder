@@ -429,7 +429,20 @@ app.get("/api/auth/verify-email", (req, res) => {
       email_verified_at: string | null;
     } | undefined;
 
-    if (!tokenRow || tokenRow.used_at) {
+    if (!tokenRow) {
+      return res.status(400).json({ error: "Verifizierungstoken ist ungültig" });
+    }
+
+    if (tokenRow.email_verified_at) {
+      if (!tokenRow.used_at) {
+        db.prepare("UPDATE email_verification_tokens SET used_at = ? WHERE id = ?")
+          .run(new Date().toISOString(), tokenRow.id);
+      }
+
+      return res.json({ message: "E-Mail-Adresse erfolgreich verifiziert" });
+    }
+
+    if (tokenRow.used_at) {
       return res.status(400).json({ error: "Verifizierungstoken ist ungültig" });
     }
 

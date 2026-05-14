@@ -1,7 +1,8 @@
 import e from 'cors';
 import { useEffect, useState } from 'react';
 import Fuse from 'fuse.js';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const rooms = [
@@ -19,6 +20,23 @@ const rooms = [
   "56-230", "56-232",
   "57-315", "57-508"
 ];
+
+// Dictionary for Building Coordinates 
+const buildingCoordinates: Record<string, [number, number]> = {
+  "01": [49.426959, 7.759883],
+  "11": [49.425347, 7.754143],
+  "13": [49.425128, 7.755527],
+  "24": [49.425654, 7.756326],
+  "32": [49.424915, 7.751632],
+  "36": [49.424566, 7.753381],
+  "42": [49.424203, 7.750254],
+  "44": [49.424025, 7.751552],
+  "46": [49.423976, 7.752662],
+  "48": [49.423533, 7.753864],
+  "52": [49.423674, 7.755943],
+  "56": [49.422612, 7.755457],
+  "57": [49.422092, 7.756112]
+};
 
 const rptuLogoUrls = [
   '/RPTU-Brand/U_Farben/RPTU U.png',
@@ -809,10 +827,49 @@ export default function App() {
             </ul>
           </div>
         ) : (
-          /* Karte wird angezeigt */
+          /* Map */
           <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
             <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>
               <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+
+              {/* Pin Rendering */}
+              {(() => {
+                // Same filters as list
+                const filteredIssues = issuesToDisplay
+                  .filter(issueMatchesCurrentFilter)
+                  .filter(issueMatchesOnlyOwnFilter);
+
+                // Issues per Building
+                const buildingIssueCount: Record<string, number> = {};
+                
+                filteredIssues.forEach(issue => {
+                  if (issue.location) {
+                    // Split the string to only show the building via regex
+                    const building = issue.location.split(/[-\s/\\._]+/)[0];
+                    if (building) {
+                      buildingIssueCount[building] = (buildingIssueCount[building] || 0) + 1;
+                    }
+                  }
+                });
+
+                // Place pin for each building with at least one issue
+                return Object.entries(buildingIssueCount).map(([building, count]) => {
+                  const coords = buildingCoordinates[building];
+                  
+                  // No pin for buildings without coordinates
+                  if (!coords) return null;
+
+                  // HTML Pin with count
+                  const countIcon = L.divIcon({
+                    html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                  });
+
+                  return (<Marker key={building} position={coords} icon={countIcon}/>);
+                });
+              })()}
             </MapContainer>
           </div>
         )}

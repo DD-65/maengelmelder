@@ -68,6 +68,13 @@ try {
   // Falls die Spalte schon existiert, ignorieren
 }
 
+// Migration: thumbnail_url Spalte hinzufügen, falls sie fehlt
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN thumbnail_url TEXT DEFAULT NULL");
+} catch {
+  // Falls die Spalte schon existiert, ignorieren
+}
+
 // Tabelle für votes, damit ein Nutzer nur einmal voten kann
 db.exec(`
   CREATE TABLE IF NOT EXISTS mangel_votes (

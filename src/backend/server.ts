@@ -69,6 +69,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.created_at,
         maengel.votes,
         maengel.image_url,
+        maengel.thumbnail_url,
         users.email AS user_email,
         CASE
           WHEN ? IS NULL THEN 0
@@ -131,15 +132,25 @@ app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) =>
 
     // Image Pathing
     let imageUrl = null;
+    let thumbnailUrl = null;
 
     // Image Processing
     if (req.file) {
-      const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
-      const filePath = path.join(upDir, fileName);
+      const baseName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
+      const fileNameBig = `${baseName}-original.jpg`;
+      const fileNameThumb = `${baseName}-thumb.jpg`;
 
-      await sharp(req.file.buffer).resize({width: 720, height: 720, fit: "contain"}).jpeg().toFile(filePath);
+      const filePathBig = path.join(upDir, fileNameBig);
+      const filePathThumb = path.join(upDir, fileNameThumb);
 
-      imageUrl = `/uploads/${fileName}`;
+      // Just convertion for the original file
+      await sharp(req.file.buffer).jpeg({ quality: 100 }).toFile(filePathBig);
+
+      // Thumbnails also gets resized
+      await sharp(req.file.buffer).resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toFile(filePathThumb);
+
+      imageUrl = `/uploads/${fileNameBig}`;
+      thumbnailUrl = `/uploads/${fileNameThumb}`;
 
     }
 
@@ -167,11 +178,11 @@ app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) =>
     const userId = req.session.userId;
 
     const stmt = db.prepare(`
-      INSERT INTO maengel (user_id, title, description, location, kategorie, image_url)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl);
+    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl, thumbnailUrl);
 
     res.status(201).json({
       message: "Mangel gespeichert!",
@@ -195,8 +206,8 @@ app.delete("/api/mangel/:id", requireAuth, (req, res) => {
     }
     
     const mangel = db
-      .prepare("SELECT user_id, image_url FROM maengel WHERE id = ?")
-      .get(mangelId) as { user_id: number; image_url: string | null } | undefined;
+      .prepare("SELECT user_id, image_url, thumbnail_url FROM maengel WHERE id = ?")
+      .get(mangelId) as { user_id: number; image_url: string | null; thumbnail_url: string | null } | undefined;
     if (!mangel) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
     }

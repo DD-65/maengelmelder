@@ -46,6 +46,7 @@ type Issue = {
   has_voted?: number | boolean;
   kategorie?: string | null;
   image_url?: string | null;
+  thumbnail_url?: string | null;
 }
 
 export default function App() {
@@ -509,7 +510,7 @@ export default function App() {
         <p className="issue-description">{issue.description}</p>
 
         {/* Image */}
-        {issue.image_url && (
+        {(issue.thumbnail_url || issue.image_url) && (
           <div style={{ marginTop: '10px' }}>
             {/* Image hint if not expanded */}
             {expandedImageId !== issue.id && (
@@ -517,7 +518,7 @@ export default function App() {
             )}
             {/* Loading of Image if expanded */}
             {expandedImageId === issue.id && (
-              <img src={issue.image_url} alt={issue.title} style={{maxWidth: "100%", height: "auto", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}}/>
+              <img src={issue.thumbnail_url || issue.image_url!} alt={issue.title} style={{width: "100%", height: "350px", objectFit: "contain", backgroundColor: "var(--surface-strong)", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}}/>
             )}
           </div>
         )}

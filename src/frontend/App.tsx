@@ -1,4 +1,3 @@
-import e from 'cors';
 import { useEffect, useState } from 'react';
 import Fuse from 'fuse.js';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -66,6 +65,7 @@ type Issue = {
   has_voted?: number | boolean;
   kategorie?: string | null;
   image_url?: string | null;
+  thumbnail_url?: string | null;
 }
 
 export default function App() {
@@ -268,13 +268,20 @@ export default function App() {
   const [userId, setUserId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
   const [authView, setAuthView] = useState<"login" | "register" | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
   const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
   const [voteError, setVoteError] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState("");
+  const [settingsError, setSettingsError] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
   // View und Query für Suche
   const [searchView, setSearchView] = useState<"search" | null>(null);
   const [query, setQuery] = useState('');
@@ -356,6 +363,7 @@ export default function App() {
           setUserId(null);
           setUserEmail("");
           setUserRole("");
+          setEmailVerified(false);
           return null;
         }
       })
@@ -364,6 +372,7 @@ export default function App() {
           setUserId(data.userId);
           setUserEmail(data.email);
           setUserRole(data.role || "user");
+          setEmailVerified(Boolean(data.emailVerified));
           loadIssues();
         }
       })
@@ -371,6 +380,46 @@ export default function App() {
         setUserId(null);
         setUserEmail("");
         setUserRole("");
+        setEmailVerified(false);
+      });
+  }, []);
+
+  // Verifizierungslink aus der E-Mail verarbeiten
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (window.location.pathname !== "/verify-email" || !token) return;
+
+    window.history.replaceState({}, "", "/");
+
+    fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+      .then(async (res) => {
+        const data = await res.json();
+
+        if (!res.ok) {
+          setVerificationMessage(data.error || "E-Mail-Verifizierung fehlgeschlagen");
+          setVerificationMessageType("error");
+          return;
+        }
+
+        setVerificationMessage(data.message || "E-Mail-Adresse erfolgreich verifiziert");
+        setVerificationMessageType("success");
+        setEmailVerified(true);
+
+        fetch('/api/auth/me')
+          .then((meRes) => meRes.ok ? meRes.json() : null)
+          .then((meData) => {
+            if (!meData) return;
+            setUserId(meData.userId);
+            setUserEmail(meData.email);
+            setUserRole(meData.role || "user");
+            setEmailVerified(Boolean(meData.emailVerified));
+          });
+      })
+      .catch(() => {
+        setVerificationMessage("E-Mail-Verifizierung fehlgeschlagen");
+        setVerificationMessageType("error");
       });
   }, []);
 
@@ -378,6 +427,7 @@ export default function App() {
   const login = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError("");
+    setAuthMessage("");
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -398,6 +448,7 @@ export default function App() {
     setUserId(data.userId);
     setUserEmail(data.email);
     setUserRole(data.role || "user");
+    setEmailVerified(Boolean(data.emailVerified));
     setAuthEmail("");
     setAuthPassword("");
     setAuthView(null);
@@ -408,6 +459,7 @@ export default function App() {
   const register = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError("");
+    setAuthMessage("");
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -430,6 +482,7 @@ export default function App() {
     setAuthPassword("");
     setAdminCode("");
     setRegisterAsAdmin(false);
+    setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
     setAuthView("login");
   };
 
@@ -439,8 +492,28 @@ export default function App() {
     setUserId(null);
     setUserEmail("");
     setUserRole("");
+    setEmailVerified(false);
     setFilterOnlyOwnIssues(false);
     loadIssues();
+  };
+
+  const resendVerificationEmail = async () => {
+    setSettingsError("");
+    setSettingsMessage("");
+
+    const res = await fetch("/api/auth/resend-verification-email", {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
+      return;
+    }
+
+    setEmailVerified(Boolean(data.emailVerified));
+    setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
   };
 
   // issues aus db laden
@@ -580,7 +653,7 @@ export default function App() {
         <p className="issue-description">{issue.description}</p>
 
         {/* Image */}
-        {issue.image_url && (
+        {(issue.thumbnail_url || issue.image_url) && (
           <div style={{ marginTop: '10px' }}>
             {/* Image hint if not expanded */}
             {expandedImageId !== issue.id && (
@@ -588,7 +661,7 @@ export default function App() {
             )}
             {/* Loading of Image if expanded */}
             {expandedImageId === issue.id && (
-              <img src={issue.image_url} alt={issue.title} style={{maxWidth: "100%", height: "auto", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}}/>
+              <img src={issue.thumbnail_url || issue.image_url!} alt={issue.title} style={{width: "100%", height: "350px", objectFit: "contain", backgroundColor: "var(--surface-strong)", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}}/>
             )}
           </div>
         )}
@@ -629,6 +702,11 @@ export default function App() {
       >
 
       <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1>
+      {verificationMessage && (
+        <p className={`verification-notice verification-${verificationMessageType}`}>
+          {verificationMessage}
+        </p>
+      )}
       
 
 
@@ -636,13 +714,71 @@ export default function App() {
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
+          {/* Wenn man eingeloggt ist: logout und einstellungen*/}
           <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
           <button className='logout-button' onClick={logout}>Logout</button>
+          <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
+            <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+            </svg>
+          </button>
         </div>
       ) : (
         <div className="auth-bar">
+        {/* Wenn man nicht eingeloggt ist: login und register */}
           <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
           <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+        </div>
+      )}
+
+      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen */}
+      {settingsOpen && (
+        <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
+          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-pane-header">
+              <h2 id="settings-title">Einstellungen</h2>
+              <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
+                X
+              </button>
+            </div>
+
+            <div className="settings-options">
+              <div className="settings-option">
+                <span>
+                  <strong>E-Mail-Adresse</strong>
+                  <small>{userEmail}</small>
+                </span>
+                <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                  {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
+                </span>
+              </div>
+
+              {!emailVerified && (
+                <button type="button" onClick={resendVerificationEmail}>
+                  Verifizierungs-E-Mail erneut senden
+                </button>
+              )}
+
+              {settingsMessage && <p className="success-text">{settingsMessage}</p>}
+              {settingsError && <p className="error-text">{settingsError}</p>}
+
+              <label className="settings-option">
+                <span>
+                  <strong>Kompakte Ansicht</strong>
+                  <small>Platzhalter</small>
+                </span>
+                <input type="checkbox" />
+              </label>
+
+              <label className="settings-field">
+                <span>Sprache</span>
+                <select defaultValue="de">
+                  <option value="de">Deutsch</option>
+                  <option value="en">Englisch</option>
+                </select>
+              </label>
+            </div>
+          </section>
         </div>
       )}
 
@@ -690,6 +826,7 @@ export default function App() {
           )}
 
           {authError && <p className="error-text">{authError}</p>}
+          {authMessage && <p className="success-text">{authMessage}</p>}
 
           <button type="submit">
             {authView === "login" ? "Einloggen" : "Registrieren"}

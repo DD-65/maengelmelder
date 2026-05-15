@@ -1,4 +1,3 @@
-import e from 'cors';
 import { useEffect, useState } from 'react';
 import Fuse from 'fuse.js';
 
@@ -205,6 +204,7 @@ export default function App() {
   const [adminCode, setAdminCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [voteError, setVoteError] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // View und Query für Suche
   const [searchView, setSearchView] = useState<"search" | null>(null);
   const [query, setQuery] = useState('');
@@ -559,13 +559,60 @@ export default function App() {
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
         <div className="auth-bar">
+          {/* Wenn man eingeloggt ist: logout und einstellungen*/}
           <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
           <button className='logout-button' onClick={logout}>Logout</button>
+          <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
+            <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+            </svg>
+          </button>
         </div>
       ) : (
         <div className="auth-bar">
+        {/* Wenn man nicht eingeloggt ist: login und register */}
           <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
           <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+        </div>
+      )}
+
+      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen */}
+      {settingsOpen && (
+        <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
+          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-pane-header">
+              <h2 id="settings-title">Einstellungen</h2>
+              <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
+                X
+              </button>
+            </div>
+
+            <div className="settings-options">
+              <label className="settings-option">
+                <span>
+                  <strong>Benachrichtigungen</strong>
+                  <small>Platzhalter</small>
+                </span>
+                <input type="checkbox" />
+              </label>
+
+              <label className="settings-option">
+                <span>
+                  <strong>Kompakte Ansicht</strong>
+                  <small>Platzhalter</small>
+                </span>
+                <input type="checkbox" />
+              </label>
+
+              <label className="settings-field">
+                <span>Sprache</span>
+                <select defaultValue="de">
+                  <option value="de">Deutsch</option>
+                  <option value="en">Englisch</option>
+                </select>
+              </label>
+            </div>
+          </section>
         </div>
       )}
 

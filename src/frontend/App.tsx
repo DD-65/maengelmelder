@@ -151,7 +151,11 @@ export default function App() {
   ];
   const possibleFilterValues: Record<string, string[]> = {
     Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
-    Ort: Array.from(new Set(issueList.map(issue => issue.location).filter((x): x is string => Boolean(x)))), // Design-Entscheidung: Filter nur mit Werten befuellen die auch tatsaechlich in den Issues vorkommen
+    Ort: Array.from(new Set(issueList.flatMap(issue => {
+      if (!issue.location) return [];
+      const building = issue.location.split(/[-\s/\\._]+/)[0];
+      return [building, issue.location]; // Returns both "46" and "46-210"
+    }))).sort(),
     User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => Boolean(x)))),
     Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => Boolean(x)))),
   };
@@ -324,7 +328,7 @@ export default function App() {
   function issueMatchesCurrentFilter(issue: Issue) {
     if (!currentFilter || !currentFilterValue) return true;
     if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
-    if (currentFilter === "Ort") return issue.location === currentFilterValue;
+    if (currentFilter === "Ort") return issue.location?.startsWith(currentFilterValue);
     if (currentFilter === "User") return issue.user_email === currentFilterValue;
     if (currentFilter === "Status") return issue.status === currentFilterValue;
     return true;
@@ -867,7 +871,7 @@ export default function App() {
                     iconAnchor: [16, 16]
                   });
 
-                  return (<Marker key={building} position={coords} icon={countIcon}/>);
+                  return (<Marker key={building} position={coords} icon={countIcon} eventHandlers={{click: () => {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
                 });
               })()}
             </MapContainer>

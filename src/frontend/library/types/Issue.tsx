@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 export type Issue = {
   id?: number;
   title: string;
@@ -15,8 +13,4 @@ export type Issue = {
   thumbnail_url?: string | null;
 }
 
-// muss leider anders geschrieben werden, weil sonst useState wieder nicht geht
-export function useIssueList() {
-    const [issueList, setIssueList] = useState<Issue[]>([]);
-    return{issueList, setIssueList};
-}
+

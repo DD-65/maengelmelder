@@ -3,18 +3,18 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import  {rooms, buildingCoordinates}  from './library/constants/roomsnbuildings';
+import {rooms}  from './library/constants/rooms';
+import {buildingCoordinates} from './library/constants/buildingCoordinates';
 //import { renderIssueCard } from './library/ui/renderIssueCard';
 import {randomRptuLogo} from './library/ui/rptulogo';
 
 //suche importieren
-import { useSearchStuff } from './library/ui/search';
+import { useSearch } from './library/ui/search';
 
 
 // Define all issue components
-import {Issue, useIssueList} from './library/hooks/issue';
-
-//const {issueList, setIssueList} = useIssueList(); //falsch, darf nur in Funktion aufgerufen werden, weil der hook(so heißt das) sonst einen fehler schmeißt
+import {Issue} from './library/types/Issue';
+import { useIssueList } from './library/hooks/useIssueList';
 
 export default function App() {
   // Input

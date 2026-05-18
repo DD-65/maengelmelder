@@ -267,7 +267,7 @@ export default function App() {
     minMatchCharLength: 3,
     keys: [
       { name: "location", weight: 0.4 },
-      //{ name: "title", weight: 0.25 }, titel auskommentiert
+      { name: "title", weight: 0.25 }, 
       { name: "description", weight: 0.25 },
       { name: "user_email", weight: 0.1 },
     ],
@@ -282,11 +282,11 @@ export default function App() {
   function issueMatchesShortSearch(issue: Issue) {
     const searchableValues = [
       issue.location,
-      //issue.title, // titel auskommentiert
+      issue.title, 
       issue.description,
       issue.user_email,
-      issue.kategorie,
-      issue.status,
+      //issue.kategorie,
+      //issue.status,
     ];
     const matchesText = searchableValues.some(value =>
       value?.toLowerCase().includes(normalizedQuery)

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Fuse from 'fuse.js';
 import { useIssueList, Issue } from '../definitions/issue';
 
 
 export function useSearchStuff() {
-    const {issueList, setIssueList} = useIssueList();
+    const {issueList} = useIssueList();
 
     const [searchView, setSearchView] = useState<"search" | null>(null);
     const [query, setQuery] = useState('');

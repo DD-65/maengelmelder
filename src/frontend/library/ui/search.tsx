@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import Fuse from 'fuse.js';
 import { Issue } from '../types/Issue';
-import { useIssueList } from '../hooks/useIssueList';
 
 
 
-export function useSearch(issues: Issue[]) {
-    const {issueList} = useIssueList();
+export function useSearch(issueList: Issue[]) {
 
     const [searchView, setSearchView] = useState<"search" | null>(null);
     const [query, setQuery] = useState('');

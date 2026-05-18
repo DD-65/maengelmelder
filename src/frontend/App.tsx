@@ -33,9 +33,9 @@ export default function App() {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
 
   // Toggle Image Expansion
-  const toggleImage = (id: number) => {
-    setExpandedImageId(prevId => (prevId === id ? null : id));
-  };
+  //const toggleImage = (id: number) => {                       --> liegt in renderIssueCard.tsx
+  //  setExpandedImageId(prevId => (prevId === id ? null : id));
+  //};
 
   // State of Viewing (List or Map)
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
@@ -233,7 +233,7 @@ export default function App() {
   const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
   
 
-  const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearchStuff();
+  const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearch(issueList);
   /* //    Anfang Suche
   // View und Query für Suche
   const [searchView, setSearchView] = useState<"search" | null>(null);

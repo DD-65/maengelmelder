@@ -1,18 +1,26 @@
-import { useEffect, useState } from 'react';
-import {Issue, useIssueList} from '../types/Issue';
+import { useState } from 'react';
+import { Issue } from '../types/Issue';
 // const{issueList, setIssueList} = useIssueList(); //wenn dann nicht hier reinschreiben
+interface IssueCardProperties {
+  issue: Issue;
+  userRole: string;
+  userId: number | null;
+  onDelete: (id: number) => void;
+  onUpvote: (id: number) => void;
+  onUpdateStatus: (id: number, status: string) => void;
+}
 
-// State of Image Expansion
+export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdateStatus }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
 
-  
-
-export function renderIssueCard(issue: Issue, index: number) {
-    const hasVoted = Boolean(issue.has_voted);
+  function toggleImage(id: number) {
+    setExpandedImageId(prevId => (prevId === id ? null : id));
+  }
+  const hasVoted = Boolean(issue.has_voted);
 
     return (
       // makes the whole issue card clickable, but only if there is an image to show
-      <li className="card issue-card" key={issue.id || index} onClick={() => {if (issue.id && issue.image_url) toggleImage(issue.id)}}>
+      <li className="card issue-card" key={issue.id} onClick={() => {if (issue.id && issue.image_url) toggleImage(issue.id)}}>
         {/* Nutzername (email) */}
         <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
 
@@ -35,7 +43,7 @@ export function renderIssueCard(issue: Issue, index: number) {
               value={issue.status}
               /* Stops card from expanding when dropdown menu is clicked */
               onClick={(e) => e.stopPropagation()}
-              onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
+              onChange={(e) => issue.id && onUpdateStatus(issue.id, e.target.value)}
             >
               <option value="Gemeldet">Gemeldet</option>
               <option value="Akzeptiert">Akzeptiert</option>
@@ -73,12 +81,12 @@ export function renderIssueCard(issue: Issue, index: number) {
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
-            <button onClick={(e) => {e.stopPropagation(); if(issue.id) deleteIssue(issue.id);}}> Meldung Löschen</button>
+            <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}> Meldung Löschen</button>
             /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
           )}
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
           {userId ? (
-            <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={(e) => { e.stopPropagation(); if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
+            <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={(e) => { e.stopPropagation(); if (issue.id) onUpvote(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
           ) : (
             <button disabled onClick={(e) => e.stopPropagation()}>Like</button>
           )}

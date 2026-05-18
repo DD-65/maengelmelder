@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Fuse from 'fuse.js';
-import { useIssueList, Issue } from '../definitions/issue';
+import { useIssueList, Issue } from '../hooks/issue';
 
 
 export function useSearchStuff() {

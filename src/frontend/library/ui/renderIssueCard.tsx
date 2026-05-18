@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {Issue, useIssueList} from '../definitions/issue';
+import {Issue, useIssueList} from '../hooks/issue';
 // const{issueList, setIssueList} = useIssueList(); //wenn dann nicht hier reinschreiben
 
 // State of Image Expansion

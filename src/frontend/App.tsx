@@ -12,7 +12,7 @@ import { useSearchStuff } from './library/ui/search';
 
 
 // Define all issue components
-import {Issue, useIssueList} from './library/definitions/issue';
+import {Issue, useIssueList} from './library/hooks/issue';
 
 //const {issueList, setIssueList} = useIssueList(); //falsch, darf nur in Funktion aufgerufen werden, weil der hook(so heißt das) sonst einen fehler schmeißt
 

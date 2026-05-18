@@ -1,19 +1,7 @@
 import { useEffect, useState } from 'react';
-// Define all issue components
-type Issue = {
-  id?: number;
-  title: string;
-  description: string | null;
-  location: string | null;
-  status?: string;
-  created_at?: string;
-  votes?: number;
-  user_email?: string | null;
-  has_voted?: number | boolean;
-  kategorie?: string | null;
-  image_url?: string | null;
-  thumbnail_url?: string | null;
-}
+import {Issue, useIssueList} from '../definitions/issue';
+// const{issueList, setIssueList} = useIssueList(); //wenn dann nicht hier reinschreiben
+
 // State of Image Expansion
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
 

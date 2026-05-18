@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
-
 const rptuLogoUrls = [
   '/RPTU-Brand/U_Farben/RPTU U.png',
   '/RPTU-Brand/U_Farben/RPTU U2.png',

@@ -4,25 +4,10 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import  rooms  from './library/constants/rooms';
-//import { renderIssueCard } from './library/ui/renderIssueCard';
+import { renderIssueCard } from './library/ui/renderIssueCard';
 import {randomRptuLogo} from './library/ui/rptulogo';
+import { buildingCoordinates } from './library/constants/buildingCoordinates';
 
-// Dictionary for Building Coordinates 
-const buildingCoordinates: Record<string, [number, number]> = {
-  "01": [49.426959, 7.759883],
-  "11": [49.425347, 7.754143],
-  "13": [49.425128, 7.755527],
-  "24": [49.425654, 7.756326],
-  "32": [49.424915, 7.751632],
-  "36": [49.424566, 7.753381],
-  "42": [49.424203, 7.750254],
-  "44": [49.424025, 7.751552],
-  "46": [49.423976, 7.752662],
-  "48": [49.423533, 7.753864],
-  "52": [49.423674, 7.755943],
-  "56": [49.422612, 7.755457],
-  "57": [49.422092, 7.756112]
-};
 
 
 

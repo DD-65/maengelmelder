@@ -13,4 +13,4 @@ const rooms = [
   "56-230", "56-232",
   "57-315", "57-508"
 ];
-export const rooms;
+export default rooms;

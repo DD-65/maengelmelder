@@ -55,5 +55,5 @@ export function useSearch(issueList: Issue[]) {
         : fuse.search(normalizedQuery).map(result => result.item);
     const issuesToDisplay = searchView ? searchIssueList : issueList;
 
-    return {issuesToDisplay, searchView, setSearchView, query, setQuery};
+    return {issuesToDisplay, searchView, setSearchView, query, setQuery };
 }

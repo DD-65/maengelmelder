@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-/* import Fuse from 'fuse.js'; */
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Konstanten und random U's importieren
 import {rooms}  from './library/constants/rooms';
 import {buildingCoordinates} from './library/constants/buildingCoordinates';
-//import { renderIssueCard } from './library/ui/renderIssueCard';
 import {randomRptuLogo} from './library/ui/rptulogo';
 
-//suche importieren
+// suche importieren
 import { useSearch } from './library/ui/search';
+import { Searchbar } from './library/ui/searchbar';
 
-
-// Define all issue components
+// issue components importieren
 import {Issue} from './library/types/Issue';
 import { useIssueList } from './library/hooks/useIssueList';
 import { IssueCard } from './library/ui/renderIssueCard';
@@ -31,7 +31,7 @@ export default function App() {
   //const [issueList, setIssueList] = useState<Issue[]>([]);
 
   // State of Image Expansion
-  const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
+  //const [expandedImageId, setExpandedImageId] = useState<number | null>(null); ->> same as below
 
   // Toggle Image Expansion
   //const toggleImage = (id: number) => {                       --> liegt in renderIssueCard.tsx
@@ -233,60 +233,9 @@ export default function App() {
   const [verificationMessage, setVerificationMessage] = useState("");
   const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
   
-
+  //  Suche mit useSearch
   const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearch(issueList);
-  /* //    Anfang Suche
-  // View und Query für Suche
-  const [searchView, setSearchView] = useState<"search" | null>(null);
-  const [query, setQuery] = useState('');
-  // Fuse erstellen, für Suche benötigt
-  const fuse = new Fuse(issueList, {
-    includeScore: true,
-    ignoreLocation: true,
-    threshold: 0.3,
-    minMatchCharLength: 3,
-    keys: [
-      { name: "location", weight: 0.4 },
-      { name: "title", weight: 0.25 }, 
-      { name: "description", weight: 0.25 },
-      { name: "user_email", weight: 0.1 },
-    ],
-  });
-  const normalizedQuery = query.trim().toLowerCase();
-  const normalizedQueryForNumberSearch = normalizedQuery.replace(/\D/g, "");
-
-  function normalizeNumberSearchValue(value?: string | null) {
-    return value?.toLowerCase().replace(/\D/g, "") ?? "";
-  }
-
-  function issueMatchesShortSearch(issue: Issue) {
-    const searchableValues = [
-      issue.location,
-      issue.title, 
-      issue.description,
-      issue.user_email,
-      //issue.kategorie,
-      //issue.status,
-    ];
-    const matchesText = searchableValues.some(value =>
-      value?.toLowerCase().includes(normalizedQuery)
-    );
-    const matchesNumberPattern = Boolean(normalizedQueryForNumberSearch) && searchableValues.some(value =>
-      normalizeNumberSearchValue(value).includes(normalizedQueryForNumberSearch)
-    );
-
-    return matchesText || matchesNumberPattern;
-  }
-
-  const searchIssueList = !normalizedQuery
-    ? issueList
-    : normalizedQuery.length < 3
-      ? issueList.filter(issueMatchesShortSearch)
-      // Issues mit fuzzy search mit score belegen 0 ist exacte übereinstimmung 1 das Gegenteil
-      : fuse.search(normalizedQuery).map(result => result.item);
-  const issuesToDisplay = searchView ? searchIssueList : issueList;
-
-  //  Ende suche */
+  
 
   function issueMatchesCurrentFilter(issue: Issue) {
     if (!currentFilter || !currentFilterValue) return true;
@@ -553,86 +502,6 @@ export default function App() {
     loadIssues();
   };
   
-  /* function renderIssueCard(issue: Issue, index: number) {
-      const hasVoted = Boolean(issue.has_voted);
-  
-      return (
-        // makes the whole issue card clickable, but only if there is an image to show
-        <li className="card issue-card" key={issue.id || index} onClick={() => {if (issue.id && issue.image_url) (issue.id)}}>
-          {/* Nutzername (email) *//*}
-          <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
-  
-          {/* ID des Mangels *//*}
-          <div className="issue-index">{issue.id}</div>
-  
-          {/* Titel *//*}
-          <h3 className="issue-title">{issue.title}</h3>
-  
-          {/* Status Anzeige *//*}
-          <div className="status-container">
-            <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
-              {issue.status}
-            </span>
-  
-            {/* Admin-Steuerung fuer den Status *//*}
-            {userRole === "admin" && (
-              <select
-                className="status-select"
-                value={issue.status}
-                /* Stops card from expanding when dropdown menu is clicked *//*
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => issue.id && updateStatus(issue.id, e.target.value)}
-              >
-                <option value="Gemeldet">Gemeldet</option>
-                <option value="Akzeptiert">Akzeptiert</option>
-                <option value="Abgelehnt">Abgelehnt</option>
-                <option value="In Bearbeitung">In Bearbeitung</option>
-                <option value="Behoben">Behoben</option>
-              </select>
-            )}
-          </div>
-  
-          {/* Standort des Mangels *//*}
-          <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
-  
-          {/* Beschreibung *//*}
-          <p className="issue-description">{issue.description}</p>
-  
-          {/* Image *//*}
-          {(issue.thumbnail_url || issue.image_url) && (
-            <div style={{ marginTop: '10px' }}>
-              {/* Image hint if not expanded *//*}
-              {expandedImageId !== issue.id && (
-                <p style={{ fontSize: '13px', color: 'var(--accent)', fontWeight: 'bold', marginTop: '8px' }}>Tippen um das Bild zu sehen</p>
-              )}
-              {/* Loading of Image if expanded *//*}
-              {expandedImageId === issue.id && (
-                <img src={issue.thumbnail_url || issue.image_url!} alt={issue.title} style={{width: "100%", height: "350px", objectFit: "contain", backgroundColor: "var(--surface-strong)", display: "block", borderRadius: "8px", marginTop: "10px", border: "1px solid var(--border)", margin: "12 px auto 0"}}/>
-              )}
-            </div>
-          )}
-  
-          {/* Container fuer Voting-zeug *//*}
-          <div className="issue-actions">
-            <p>Likes: {issue.votes || 0}</p>
-            <p>Kategorie: {issue.kategorie || '-'}</p>
-  
-            {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins *//*}
-            {userRole === "admin" && (
-              <button onClick={(e) => {e.stopPropagation(); if(issue.id) deleteIssue(issue.id);}}> Meldung Löschen</button>
-              /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. *//*
-            )}
-            {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled *//*}
-            {userId ? (
-              <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={(e) => { e.stopPropagation(); if (issue.id) upvoteIssue(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
-            ) : (
-              <button disabled onClick={(e) => e.stopPropagation()}>Like</button>
-            )}
-          </div>
-        </li>
-      );
-    }*/
-  
   // UI
   return (
     <div className="app-shell" style={
@@ -780,26 +649,15 @@ export default function App() {
         </form>
       )}
 
+
       {/* Suchleiste */}   
-
-
-      <div className="search-bar" >
-          <input
-              type="text"
-              placeholder="Suche..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setSearchView("search")}
-              onBlur={() => {
-                if (query.length === 0) setSearchView(null);
-              }}
-          />
-          {(query.length > 0 || searchView === "search") && (
-            <button className="search-clear-button" aria-label="Suche schließen" onClick={(e) => {e.stopPropagation();setQuery("");setSearchView(null);}}>
-              X
-            </button>
-          )}
-      </div>
+      <Searchbar
+        query ={query}
+        setQuery={setQuery}
+        searchView={searchView}
+        setSearchView={setSearchView}
+        issuesToDisplay={issuesToDisplay}
+      />
       
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}

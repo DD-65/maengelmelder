@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Issue } from '../types/Issue';
-// const{issueList, setIssueList} = useIssueList(); //wenn dann nicht hier reinschreiben
+
 interface IssueCardProperties {
   issue: Issue;
   userRole: string;

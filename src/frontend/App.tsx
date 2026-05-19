@@ -23,6 +23,7 @@ import { useSwiping } from './library/hooks/useSwiping';
 
 // Filter importieren
 import { useFilter } from './library/hooks/useFilter';
+import { useArchiveMode } from './library/hooks/useArchiveMode';
 
 
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
@@ -54,6 +55,10 @@ export default function App() {
 
   // State of Viewing (List or Map)
   const {viewMode, setViewMode} = useViewMode();
+  
+  // Archiv-Modus
+  const {isArchiveMode, setIsArchiveMode} = useArchiveMode();
+
   // Swiping using view mode
   const {handleTouchStart, handleTouchEnd}=useSwiping(setViewMode);
   
@@ -225,11 +230,15 @@ export default function App() {
   }
 
 
-  const loadIssues = () => {
-    fetch('/api/mangel')
+  const loadIssues = (archiv: boolean = false) => {
+    fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)
       .then((res) => res.json())
       .then((data) => setIssueList(data));
   };
+
+  useEffect(() => {
+    loadIssues(isArchiveMode);
+  }, [isArchiveMode]);
 
   // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
@@ -810,8 +819,27 @@ export default function App() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
-        <button onClick={() => setViewMode('list')}>Liste</button>
-        <button onClick={() => setViewMode('map')}>Karte</button>
+        <button 
+          onClick={() => { setViewMode('list'); setIsArchiveMode(false); }} 
+          className={viewMode === 'list' && !isArchiveMode ? 'active' : ''}
+        >
+          Liste
+        </button>
+        <button 
+          onClick={() => { setViewMode('map'); setIsArchiveMode(false); }} 
+          className={viewMode === 'map' && !isArchiveMode ? 'active' : ''}
+        >
+          Karte
+        </button>
+        {userId && (
+          <button 
+            onClick={() => { setViewMode('list'); setIsArchiveMode(true); }}
+            className={isArchiveMode ? 'active' : ''}
+            style={{ backgroundColor: isArchiveMode ? 'var(--accent-2)' : '' }}
+          >
+            Archiv
+          </button>
+        )}
       </div>
 
       <div className='list-container'>

@@ -126,6 +126,30 @@ function canSendVerificationMail(userId: number) {
 app.get("/api/mangel", (req, res) => {
   try {
     const userId = req.session.userId ?? null;
+    const isArchive = req.query.archiv === "true";
+
+    let role = "user";
+    if (userId) {
+      const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+      if (user) role = user.role;
+    }
+
+    let whereClause = "";
+    const params: any[] = [userId, userId];
+
+    if (isArchive) {
+      if (role === "admin") {
+        whereClause = "WHERE maengel.status = 'Behoben'";
+      } else if (userId) {
+        whereClause = "WHERE maengel.status = 'Behoben' AND maengel.user_id = ?";
+        params.push(userId);
+      } else {
+        return res.json([]);
+      }
+    } else {
+      whereClause = "WHERE maengel.status != 'Behoben' OR maengel.status IS NULL";
+    }
+
     // statement um mängel zu laden, join auf der votes tabelle um die votes zu laden / zu prüfen ob nutzer schon gevotet haben
     const stmt = db.prepare(`
       SELECT
@@ -151,9 +175,10 @@ app.get("/api/mangel", (req, res) => {
         END AS has_voted
       FROM maengel
       LEFT JOIN users ON maengel.user_id = users.id
+      ${whereClause}
       ORDER BY maengel.votes DESC, maengel.created_at DESC
     `);
-    const maengel = stmt.all(userId, userId);
+    const maengel = stmt.all(...params);
     res.json(maengel);
   } catch (error) {
     console.error(error);

@@ -17,6 +17,11 @@ import {Issue} from './library/types/Issue';
 import { useIssueList } from './library/hooks/useIssueList';
 import { IssueCard } from './library/ui/renderIssueCard';
 
+// swiping & teile von Map
+import { useViewMode } from './library/hooks/useViewMode';
+import { useSwiping } from './library/hooks/useSwiping';
+
+
 export default function App() {
   // Input
   const [title, setTitle] = useState('');
@@ -39,52 +44,10 @@ export default function App() {
   //};
 
   // State of Viewing (List or Map)
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-
-  // Swiping logic
-  const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
+  const {viewMode, setViewMode} = useViewMode();
+  // Swiping using view mode
+  const {handleTouchStart, handleTouchEnd}=useSwiping(setViewMode);
   
-  // Start of swiping Handler
-  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-
-    if (target.closest('.leaflet-container')) return; // Ignore touches on the map
-    
-    if ('touches' in e) {
-      setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); // Either per Touch
-    } else {
-      setTouchStart({ x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY }); // Or per Mouse
-    }
-  };
-
-  // End of swiping Handler
-  const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!touchStart) return;
-
-    let touchEndX: number = 0, touchEndY: number = 0;
-
-    if ('changedTouches' in e) {
-      touchEndX = e.changedTouches[0].clientX;
-      touchEndY = e.changedTouches[0].clientY;
-    } else {
-      touchEndX = (e as React.MouseEvent).clientX;
-      touchEndY = (e as React.MouseEvent).clientY;
-    }
-
-    const deltaX = touchEndX - touchStart.x;
-    const deltaY = touchEndY - touchStart.y;  
-
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) { // Horizontal swipe with some vertical tolerance
-      if (deltaX > 0) {
-        setViewMode('list'); // Swipe right to go to list
-      } else {
-        setViewMode('map'); // Swipe left to go to map
-      }
-    }
-
-    setTouchStart(null); // Reset touch start
-  };
-
   //Bool für Filter "nur eigene Mängel anzeigen"
   const [filterOnlyOwnIssues, setFilterOnlyOwnIssues] = useState(false);
 

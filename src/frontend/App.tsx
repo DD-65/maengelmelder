@@ -15,6 +15,7 @@ import { useSearch } from './library/ui/search';
 // Define all issue components
 import {Issue} from './library/types/Issue';
 import { useIssueList } from './library/hooks/useIssueList';
+import { IssueCard } from './library/ui/renderIssueCard';
 
 export default function App() {
   // Input
@@ -557,7 +558,7 @@ export default function App() {
   
       return (
         // makes the whole issue card clickable, but only if there is an image to show
-        <li className="card issue-card" key={issue.id || index} onClick={() => {if (issue.id && issue.image_url) toggleImage(issue.id)}}>
+        <li className="card issue-card" key={issue.id || index} onClick={() => {if (issue.id && issue.image_url) (issue.id)}}>
           {/* Nutzername (email) */}
           <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
   
@@ -911,7 +912,17 @@ export default function App() {
                 .filter(issueMatchesCurrentFilter)
                 .filter(issueMatchesOnlyOwnFilter)
                 .sort(currentComparator)
-                .map(renderIssueCard)}
+                .map((issue, index) => (
+                  <IssueCard
+                    key={issue.id || index}
+                    issue={issue}
+                    userRole={userRole}
+                    userId={userId}
+                    onDelete={deleteIssue}
+                    onUpvote={upvoteIssue}
+                    onUpdateStatus={updateStatus}
+                  />
+                ))}
             </ul>
           </div>
         ) : (

@@ -49,11 +49,11 @@ db.exec(`
   ON email_verification_tokens(user_id)
 `);
 
-// Benutzer-Tabelle erstellen (falls sie noch nicht existiert)
+// kategorien Tabelle
 db.exec(`
   CREATE TABLE IF NOT EXISTS kategorien (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    kategorie TEXT NOT NULL
+    kategorieelem TEXT UNIQUE DEFAULT NULL
   )
 `);
 
@@ -66,10 +66,11 @@ db.exec(`
     location TEXT DEFAULT NULL CHECK(LENGTH(location) <= 255 OR location IS NULL),     
     description TEXT DEFAULT NULL CHECK(LENGTH(description) <= 255 OR description IS NULL),
     status TEXT NOT NULL DEFAULT 'Gemeldet' CHECK (status IN ('Gemeldet', 'Akzeptiert', 'Abgelehnt', 'In Bearbeitung', 'Behoben')),
-    kategorie TEXT DEFAULT NULL CHECK (kategorie IS NULL OR kategorie = '' OR kategorie IN ('Steckdose', 'Schlagloch', 'WLAN', 'Mobiliar', 'Andere')),
+    kategorie TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (kategorie) REFERENCES kategorien(kategorieelem) ON DELETE SET NULL
   )
 `);
 
@@ -82,7 +83,13 @@ try {
 
 // Migration: kategorie Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
-  db.exec("ALTER TABLE maengel ADD COLUMN kategorie TEXT DEFAULT NULL CHECK (kategorie IS NULL OR kategorie = '' OR kategorie IN ('Steckdose', 'Schlagloch', 'WLAN', 'Mobiliar', 'Andere'))");
+  db.exec("ALTER TABLE maengel ADD COLUMN kategorie TEXT");
+} catch {
+  // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
+}
+// Migration: kategorie Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
+try {
+  db.exec("FOREIGN KEY (kategorie) REFERENCES kategorien(kategorieelem) ON DELETE SET NULL");
 } catch {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
@@ -112,6 +119,8 @@ db.exec(`
     FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
   )
 `);
+
+db.exec("INSERT INTO kategorien (kategorieelem) VALUES ('Steckdose'), ('Schlagloch'), ('WLAN'), ('Mobiliar'), ('Andere')");
 
 
 export default db;

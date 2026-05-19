@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
-const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar"];
+const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
 const emailTokenTtlMinutes = Number(process.env.EMAIL_TOKEN_TTL_MINUTES || 60);
 const emailVerificationResendDelayMs = 60 * 1000;
 // Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.

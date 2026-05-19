@@ -21,6 +21,15 @@ import { IssueCard } from './library/ui/renderIssueCard';
 import { useViewMode } from './library/hooks/useViewMode';
 import { useSwiping } from './library/hooks/useSwiping';
 
+// Filter importieren
+import { useFilter } from './library/hooks/useFilter';
+
+
+import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
+//    Vielleicht ist es aber später nützlich, sobald wir irgendeinen Teil der Verifikation auslagern
+
+
+import { Reportunfall } from './library/ui/rptulogoui'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 
 export default function App() {
   // Input
@@ -52,16 +61,17 @@ export default function App() {
   const [filterOnlyOwnIssues, setFilterOnlyOwnIssues] = useState(false);
 
 
-  // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
-  const [currentFilter, setCurrentFilter] = useState("");
-  const [currentFilterValue, setCurrentFilterValue] = useState("");
-  const possibleFilters = [
-    "Kategorie",
-    "Ort",
-    //"User", war nicht gefordert, dann eben nicht.
-    "Status",
+  // // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
+  const{currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters}=useFilter();
+  // const [currentFilter, setCurrentFilter] = useState("");
+  // const [currentFilterValue, setCurrentFilterValue] = useState("");
+  // const possibleFilters = [
+  //   "Kategorie",
+  //   "Ort",
+  //   //"User", war nicht gefordert, dann eben nicht.
+  //   "Status",
 
-  ];
+  // ];
   const possibleFilterValues: Record<string, string[]> = {
     Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
     Ort: Array.from(new Set(issueList.flatMap(issue => {
@@ -193,9 +203,9 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [settingsError, setSettingsError] = useState("");
-  const [verificationMessage, setVerificationMessage] = useState("");
-  const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
-  
+  // const [verificationMessage, setVerificationMessage] = useState("");
+  // const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
+  const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
   //  Suche mit useSearch
   const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearch(issueList);
   
@@ -479,12 +489,13 @@ export default function App() {
       onMouseUp={handleTouchEnd}
       >
 
-      <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1>
+      <Reportunfall/> {/* // ersetzt die Überschrift, ist vll. einfacher zu lesen und kürzer, wenn wir die kommentare mal löschen */}
+      {/* <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1> */}
       {verificationMessage && (
         <p className={`verification-notice verification-${verificationMessageType}`}>
           {verificationMessage}
         </p>
-      )}
+      )} 
       
 
 
@@ -509,7 +520,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen */}
+      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
+          Das sieht sehr ausschneidbar aus*/}
       {settingsOpen && (
         <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
           <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
@@ -613,7 +625,7 @@ export default function App() {
       )}
 
 
-      {/* Suchleiste */}   
+      {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}   
       <Searchbar
         query ={query}
         setQuery={setQuery}
@@ -655,6 +667,7 @@ export default function App() {
             <option value="Schlagloch">Schlagloch</option>
             <option value="WLAN">WLAN</option>
             <option value="Mobiliar">Mobiliar</option>
+            <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
           </select>
           <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
           <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />

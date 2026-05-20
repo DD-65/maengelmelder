@@ -28,13 +28,16 @@ import { useFilter } from './library/hooks/useFilter';
 import { useArchiveMode } from './library/hooks/useArchiveMode';
 // Sortierung importieren
 import { useSorting } from './library/hooks/useSorting';
+// regristrierung login importieren
+import { useRegistrationLogin} from './library/hooks/useRegistrationLogin';
 
 
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
 //    Vielleicht ist es aber später nützlich, sobald wir irgendeinen Teil der Verifikation auslagern
 
 
-import { Reportunfall } from './library/ui/rptulogoui'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
+import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
+
 
 export default function App() {
   // Input
@@ -199,21 +202,29 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
 
 
   // Views fuer Registrierung und Login
-  const [userId, setUserId] = useState<number | null>(null);
-  const [userEmail, setUserEmail] = useState("");
-  const [userRole, setUserRole] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [authView, setAuthView] = useState<"login" | "register" | null>(null);
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
-  const [adminCode, setAdminCode] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
-  const [voteError, setVoteError] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsMessage, setSettingsMessage] = useState("");
-  const [settingsError, setSettingsError] = useState("");
+  const{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
+        authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
+        registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, authError, setAuthError, authMessage, setAuthMessage,
+        voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
+    }=useRegistrationLogin();
+
+// 
+  
+  // const [userId, setUserId] = useState<number | null>(null);
+  // const [userEmail, setUserEmail] = useState("");
+  // const [userRole, setUserRole] = useState("");
+  // const [emailVerified, setEmailVerified] = useState(false);
+  // const [authView, setAuthView] = useState<"login" | "register" | null>(null);
+  // const [authEmail, setAuthEmail] = useState("");
+  // const [authPassword, setAuthPassword] = useState("");
+  // const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
+  // const [adminCode, setAdminCode] = useState("");
+  // const [authError, setAuthError] = useState("");
+  // const [authMessage, setAuthMessage] = useState("");
+  // const [voteError, setVoteError] = useState("");
+  // const [settingsOpen, setSettingsOpen] = useState(false);
+  // const [settingsMessage, setSettingsMessage] = useState("");
+  // const [settingsError, setSettingsError] = useState("");
   // const [verificationMessage, setVerificationMessage] = useState("");
   // const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();

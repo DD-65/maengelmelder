@@ -26,6 +26,8 @@ import { useSwiping } from './library/hooks/useSwiping';
 // Filter importieren
 import { useFilter } from './library/hooks/useFilter';
 import { useArchiveMode } from './library/hooks/useArchiveMode';
+// Sortierung importieren
+import { useSorting } from './library/hooks/useSorting';
 
 
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
@@ -110,18 +112,19 @@ export default function App() {
   }
 
 // Variablen und Funktionen für Sortierung
-  const [currentSorting, setCurrentSorting] = useState("");
-  const [currentSortingMode, setCurrentSortingMode] = useState("");
-  const possibleSortings = [
-    "Votes",
-    "Erstellungsdatum",
-    "Status"
-  ];
-  const possibleSortingModes: Record<string, string[]> = {
-    Votes: ["Aufsteigend", "Absteigend"],
-    Erstellungsdatum: ["Neueste zuerst", "Älteste zuerst"],
-    Status: ["Aufsteigend", "Absteigend"]
-  };
+const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMode, possibleSortings, possibleSortingModes}=useSorting();
+  // const [currentSorting, setCurrentSorting] = useState("");
+  // const [currentSortingMode, setCurrentSortingMode] = useState("");
+  // const possibleSortings = [
+  //   "Votes",
+  //   "Erstellungsdatum",
+  //   "Status"
+  // ];
+  // const possibleSortingModes: Record<string, string[]> = {
+  //   Votes: ["Aufsteigend", "Absteigend"],
+  //   Erstellungsdatum: ["Neueste zuerst", "Älteste zuerst"],
+  //   Status: ["Aufsteigend", "Absteigend"]
+  // };
 
     // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
   function chooseSortingFromPossibleSortings(chosenSorting: string) {

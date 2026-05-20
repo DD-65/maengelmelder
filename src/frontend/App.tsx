@@ -8,6 +8,8 @@ import {rooms}  from './library/constants/rooms';
 import {buildingCoordinates} from './library/constants/buildingCoordinates';
 import {randomRptuLogo} from './library/ui/rptulogo';
 
+// input importieren
+import { useInput } from './library/hooks/useInput';
 // suche importieren
 import { useSearch } from './library/ui/search';
 import { Searchbar } from './library/ui/searchbar';
@@ -34,11 +36,12 @@ import { Reportunfall } from './library/ui/rptulogoui'; // for Fun eine Zeile du
 
 export default function App() {
   // Input
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [kategorie, setKategorie] = useState('');
-  const [image, setImage] = useState<File | null>(null);
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage}=useInput();
+  // const [title, setTitle] = useState('');
+  // const [description, setDescription] = useState('');
+  // const [location, setLocation] = useState('');
+  // const [kategorie, setKategorie] = useState('');
+  // const [image, setImage] = useState<File | null>(null);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
 
   // List of issues

@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 // Konstanten und random U's importieren
 import {rooms}  from './library/constants/rooms';
 import {buildingCoordinates} from './library/constants/buildingCoordinates';
-import {randomRptuLogo} from './library/ui/rptulogo';
+import {randomRptuLogo} from './library/utils/rptulogo';
 
 // input importieren
 import { useInput } from './library/hooks/useInput';

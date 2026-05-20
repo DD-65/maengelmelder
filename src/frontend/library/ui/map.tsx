@@ -5,6 +5,7 @@ import { useViewMode } from "../hooks/useViewMode";
 
 
 // hier müssen die Filter importiert werden, außerdem müssen die erst aus App raus gemacht werden.
+// test commit
 interface MapProperties{
     issuesToDisplay: Issue[];
     //issueMatches ...

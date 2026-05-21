@@ -120,7 +120,11 @@ db.exec(`
   )
 `);
 
-db.exec("INSERT INTO kategorien (kategorieelem) VALUES ('Steckdose'), ('Schlagloch'), ('WLAN'), ('Mobiliar'), ('Andere')");
+try {
+  db.exec("INSERT INTO kategorien (kategorieelem) VALUES ('Steckdose'), ('Schlagloch'), ('WLAN'), ('Mobiliar'), ('Andere')");
+} catch {
+  // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
+}
 
 
 export default db;

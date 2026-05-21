@@ -38,6 +38,8 @@ import { useVerificationMessage } from './library/hooks/useVerificationMessage';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 
+// import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
+
 
 export default function App() {
   // Input
@@ -246,7 +248,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
     return true;
   }
 
-
+  //const{loadIssues}=useLoadIssues();
   const loadIssues = (archiv: boolean = false) => {
     fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)
       .then((res) => res.json())
@@ -515,8 +517,8 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
       onMouseUp={handleTouchEnd}
       >
 
-      <Reportunfall/> {/* // ersetzt die Überschrift, ist vll. einfacher zu lesen und kürzer, wenn wir die kommentare mal löschen */}
-      {/* <h1><span className='RPTU-Font'>R</span>e<span className='RPTU-Font'>P</span>or<span className='RPTU-Font'>T</span> <span className='RPTU-U'></span> nfall</h1> */}
+      <Reportunfall/> {/* Seitenüberschrift mit random RPTU U */}
+
       {verificationMessage && (
         <p className={`verification-notice verification-${verificationMessageType}`}>
           {verificationMessage}

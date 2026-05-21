@@ -72,137 +72,6 @@ export default function App() {
   // Swiping using view mode
   const {handleTouchStart, handleTouchEnd}=useSwiping(setViewMode);
   
-  //Bool für Filter "nur eigene Mängel anzeigen"
-  const [filterOnlyOwnIssues, setFilterOnlyOwnIssues] = useState(false);
-
-
-  // // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
-  const{currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters}=useFilter();
-  // const [currentFilter, setCurrentFilter] = useState("");
-  // const [currentFilterValue, setCurrentFilterValue] = useState("");
-  // const possibleFilters = [
-  //   "Kategorie",
-  //   "Ort",
-  //   //"User", war nicht gefordert, dann eben nicht.
-  //   "Status",
-
-  // ];
-  const possibleFilterValues: Record<string, string[]> = {
-    Kategorie: Array.from(new Set(issueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
-    Ort: Array.from(new Set(issueList.flatMap(issue => {
-      if (!issue.location) return [];
-      const building = issue.location.split(/[-\s/\\._]+/)[0];
-      return [building, issue.location]; // Returns both "46" and "46-210"
-    }))).sort(),
-    User: Array.from(new Set(issueList.map(issue => issue.user_email).filter((x): x is string => Boolean(x)))),
-    Status: Array.from(new Set(issueList.map(issue => issue.status).filter((x): x is string => Boolean(x)))),
-  };
-
-  // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
-  function chooseFilterFromPossibleFilters(chosenFilter: string) {
-    if (possibleFilters.includes(chosenFilter)) {
-      setCurrentFilter(chosenFilter);
-    } else {
-      setCurrentFilter("");
-    }
-    setCurrentFilterValue("");
-  }
-
-  function chooseFilterValueFromPossibleValues(filter: string, chosenValue: string) {
-    if (possibleFilterValues[filter]?.includes(chosenValue)) {
-      setCurrentFilterValue(chosenValue);
-    } else {
-      setCurrentFilterValue("");
-    }
-  }
-
-// Variablen und Funktionen für Sortierung
-const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMode, possibleSortings, possibleSortingModes}=useSorting();
-  // const [currentSorting, setCurrentSorting] = useState("");
-  // const [currentSortingMode, setCurrentSortingMode] = useState("");
-  // const possibleSortings = [
-  //   "Votes",
-  //   "Erstellungsdatum",
-  //   "Status"
-  // ];
-  // const possibleSortingModes: Record<string, string[]> = {
-  //   Votes: ["Aufsteigend", "Absteigend"],
-  //   Erstellungsdatum: ["Neueste zuerst", "Älteste zuerst"],
-  //   Status: ["Aufsteigend", "Absteigend"]
-  // };
-
-    // dedizierte Funktionen um nur gueltige Filter und Werte setzbar zu machen
-  function chooseSortingFromPossibleSortings(chosenSorting: string) {
-    if (possibleSortings.includes(chosenSorting)) {
-      setCurrentSorting(chosenSorting);
-      setCurrentSortingMode(possibleSortingModes[chosenSorting][0]);
-    } else {
-      setCurrentSorting("");
-      setCurrentSortingMode("");
-    }
-  }
-
-  function chooseSortingModeFromPossibleSortingModes(filter: string, chosenValue: string) {
-    if (possibleSortingModes[filter]?.includes(chosenValue)) {
-      setCurrentSortingMode(chosenValue);
-    } else {
-      setCurrentSortingMode("");
-    }
-  }
-
-  function currentComparator(a: Issue, b: Issue): number {
-    if (!currentSorting || !currentSortingMode) return 0;
-
-    if (currentSorting === "Votes") {
-      const votesA = a.votes || 0;
-      const votesB = b.votes || 0;
-      if(currentSortingMode === "Aufsteigend") {
-        if (votesA - votesB < 0) return -1;
-        if (votesA - votesB > 0) return 1;
-        return 0; 
-      }
-      else {
-        if (votesB - votesA < 0) return -1;
-        if (votesB - votesA > 0) return 1;
-        return 0; 
-      }
-    }
-    
-    if (currentSorting === "Erstellungsdatum") {
-      const dateA = new Date(a.created_at || "");
-      const dateB = new Date(b.created_at || "");
-      if(currentSortingMode === "Neueste zuerst") {
-        if (dateA > dateB) return -1;
-        if (dateA < dateB) return 1;
-        return 0; 
-      }
-      else {
-        if (dateA < dateB) return -1;
-        if (dateA > dateB) return 1;
-        return 0; 
-      }
-    }
-    
-    if (currentSorting === "Status") {
-      const statusOrder = ["Gemeldet", "Akzeptiert", "In Bearbeitung", "Behoben", "Abgelehnt"];
-      const indexA = statusOrder.indexOf(a.status || "");
-      const indexB = statusOrder.indexOf(b.status || "");
-      
-      if(currentSortingMode === "Aufsteigend") {
-        if (indexA - indexB < 0) return -1;
-        if (indexA - indexB > 0) return 1;
-        return 0; 
-      }
-      else {
-        if (indexB - indexA < 0) return -1;
-        if (indexB - indexA > 0) return 1;
-        return 0; 
-      }
-    }
-    return 0;
-  }
-
-
   // Views fuer Registrierung und Login
   const{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
         authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
@@ -210,43 +79,21 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
         voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
     }=useRegistrationLogin();
 
-// 
-  
-  // const [userId, setUserId] = useState<number | null>(null);
-  // const [userEmail, setUserEmail] = useState("");
-  // const [userRole, setUserRole] = useState("");
-  // const [emailVerified, setEmailVerified] = useState(false);
-  // const [authView, setAuthView] = useState<"login" | "register" | null>(null);
-  // const [authEmail, setAuthEmail] = useState("");
-  // const [authPassword, setAuthPassword] = useState("");
-  // const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
-  // const [adminCode, setAdminCode] = useState("");
-  // const [authError, setAuthError] = useState("");
-  // const [authMessage, setAuthMessage] = useState("");
-  // const [voteError, setVoteError] = useState("");
-  // const [settingsOpen, setSettingsOpen] = useState(false);
-  // const [settingsMessage, setSettingsMessage] = useState("");
-  // const [settingsError, setSettingsError] = useState("");
-  // const [verificationMessage, setVerificationMessage] = useState("");
-  // const [verificationMessageType, setVerificationMessageType] = useState<"success" | "error" | "info">("info");
-  const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
+
   //  Suche mit useSearch
   const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearch(issueList);
+  //--> issuesToDisplay dann als input in useFilter
+  //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
+  const{filteredIssues, currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
+  //--> filteredIssues dann als input in useSorting
+  // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
+  const{currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
+  const finalIssueList = sortedIssues; 
+  // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
+// 
+  const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
+
   
-
-  function issueMatchesCurrentFilter(issue: Issue) {
-    if (!currentFilter || !currentFilterValue) return true;
-    if (currentFilter === "Kategorie") return issue.kategorie === currentFilterValue;
-    if (currentFilter === "Ort") return issue.location?.startsWith(currentFilterValue);
-    if (currentFilter === "User") return issue.user_email === currentFilterValue;
-    if (currentFilter === "Status") return issue.status === currentFilterValue;
-    return true;
-  }
-
-  function issueMatchesOnlyOwnFilter(issue: Issue) {
-    if (filterOnlyOwnIssues) return issue.user_email === userEmail;
-    return true;
-  }
 
   //const{loadIssues}=useLoadIssues();
   const loadIssues = (archiv: boolean = false) => {
@@ -399,7 +246,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
     setUserEmail("");
     setUserRole("");
     setEmailVerified(false);
-    setFilterOnlyOwnIssues(false);
+    setFilterOnlyOwn(false);
     loadIssues();
   };
 
@@ -708,7 +555,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
 
       <div className='issue-toolbar'>
         {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-        <select className='issue-filter-select' value={currentFilter} onChange={(event) => chooseFilterFromPossibleFilters(event.target.value)}>
+        <select className='issue-filter-select' value={currentFilter} onChange={(event) => chooseFilter(event.target.value)}>
           <option value="" disabled>Filter wählen</option>
           {possibleFilters.map((filter) => (
             <option key={filter} value={filter}>{filter}</option>
@@ -718,7 +565,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
 
         {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
         {currentFilter ? (
-          <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => chooseFilterValueFromPossibleValues(currentFilter, event.target.value)}>
+          <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}>
             <option value="" disabled>Wert wählen</option>
             {possibleFilterValues[currentFilter]?.map((value) => (
               <option key={value} value={value}>{value}</option>
@@ -727,7 +574,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
         ) : null}
         <div className='divider'></div>
         {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
-        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSortingFromPossibleSortings(event.target.value)} >
+        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSorting(event.target.value)} >
           <option value="" disabled>Sortierung wählen</option>
           {possibleSortings.map((sorting) => (
             <option key={sorting} value={sorting}>{sorting}</option>
@@ -738,7 +585,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
 
         {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
         {currentSorting ? (
-          <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingModeFromPossibleSortingModes(currentSorting, event.target.value)}>
+          <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}>
 
             {possibleSortingModes[currentSorting]?.map((mode) => (
               <option key={mode} value={mode}>
@@ -750,7 +597,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
         ) : null}
         {userId && (
           <div className='issue-filter-only-own'>
-            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwnIssues} onChange={(e) => setFilterOnlyOwnIssues(e.target.checked)} />
+            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
             <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
           </div>
         )}
@@ -789,10 +636,7 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
             {/* List of issues */}
             {voteError && <p className="error-text vote-error">{voteError}</p>}
             <ul className="issue-list">
-              {issuesToDisplay
-                .filter(issueMatchesCurrentFilter)
-                .filter(issueMatchesOnlyOwnFilter)
-                .sort(currentComparator)
+              {finalIssueList
                 .map((issue, index) => (
                   <IssueCard
                     key={issue.id || index}
@@ -814,15 +658,11 @@ const{currentSorting, setCurrentSorting, currentSortingMode, setCurrentSortingMo
 
               {/* Pin Rendering */}
               {(() => {
-                // Same filters as list
-                const filteredIssues = issuesToDisplay
-                  .filter(issueMatchesCurrentFilter)
-                  .filter(issueMatchesOnlyOwnFilter);
 
                 // Issues per Building
                 const buildingIssueCount: Record<string, number> = {};
                 
-                filteredIssues.forEach(issue => {
+                finalIssueList.forEach(issue => {
                   if (issue.location) {
                     // Split the string to only show the building via regex
                     const building = issue.location.split(/[-\s/\\._]+/)[0];

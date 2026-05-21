@@ -89,8 +89,6 @@ export default function App() {
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
 
-  
-
   //const{loadIssues}=useLoadIssues();
   // const loadIssues = (archiv: boolean = false) => {
   //   fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)

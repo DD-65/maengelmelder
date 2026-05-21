@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(basicAuth); //auskommentieren um Basic Auth zu deaktivieren
+app.use(basicAuth); //AUSKOMMENTIEREN UM BASIC AUTH ZU DEAKTIVIEREN
 
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";

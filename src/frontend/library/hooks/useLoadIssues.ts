@@ -1,17 +1,27 @@
 import { Issue } from "../types/Issue";
-import { useIssueList } from "./useIssueList";
+import { useCallback } from "react";
+
 
 /* interface UseLoadIssuesProperties{
     issueList: Issue[]
     setIssueList:React.Dispatch<React.SetStateAction<Issue[]>>
 } */
-export function useLoadIssues(/* setIssueList: UseLoadIssuesProperties */){ 
-    const {setIssueList} = useIssueList();
+export function useLoadIssues(setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>) { 
 
-    const loadIssues = (archiv: boolean = false) => {
+    // issues aus db laden
+    const loadIssues = useCallback((archiv: boolean = false) => {
     fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)
       .then((res) => res.json())
       .then((data) => setIssueList(data));
+    }, [setIssueList]);
+    
+
+    // issues in db löschen
+    const deleteIssue = async (id: number) => {
+    await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
+    loadIssues();
     };
-    return{loadIssues}
-}
+
+    return{loadIssues, deleteIssue}
+
+} 

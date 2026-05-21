@@ -38,12 +38,18 @@ import { useVerificationMessage } from './library/hooks/useVerificationMessage';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 
-// import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
+import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
 
 
 export default function App() {
+  // List of issues
+  const {issueList, setIssueList} = useIssueList(); //so müsste es richtig sein
+  //const [issueList, setIssueList] = useState<Issue[]>([]);
+
+  const{loadIssues, deleteIssue}=useLoadIssues(setIssueList);
+
   // Input
-  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage}=useInput();
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(loadIssues);
   // const [title, setTitle] = useState('');
   // const [description, setDescription] = useState('');
   // const [location, setLocation] = useState('');
@@ -51,17 +57,6 @@ export default function App() {
   // const [image, setImage] = useState<File | null>(null);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
 
-  // List of issues
-  const {issueList, setIssueList} = useIssueList(); //so müsste es richtig sein
-  //const [issueList, setIssueList] = useState<Issue[]>([]);
-
-  // State of Image Expansion
-  // const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
-
-  // Toggle Image Expansion
-  //const toggleImage = (id: number) => {                       --> liegt in renderIssueCard.tsx
-  //  setExpandedImageId(prevId => (prevId === id ? null : id));
-  //};
 
   // State of Viewing (List or Map)
   const {viewMode, setViewMode} = useViewMode();
@@ -82,29 +77,30 @@ export default function App() {
 
   //  Suche mit useSearch
   const{ searchView, query, setSearchView, setQuery, issuesToDisplay }=useSearch(issueList);
+
   //--> issuesToDisplay dann als input in useFilter
   //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
   const{filteredIssues, currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
+
   //--> filteredIssues dann als input in useSorting
   // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
   const{currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
   const finalIssueList = sortedIssues; 
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
-// 
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
 
   
 
   //const{loadIssues}=useLoadIssues();
-  const loadIssues = (archiv: boolean = false) => {
-    fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)
-      .then((res) => res.json())
-      .then((data) => setIssueList(data));
-  };
+  // const loadIssues = (archiv: boolean = false) => {
+  //   fetch(`/api/mangel${archiv ? '?archiv=true' : ''}`)
+  //     .then((res) => res.json())
+  //     .then((data) => setIssueList(data));
+  // };
 
   useEffect(() => {
     loadIssues(isArchiveMode);
-  }, [isArchiveMode]);
+  }, [isArchiveMode, loadIssues]);
 
   // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
@@ -269,51 +265,13 @@ export default function App() {
     setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
   };
 
-  // issues aus db laden
-  useEffect(() => {
-    loadIssues();
-  }, []);
 
-  // Add issue to list
-  const addIssue = async (event: React.SubmitEvent) => {
-    // Stops refreshing
-    event.preventDefault();
+  // // Delete issue
+  // const deleteIssue = async (id: number) => {
+  //   await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
+  //   loadIssues();
+  // };
 
-    // Dont add empty issue to Array
-    if (title === '') return;
-
-    // Combine into new Issue
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("location", location);
-    formData.append("kategorie", kategorie);
-    if (image) {
-      formData.append("image", image);
-    }
-
-    // issue in db speichern und dann neu laden
-    await fetch('/api/mangel', {
-      method: 'POST',
-      body: formData,
-    });
-
-    // Reload aus db
-    loadIssues();
-
-    // Clear Input
-    setTitle('');
-    setDescription('');
-    setLocation('');
-    setKategorie('');
-    setImage(null);
-  }
-
-  // Delete issue
-  const deleteIssue = async (id: number) => {
-    await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
-    loadIssues();
-  };
 
   const upvoteIssue = async (id: number) => {
     setVoteError("");

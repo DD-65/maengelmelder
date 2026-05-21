@@ -13,10 +13,15 @@ import multer from "multer";
 import fs from "fs";
 import sharp from "sharp";
 
+import { basicAuth } from "./middleware/basicAuth.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+app.use(basicAuth); //auskommentieren um Basic Auth zu deaktivieren
+
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
 const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];

@@ -74,6 +74,9 @@ db.exec(`
   )
 `);
 
+// TODO: users Tabelle erweitern um notification_interval (INTEGER, 0=sofort, >0=Tage) und last_summary_email_at (TEXT/ISO-Date)
+// TODO: maybe Tabelle status_changes erstellen für Änderungen -> Hintergrundskript weiß was in die Sammelmail muss
+
 // Migration: status Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
   db.exec("ALTER TABLE maengel ADD COLUMN status TEXT NOT NULL DEFAULT 'Gemeldet' CHECK (status IN ('Gemeldet', 'Akzeptiert', 'Abgelehnt', 'In Bearbeitung', 'Behoben'))");

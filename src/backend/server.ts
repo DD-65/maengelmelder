@@ -15,6 +15,10 @@ import sharp from "sharp";
 
 import { basicAuth } from "./middleware/basicAuth.js";
 
+
+// TODO: Nach DB Update prüfen, ob E-Mail des Users verifiziert ist, ob notification_interval === 0 und nur falls ja dann sendStatusUpdateEmail aufrufen
+// TODO: Hintergrundskript/setInterval implementieren für die Sammelmails
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

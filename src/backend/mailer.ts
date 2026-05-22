@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 
+// TODO: function sendStatusUpdateEmail implementieren, die createTransporter() nutzt 
+
 type VerificationMailInput = {
   to: string;
   verifyUrl: string;

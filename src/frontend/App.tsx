@@ -6,12 +6,12 @@ import { Map } from './library/ui/map';
 // import 'leaflet/dist/leaflet.css';
 
 // Konstanten und random U's importieren
-import {rooms}  from './library/constants/rooms';
+import {rooms}  from './library/constants/rooms';   // unnötig, weil ausgebaut
 import {buildingCoordinates} from './library/constants/buildingCoordinates';
 import {randomRptuLogo} from './library/utils/rptulogo';
 
 // input importieren
-import { useInput } from './library/hooks/useInput';
+import { useInput } from './library/hooks/useInput';    //eigentlich auch unnötig, weil ausgebaut
 // suche importieren
 import { useSearch } from './library/ui/search';
 import { Searchbar } from './library/ui/searchbar';
@@ -52,13 +52,14 @@ export default function App() {
 
   const{loadIssues, deleteIssue}=useLoadIssues(setIssueList);
 
-  // Input
+  // Input  jetzt ist eigentlich alles hier unnötig, auc hder useInput import
   const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(loadIssues);
   // const [title, setTitle] = useState('');
   // const [description, setDescription] = useState('');
   // const [location, setLocation] = useState('');
   // const [kategorie, setKategorie] = useState('');
   // const [image, setImage] = useState<File | null>(null);
+
   // const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));   // => permanently moved to inputForm.tsx
 
 
@@ -486,48 +487,13 @@ export default function App() {
       />
       
 
-      {/* Input form nur sichtbar wenn man eingeloggt ist*/}
+      {/* Input form nur sichtbar wenn man eingeloggt ist, */}
       {userId ? (
+
         <InputForm
         setIssueList={setIssueList}
         />
-        // <form className="issue-form" onSubmit={addIssue}>
-        //   <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
 
-        //   <div className="location-wrapper">
-        //     <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
-
-        //     {location.length > 0 && filteredRooms.length > 0 && (
-        //       <div className="room-suggestions">
-        //         {filteredRooms
-        //           .filter(room => room !== location)
-        //           .slice(0, 6)
-        //           .map((room) => (
-        //             <div
-        //               key={room}
-        //               className="room-item"
-        //               onClick={() => setLocation(room)}
-        //             >
-        //               {room}
-        //             </div>
-        //           ))}
-        //       </div>
-        //     )}
-        //   </div>
-
-        //   <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
-        //     <option value="">Kategorie wählen</option>
-        //     <option value="Steckdose">Steckdose</option>
-        //     <option value="Schlagloch">Schlagloch</option>
-        //     <option value="WLAN">WLAN</option>
-        //     <option value="Mobiliar">Mobiliar</option>
-        //     <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
-        //   </select>
-        //   <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
-        //   <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
-
-        //   <button type="submit">Posten</button>
-        // </form>
       ) : (
         <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}
@@ -590,29 +556,6 @@ export default function App() {
       setViewMode={setViewMode}
       />
 
-      {/* <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
-        <button 
-          onClick={() => { setViewMode('list'); setIsArchiveMode(false); }} 
-          className={viewMode === 'list' && !isArchiveMode ? 'active' : ''}
-        >
-          Liste
-        </button>
-        <button 
-          onClick={() => { setViewMode('map'); setIsArchiveMode(false); }} 
-          className={viewMode === 'map' && !isArchiveMode ? 'active' : ''}
-        >
-          Karte
-        </button>
-        {userId && (
-          <button 
-            onClick={() => { setViewMode('list'); setIsArchiveMode(true); }}
-            className={isArchiveMode ? 'active' : ''}
-            style={{ backgroundColor: isArchiveMode ? 'var(--accent-2)' : '' }}
-          >
-            Archiv
-          </button>
-        )}
-      </div> */}
 
       <div className='list-container'>
         {/* BEDINGTES RENDERN: Liste ODER Karte */}
@@ -647,46 +590,6 @@ export default function App() {
           issueMatchesCurrentFilter={issueMatchesCurrentFilter}
           issueMatchesOnlyOwnFilter={issueMatchesOnlyOwnFilter}
           />
-          // <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
-          //   <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>
-          //     <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-
-          //     {/* Pin Rendering */}
-          //     {(() => {
-
-          //       // Issues per Building
-          //       const buildingIssueCount: Record<string, number> = {};
-                
-          //       finalIssueList.forEach(issue => {
-          //         if (issue.location) {
-          //           // Split the string to only show the building via regex
-          //           const building = issue.location.split(/[-\s/\\._]+/)[0];
-          //           if (building) {
-          //             buildingIssueCount[building] = (buildingIssueCount[building] || 0) + 1;
-          //           }
-          //         }
-          //       });
-
-          //       // Place pin for each building with at least one issue
-          //       return Object.entries(buildingIssueCount).map(([building, count]) => {
-          //         const coords = buildingCoordinates[building];
-                  
-          //         // No pin for buildings without coordinates
-          //         if (!coords) return null;
-
-          //         // HTML Pin with count
-          //         const countIcon = L.divIcon({
-          //           html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
-          //           className: '',
-          //           iconSize: [32, 32],
-          //           iconAnchor: [16, 16]
-          //         });
-
-          //         return (<Marker key={building} position={coords} icon={countIcon} eventHandlers={{click: () => {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
-          //       });
-          //     })()}
-          //   </MapContainer>
-          // </div>
         )}
       </div>
     </div>

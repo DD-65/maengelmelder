@@ -50,6 +50,7 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdat
               <option value="Abgelehnt">Abgelehnt</option>
               <option value="In Bearbeitung">In Bearbeitung</option>
               <option value="Behoben">Behoben</option>
+              <option value="Gelöscht">Gelöscht</option>
             </select>
           )}
         </div>

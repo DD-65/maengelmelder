@@ -6,12 +6,12 @@ import { Map } from './library/ui/map';
 // import 'leaflet/dist/leaflet.css';
 
 // Konstanten und random U's importieren
-import {rooms}  from './library/constants/rooms';
+import {rooms}  from './library/constants/rooms';   // unnötig, weil ausgebaut
 import {buildingCoordinates} from './library/constants/buildingCoordinates';
 import {randomRptuLogo} from './library/utils/rptulogo';
 
 // input importieren
-import { useInput } from './library/hooks/useInput';
+import { useInput } from './library/hooks/useInput';    //eigentlich auch unnötig, weil ausgebaut
 // suche importieren
 import { useSearch } from './library/ui/search';
 import { Searchbar } from './library/ui/searchbar';
@@ -90,23 +90,21 @@ export default function App() {
     filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue, issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter}=useFilter(issuesToDisplay, userEmail);
 
   //--> filteredIssues dann als input in useSorting
-  // Sortierung importieren
-  const{currentSorting, currentSortingMode, possibleSortings, possibleSortingsModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
+  // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
+  const{currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
   const finalIssueList = sortedIssues; 
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
 
-<<<<<<< HEAD
   const resetFilterAndSorting = () => {
     chooseFilter("");
     chooseSorting("");
     setFilterOnlyOwn(false);
   };
-=======
-  // State für die Bestätigung der endgültigen Löschung
+
+   // State für die Bestätigung der endgültigen Löschung
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [issueToDelete, setIssueToDelete] = useState<number | null>(null);
->>>>>>> archiv
 
   //const{loadIssues}=useLoadIssues();
   // const loadIssues = (archiv: boolean = false) => {
@@ -356,8 +354,7 @@ export default function App() {
       )} 
       
 
-
-<<<<<<< HEAD
+    <div className='list-container'>
       <div className='header-container'>
       {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
       {userId ? (
@@ -376,17 +373,17 @@ export default function App() {
         </div>
       )}
 
-      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
-          Das sieht sehr ausschneidbar aus*/}
-      {settingsOpen && (
-        <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
-          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
-            <div className="settings-pane-header">
-              <h2 id="settings-title">Einstellungen</h2>
-              <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
-                X
-              </button>
-            </div>
+        {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
+            Das sieht sehr ausschneidbar aus*/}
+        {settingsOpen && (
+          <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
+            <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
+              <div className="settings-pane-header">
+                <h2 id="settings-title">Einstellungen</h2>
+                <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
+                  X
+                </button>
+              </div>
 
             <div className="settings-options">
               {userId && (
@@ -411,235 +408,6 @@ export default function App() {
                   {settingsError && <p className="error-text">{settingsError}</p>}
                 </>
               )}
-
-              <label className="settings-option">
-                <span>
-                  <strong>Kompakte Ansicht</strong>
-                  <small>Platzhalter</small>
-                </span>
-                <input type="checkbox" />
-              </label>
-
-              <label className="settings-field">
-                <span>Sprache</span>
-                <select defaultValue="de">
-                  <option value="de">Deutsch</option>
-                  <option value="en">Englisch</option>
-                </select>
-              </label>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
-      {authView && (
-        <form
-          className="auth-card"
-          onSubmit={authView === "login" ? login : register}
-        >
-          <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
-
-          <input
-            type="email"
-            placeholder="Email"
-            value={authEmail}
-            onChange={(event) => setAuthEmail(event.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Passwort"
-            value={authPassword}
-            onChange={(event) => setAuthPassword(event.target.value)}
-          />
-
-          {authView === "register" && (
-            <div className="admin-checkbox">
-              <input
-                type="checkbox"
-                id="registerAsAdmin"
-                checked={registerAsAdmin}
-                onChange={(e) => setRegisterAsAdmin(e.target.checked)}
-              />
-              <label htmlFor="registerAsAdmin">als Admin registrieren</label>
-            </div>
-          )}
-
-          {authView === "register" && registerAsAdmin && (
-            <input
-              type="password"
-              placeholder="Admin-Code"
-              value={adminCode}
-              onChange={(event) => setAdminCode(event.target.value)}
-            />
-          )}
-
-          {authError && <p className="error-text">{authError}</p>}
-          {authMessage && <p className="success-text">{authMessage}</p>}
-
-          <button type="submit">
-            {authView === "login" ? "Einloggen" : "Registrieren"}
-          </button>
-        </form>
-      )}
-
-
-      {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}   
-      <Searchbar
-        query ={query}
-        setQuery={setQuery}
-        searchView={searchView}
-        setSearchView={setSearchView}
-        issuesToDisplay={issuesToDisplay}
-      />
-      
-
-      {/* Input form nur sichtbar wenn man eingeloggt ist*/}
-      {userId ? (
-        <form className="issue-form" onSubmit={addIssue}>
-          <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
-
-          <div className="location-wrapper">
-            <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
-
-            {location.length > 0 && filteredRooms.length > 0 && (
-              <div className="room-suggestions">
-                {filteredRooms
-                  .filter(room => room !== location)
-                  .slice(0, 6)
-                  .map((room) => (
-                    <div
-                      key={room}
-                      className="room-item"
-                      onClick={() => setLocation(room)}
-                    >
-                      {room}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
-            <option value="">Kategorie wählen</option>
-            <option value="Steckdose">Steckdose</option>
-            <option value="Schlagloch">Schlagloch</option>
-            <option value="WLAN">WLAN</option>
-            <option value="Mobiliar">Mobiliar</option>
-            <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
-          </select>
-          <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
-          <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
-
-          <button type="submit">Posten</button>
-        </form>
-      ) : (
-        <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
-      )}
-
-      <div className='issue-toolbar'>
-        {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-        <select className='issue-filter-select' value={currentFilter} onChange={(event) => chooseFilter(event.target.value)}>
-          <option value="" disabled>Filter wählen</option>
-          {possibleFilters.map((filter) => (
-            <option key={filter} value={filter}>{filter}</option>
-          ))}
-          <option value=""> - Kein Filter - </option>
-        </select>
-
-        {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
-        {currentFilter ? (
-          <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}>
-            <option value="" disabled>Wert wählen</option>
-            {possibleFilterValues[currentFilter]?.map((value) => (
-              <option key={value} value={value}>{value}</option>
-            ))}
-          </select>
-        ) : null}
-        <div className='divider'></div>
-        {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
-        <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSorting(event.target.value)} >
-          <option value="" disabled>Sortierung wählen</option>
-          {possibleSortings.map((sorting) => (
-            <option key={sorting} value={sorting}>{sorting}</option>
-
-          ))}
-          <option value=""> - Kein Sortierung - </option>
-        </select>
-
-        {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
-        {currentSorting ? (
-          <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}>
-
-            {possibleSortingModes[currentSorting]?.map((mode: string) => (
-              <option key={mode} value={mode}>
-                {mode}
-              </option>
-            ))}
-
-          </select>
-        ) : null}
-        {userId && (
-          <div className='issue-filter-only-own'>
-            <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
-            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
-            <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
-=======
-      <div className='list-container'>
-        <div className='header-container'>
-        {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-        {userId ? (
-          <div className="auth-bar">
-            {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-            <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
-            <button className='logout-button' onClick={logout}>Logout</button>
-            <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
-              <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="auth-bar">
-          {/* Wenn man nicht eingeloggt ist: login und register */}
-            <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
-            <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
->>>>>>> archiv
-          </div>
-        )}
-
-        {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
-            Das sieht sehr ausschneidbar aus*/}
-        {settingsOpen && (
-          <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
-            <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
-              <div className="settings-pane-header">
-                <h2 id="settings-title">Einstellungen</h2>
-                <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
-                  X
-                </button>
-              </div>
-
-              <div className="settings-options">
-                <div className="settings-option">
-                  <span>
-                    <strong>E-Mail-Adresse</strong>
-                    <small>{userEmail}</small>
-                  </span>
-                  <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
-                    {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
-                  </span>
-                </div>
-
-                {!emailVerified && (
-                  <button type="button" onClick={resendVerificationEmail}>
-                    Verifizierungs-E-Mail erneut senden
-                  </button>
-                )}
-
-                {settingsMessage && <p className="success-text">{settingsMessage}</p>}
-                {settingsError && <p className="error-text">{settingsError}</p>}
 
                 <label className="settings-option">
                   <span>
@@ -801,21 +569,22 @@ export default function App() {
           {currentSorting ? (
             <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}>
 
-              {possibleSortingModes[currentSorting]?.map((mode: string) => (
+              {possibleSortingModes[currentSorting]?.map((mode) => (
                 <option key={mode} value={mode}>
                   {mode}
                 </option>
               ))}
 
-            </select>
-          ) : null}
-          {userId && (
-            <div className='issue-filter-only-own'>
-              <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
-              <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
-            </div>
-          )}
-        </div>
+          </select>
+        ) : null}
+        {userId && (
+          <div className='issue-filter-only-own'>
+            <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
+            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
+            <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
+          </div>
+        )}
+      </div>
       </div>
 
       <ViewModeButtons

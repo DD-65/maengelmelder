@@ -11,7 +11,6 @@ import { useFilter } from "../hooks/useFilter";
 // test commit
 interface MapProperties{
     issuesToDisplay: Issue[];
-    userEmail: string;
     setViewMode: React.Dispatch<React.SetStateAction<"list" | "map">>;
     setCurrentFilter: React.Dispatch<React.SetStateAction<string>>;
     setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
@@ -19,7 +18,7 @@ interface MapProperties{
     issueMatchesOnlyOwnFilter: (issue: Issue) => boolean
 }
 
-export function Map({issuesToDisplay, userEmail,  setViewMode, setCurrentFilter, setCurrentFilterValue,
+export function Map({issuesToDisplay,  setViewMode, setCurrentFilter, setCurrentFilterValue,
      issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter}:MapProperties){
     //const{viewMode, setViewMode}=useViewMode();
     // const{

@@ -2,10 +2,6 @@ import { Issue } from "../types/Issue";
 import { useCallback } from "react";
 
 
-/* interface UseLoadIssuesProperties{
-    issueList: Issue[]
-    setIssueList:React.Dispatch<React.SetStateAction<Issue[]>>
-} */
 export function useLoadIssues(setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>) { 
 
     // issues aus db laden

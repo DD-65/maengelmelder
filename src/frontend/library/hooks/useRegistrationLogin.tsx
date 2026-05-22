@@ -15,6 +15,8 @@ export function useRegistrationLogin(){
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [settingsMessage, setSettingsMessage] = useState("");
     const [settingsError, setSettingsError] = useState("");
+
+    
     return{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
         authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
         registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, authError, setAuthError, authMessage, setAuthMessage,

@@ -37,6 +37,7 @@ import { useRegistrationLogin} from './library/hooks/useRegistrationLogin';
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
 //    Vielleicht ist es aber später nützlich, sobald wir irgendeinen Teil der Verifikation auslagern
 
+import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
@@ -58,7 +59,7 @@ export default function App() {
   // const [location, setLocation] = useState('');
   // const [kategorie, setKategorie] = useState('');
   // const [image, setImage] = useState<File | null>(null);
-  const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
+  // const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));   // => permanently moved to inputForm.tsx
 
 
   // State of Viewing (List or Map)
@@ -487,43 +488,46 @@ export default function App() {
 
       {/* Input form nur sichtbar wenn man eingeloggt ist*/}
       {userId ? (
-        <form className="issue-form" onSubmit={addIssue}>
-          <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
+        <InputForm
+        setIssueList={setIssueList}
+        />
+        // <form className="issue-form" onSubmit={addIssue}>
+        //   <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
 
-          <div className="location-wrapper">
-            <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
+        //   <div className="location-wrapper">
+        //     <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
 
-            {location.length > 0 && filteredRooms.length > 0 && (
-              <div className="room-suggestions">
-                {filteredRooms
-                  .filter(room => room !== location)
-                  .slice(0, 6)
-                  .map((room) => (
-                    <div
-                      key={room}
-                      className="room-item"
-                      onClick={() => setLocation(room)}
-                    >
-                      {room}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
+        //     {location.length > 0 && filteredRooms.length > 0 && (
+        //       <div className="room-suggestions">
+        //         {filteredRooms
+        //           .filter(room => room !== location)
+        //           .slice(0, 6)
+        //           .map((room) => (
+        //             <div
+        //               key={room}
+        //               className="room-item"
+        //               onClick={() => setLocation(room)}
+        //             >
+        //               {room}
+        //             </div>
+        //           ))}
+        //       </div>
+        //     )}
+        //   </div>
 
-          <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
-            <option value="">Kategorie wählen</option>
-            <option value="Steckdose">Steckdose</option>
-            <option value="Schlagloch">Schlagloch</option>
-            <option value="WLAN">WLAN</option>
-            <option value="Mobiliar">Mobiliar</option>
-            <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
-          </select>
-          <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
-          <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
+        //   <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
+        //     <option value="">Kategorie wählen</option>
+        //     <option value="Steckdose">Steckdose</option>
+        //     <option value="Schlagloch">Schlagloch</option>
+        //     <option value="WLAN">WLAN</option>
+        //     <option value="Mobiliar">Mobiliar</option>
+        //     <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
+        //   </select>
+        //   <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
+        //   <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
 
-          <button type="submit">Posten</button>
-        </form>
+        //   <button type="submit">Posten</button>
+        // </form>
       ) : (
         <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
       )}

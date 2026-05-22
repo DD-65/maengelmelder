@@ -37,6 +37,7 @@ import { useRegistrationLogin} from './library/hooks/useRegistrationLogin';
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
 //    Vielleicht ist es aber später nützlich, sobald wir irgendeinen Teil der Verifikation auslagern
 
+import { ViewModeButtons } from './library/ui/viewModeButtons';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 
@@ -562,7 +563,11 @@ export default function App() {
       </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
+      <ViewModeButtons
+      userId  ={userId}
+      />
+
+      {/* <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
         <button 
           onClick={() => { setViewMode('list'); setIsArchiveMode(false); }} 
           className={viewMode === 'list' && !isArchiveMode ? 'active' : ''}
@@ -584,7 +589,7 @@ export default function App() {
             Archiv
           </button>
         )}
-      </div>
+      </div> */}
 
       <div className='list-container'>
         {/* BEDINGTES RENDERN: Liste ODER Karte */}

@@ -108,6 +108,13 @@ try {
   // Falls die Spalte schon existiert, ignorieren
 }
 
+// Migration: is_deleted Spalte hinzufügen, falls sie fehlt
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN is_deleted INTEGER DEFAULT 0");
+} catch {
+  // Falls die Spalte schon existiert, ignorieren
+}
+
 // Tabelle für votes, damit ein Nutzer nur einmal voten kann
 db.exec(`
   CREATE TABLE IF NOT EXISTS mangel_votes (

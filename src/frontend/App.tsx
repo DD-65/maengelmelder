@@ -49,7 +49,10 @@ export default function App() {
   const{loadIssues, deleteIssue}=useLoadIssues(setIssueList);
 
   // Input
-  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(loadIssues);
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(() => {
+    loadIssues(false);
+    setIsArchiveMode(false);
+  });
   // const [title, setTitle] = useState('');
   // const [description, setDescription] = useState('');
   // const [location, setLocation] = useState('');
@@ -120,7 +123,7 @@ export default function App() {
           setUserEmail(data.email);
           setUserRole(data.role || "user");
           setEmailVerified(Boolean(data.emailVerified));
-          loadIssues();
+          loadIssues(isArchiveMode);
         }
       })
       .catch(() => {
@@ -199,7 +202,7 @@ export default function App() {
     setAuthEmail("");
     setAuthPassword("");
     setAuthView(null);
-    loadIssues();
+    loadIssues(false);
   };
 
   // Registrierungs-handler
@@ -241,7 +244,7 @@ export default function App() {
     setUserRole("");
     setEmailVerified(false);
     setFilterOnlyOwn(false);
-    loadIssues();
+    loadIssues(false);
   };
 
   const resendVerificationEmail = async () => {
@@ -280,12 +283,12 @@ export default function App() {
 
     if (!res.ok) {
       setVoteError(data.error || "Fehler beim Bewerten");
-      loadIssues();
+      loadIssues(isArchiveMode);
       return;
     }
 
     // reload
-    loadIssues();
+    loadIssues(isArchiveMode);
   };
 
   /**
@@ -303,7 +306,7 @@ export default function App() {
       const data = await res.json();
       alert(data.error || "Fehler beim Aktualisieren des Status");
     }
-    loadIssues();
+    loadIssues(isArchiveMode);
   };
   
   // UI
@@ -599,7 +602,7 @@ export default function App() {
                     issue={issue}
                     userRole={userRole}
                     userId={userId}
-                    onDelete={deleteIssue}
+                    onDelete={(id) => deleteIssue(id, isArchiveMode)}
                     onUpvote={upvoteIssue}
                     onUpdateStatus={updateStatus}
                   />

@@ -144,15 +144,15 @@ app.get("/api/mangel", (req, res) => {
 
     if (isArchive) {
       if (role === "admin") {
-        whereClause = "WHERE maengel.status = 'Behoben'";
+        whereClause = "WHERE (maengel.status = 'Behoben' OR maengel.is_deleted = 1)";
       } else if (userId) {
-        whereClause = "WHERE maengel.status = 'Behoben' AND maengel.user_id = ?";
+        whereClause = "WHERE (maengel.status = 'Behoben' OR maengel.is_deleted = 1) AND maengel.user_id = ?";
         params.push(userId);
       } else {
         return res.json([]);
       }
     } else {
-      whereClause = "WHERE maengel.status != 'Behoben' OR maengel.status IS NULL";
+      whereClause = "WHERE (maengel.status != 'Behoben' OR maengel.status IS NULL) AND maengel.is_deleted = 0";
     }
 
     // statement um mängel zu laden, join auf der votes tabelle um die votes zu laden / zu prüfen ob nutzer schon gevotet haben
@@ -162,7 +162,10 @@ app.get("/api/mangel", (req, res) => {
         maengel.title,
         maengel.description,
         maengel.location,
-        maengel.status,
+        CASE 
+          WHEN maengel.is_deleted = 1 THEN 'Gelöscht'
+          ELSE maengel.status
+        END AS status,
         maengel.kategorie,
         maengel.created_at,
         maengel.votes,
@@ -205,13 +208,19 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     }
 
     // Status validieren
-    const allowedStatus = ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung", "Behoben"];
+    const allowedStatus = ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung", "Behoben", "Gelöscht"];
     if (!allowedStatus.includes(status)) {
       return res.status(400).json({ error: "Ungültiger Status" });
     }
 
-    const stmt = db.prepare("UPDATE maengel SET status = ? WHERE id = ?");
-    const result = stmt.run(status, mangelId);
+    let result;
+    if (status === "Gelöscht") {
+      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
+      result = stmt.run(mangelId);
+    } else {
+      const stmt = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?");
+      result = stmt.run(status, mangelId);
+    }
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
@@ -316,10 +325,10 @@ app.delete("/api/mangel/:id", requireAuth, (req, res) => {
       return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
     }
 
-    const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
+    const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
     const result = stmt.run(mangelId);
 
-    res.json({ message: "Mangel erfolgreich gelöscht" });
+    res.json({ message: "Mangel erfolgreich archiviert" });
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });

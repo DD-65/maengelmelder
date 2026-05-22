@@ -14,14 +14,15 @@ export function useLoadIssues(setIssueList: React.Dispatch<React.SetStateAction<
       .then((res) => res.json())
       .then((data) => setIssueList(data));
     }, [setIssueList]);
-    
+
 
     // issues in db löschen
-    const deleteIssue = async (id: number) => {
+    const deleteIssue = async (id: number, archiv: boolean = false) => {
     await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
-    loadIssues();
+    loadIssues(archiv);
     };
 
     return{loadIssues, deleteIssue}
 
 } 
+ 

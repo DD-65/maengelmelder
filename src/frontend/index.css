@@ -713,10 +713,23 @@ input:checked {
   background: var(--accent-soft);
 }
 
+button.active {
+  background-color: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
 .status-behoben {
   color: #48bb78;
   border-color: #48bb78;
   background: rgba(72, 187, 120, 0.1);
+}
+
+.status-gelöscht {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(255, 107, 138, 0.1);
+  opacity: 0.7;
 }
 
 .status-select {

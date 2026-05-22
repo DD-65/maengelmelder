@@ -1,8 +1,14 @@
 import { useViewMode } from "../hooks/useViewMode";
 import { useArchiveMode } from "../hooks/useArchiveMode";
 
-export function ViewModeButtons(userId: number | null){
-    const{viewMode, setViewMode}=useViewMode();
+interface ViewModeButtonsProperties{
+    viewMode : "map" | "list";
+    setViewMode: React.Dispatch<React.SetStateAction<"map" | "list">>;
+    userId: number | null
+}
+//}: {userId: number | null}, {
+export function ViewModeButtons({viewMode, userId, setViewMode }: ViewModeButtonsProperties){
+    //const{viewMode, setViewMode}=useViewMode();
     const{isArchiveMode, setIsArchiveMode}=useArchiveMode();
 
     return(

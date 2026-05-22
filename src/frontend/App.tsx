@@ -83,7 +83,8 @@ export default function App() {
 
   //--> issuesToDisplay dann als input in useFilter
   //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
-  const{filteredIssues, currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
+  const{filteredIssues, currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, 
+    filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue, issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter}=useFilter(issuesToDisplay, userEmail);
 
   //--> filteredIssues dann als input in useSorting
   // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
@@ -572,6 +573,8 @@ export default function App() {
 
       <ViewModeButtons
       userId  ={userId}
+      viewMode={viewMode}
+      setViewMode={setViewMode}
       />
 
       {/* <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>
@@ -625,6 +628,11 @@ export default function App() {
           <Map
           issuesToDisplay={issuesToDisplay}
           userEmail={userEmail}
+          setViewMode={setViewMode}
+          setCurrentFilter={setCurrentFilter}
+          setCurrentFilterValue={setCurrentFilterValue}
+          issueMatchesCurrentFilter={issueMatchesCurrentFilter}
+          issueMatchesOnlyOwnFilter={issueMatchesOnlyOwnFilter}
           />
           // <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
           //   <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>

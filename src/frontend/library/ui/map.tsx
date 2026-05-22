@@ -12,21 +12,28 @@ import { useFilter } from "../hooks/useFilter";
 interface MapProperties{
     issuesToDisplay: Issue[];
     userEmail: string;
+    setViewMode: React.Dispatch<React.SetStateAction<"list" | "map">>;
+    setCurrentFilter: React.Dispatch<React.SetStateAction<string>>;
+    setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
+    issueMatchesCurrentFilter: (issue: Issue) => boolean;
+    issueMatchesOnlyOwnFilter: (issue: Issue) => boolean
 }
 
-export function Map({issuesToDisplay, userEmail}:MapProperties){
-    const{viewMode, setViewMode}=useViewMode();
-    const{
-        setCurrentFilter,
-        setCurrentFilterValue,
-        issueMatchesCurrentFilter,
-        issueMatchesOnlyOwnFilter
-    }=useFilter(issuesToDisplay, userEmail);
+export function Map({issuesToDisplay, userEmail,  setViewMode, setCurrentFilter, setCurrentFilterValue,
+     issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter}:MapProperties){
+    //const{viewMode, setViewMode}=useViewMode();
+    // const{
+    //     setCurrentFilter,
+    //     setCurrentFilterValue,
+    //     issueMatchesCurrentFilter,
+    //     issueMatchesOnlyOwnFilter
+    // }=useFilter(issuesToDisplay, userEmail);
 
 
     return(<div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
                 <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>
-                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 
+                contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
                 {/* Pin Rendering */}
                 {(() => {
@@ -57,13 +64,15 @@ export function Map({issuesToDisplay, userEmail}:MapProperties){
 
                     // HTML Pin with count
                     const countIcon = L.divIcon({
-                        html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
+                        html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
+                        border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
                         className: '',
                         iconSize: [32, 32],
                         iconAnchor: [16, 16]
                     });
 
-                    return (<Marker key={building} position={coords} icon={countIcon} eventHandlers={{click: () => {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
+                    return (<Marker key={building} position={coords} icon={countIcon} eventHandlers={{click: () => 
+                        {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
                     });
                 })()}
                 </MapContainer>

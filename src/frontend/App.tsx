@@ -86,11 +86,15 @@ export default function App() {
   const{filteredIssues, currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
 
   //--> filteredIssues dann als input in useSorting
-  // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
-  const{currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
+  // Sortierung importieren
+  const{currentSorting, currentSortingMode, possibleSortings, possibleSortingsModes, sortedIssues, chooseSorting, chooseSortingMode} = useSorting(filteredIssues);
   const finalIssueList = sortedIssues; 
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
+
+  // State für die Bestätigung der endgültigen Löschung
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [issueToDelete, setIssueToDelete] = useState<number | null>(null);
 
   //const{loadIssues}=useLoadIssues();
   // const loadIssues = (archiv: boolean = false) => {
@@ -602,7 +606,14 @@ export default function App() {
                     issue={issue}
                     userRole={userRole}
                     userId={userId}
-                    onDelete={(id) => deleteIssue(id, isArchiveMode)}
+                    onDelete={(id) => {
+                      if (isArchiveMode && issue.status === "Gelöscht") {
+                        setIssueToDelete(id);
+                        setIsConfirmOpen(true);
+                      } else {
+                        deleteIssue(id, isArchiveMode);
+                      }
+                    }}
                     onUpvote={upvoteIssue}
                     onUpdateStatus={updateStatus}
                   />
@@ -653,6 +664,39 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Bestätigungs-Modal für endgültiges Löschen */}
+      {isConfirmOpen && (
+        <div className="settings-overlay" role="presentation" onClick={() => setIsConfirmOpen(false)}>
+          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()} style={{textAlign: 'center'}}>
+            <h2 id="confirm-title">Meldung endgültig löschen?</h2>
+            <p style={{marginBottom: '20px'}}>Möchten Sie diese Meldung wirklich endgültig aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
+              <button 
+                onClick={() => {
+                  if (issueToDelete !== null) {
+                    deleteIssue(issueToDelete, isArchiveMode, true);
+                  }
+                  setIsConfirmOpen(false);
+                  setIssueToDelete(null);
+                }}
+                style={{backgroundColor: 'var(--danger)', backgroundImage: 'none'}}
+              >
+                Löschen
+              </button>
+              <button 
+                onClick={() => {
+                  setIsConfirmOpen(false);
+                  setIssueToDelete(null);
+                }}
+                style={{backgroundColor: 'var(--surface-strong)', backgroundImage: 'none', color: 'var(--text)'}}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   
   );

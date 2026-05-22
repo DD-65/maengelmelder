@@ -17,8 +17,8 @@ export function useLoadIssues(setIssueList: React.Dispatch<React.SetStateAction<
 
 
     // issues in db löschen
-    const deleteIssue = async (id: number, archiv: boolean = false) => {
-    await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
+    const deleteIssue = async (id: number, archiv: boolean = false, permanent: boolean = false) => {
+    await fetch(`/api/mangel/${id}${permanent ? '?permanent=true' : ''}`, { method: 'DELETE' });
     loadIssues(archiv);
     };
 

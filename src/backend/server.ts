@@ -308,6 +308,7 @@ app.delete("/api/mangel/:id", requireAuth, (req, res) => {
 
     const userId = req.session.userId;
     const mangelId = Number(req.params.id);
+    const permanent = req.query.permanent === "true";
 
     if (!Number.isInteger(mangelId)) {
       return res.status(400).json({ error: "Ungültige Mangel-ID" });
@@ -325,15 +326,21 @@ app.delete("/api/mangel/:id", requireAuth, (req, res) => {
       return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
     }
 
-    const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
-    const result = stmt.run(mangelId);
-
-    res.json({ message: "Mangel erfolgreich archiviert" });
-
-    if (result.changes === 0) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    if (permanent) {
+      const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
+      const result = stmt.run(mangelId);
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "Mangel nicht gefunden" });
+      }
+      return res.json({ message: "Mangel endgültig gelöscht" });
+    } else {
+      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
+      const result = stmt.run(mangelId);
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "Mangel nicht gefunden" });
+      }
+      return res.json({ message: "Mangel erfolgreich archiviert" });
     }
-    // Falls ein Bild existiert, könnte man dieses ebenfalls löschen
 });
 
 // voten (braucht login)

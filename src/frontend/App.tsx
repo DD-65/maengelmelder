@@ -83,7 +83,7 @@ export default function App() {
 
   //--> issuesToDisplay dann als input in useFilter
   //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
-  const{filteredIssues, currentFilter, setCurrentFilter, currentFilterValue, setCurrentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
+  const{filteredIssues, currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue, filterOnlyOwn, setFilterOnlyOwn}=useFilter(issuesToDisplay, userEmail);
 
   //--> filteredIssues dann als input in useSorting
   // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
@@ -91,6 +91,12 @@ export default function App() {
   const finalIssueList = sortedIssues; 
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
   const{verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType}=useVerificationMessage();
+
+  const resetFilterAndSorting = () => {
+    chooseFilter("");
+    chooseSorting("");
+    setFilterOnlyOwn(false);
+  };
 
   //const{loadIssues}=useLoadIssues();
   // const loadIssues = (archiv: boolean = false) => {
@@ -556,6 +562,7 @@ export default function App() {
         ) : null}
         {userId && (
           <div className='issue-filter-only-own'>
+            <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
             <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
             <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{fontStyle:'italic'}}>Nur eigene Mängel anzeigen</p></label>
           </div>

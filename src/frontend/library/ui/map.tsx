@@ -1,18 +1,27 @@
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Issue } from "../types/Issue";
 import { buildingCoordinates } from "../constants/buildingCoordinates";
 import { useViewMode } from "../hooks/useViewMode";
+import { useFilter } from "../hooks/useFilter";
 
 
 // hier müssen die Filter importiert werden, außerdem müssen die erst aus App raus gemacht werden.
 // test commit
 interface MapProperties{
     issuesToDisplay: Issue[];
-    //issueMatches ...
+    userEmail: string;
 }
 
-export function Map(){
-
+export function Map({issuesToDisplay, userEmail}:MapProperties){
+    const{viewMode, setViewMode}=useViewMode();
+    const{
+        setCurrentFilter,
+        setCurrentFilterValue,
+        issueMatchesCurrentFilter,
+        issueMatchesOnlyOwnFilter
+    }=useFilter(issuesToDisplay, userEmail);
 
 
     return(<div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>

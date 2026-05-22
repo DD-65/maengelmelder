@@ -75,7 +75,9 @@ export function useFilter(unfilteredIssueList: Issue[], userEmail: string) {
         chooseFilter,
         chooseFilterValue,
         filterOnlyOwn,
-        setFilterOnlyOwn
+        setFilterOnlyOwn,
+        issueMatchesCurrentFilter,
+        issueMatchesOnlyOwnFilter
     };
 
 }

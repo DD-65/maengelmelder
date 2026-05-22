@@ -457,7 +457,8 @@ code {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 2px 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-rows: auto;
+  grid-auto-rows: auto;
   gap: 10px;
 }
 .divider {

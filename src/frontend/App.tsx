@@ -273,6 +273,14 @@ export default function App() {
     setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
   };
 
+  const settingsButton = (
+    <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
+      <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+      </svg>
+    </button>
+  );
+
 
   // // Delete issue
   // const deleteIssue = async (id: number) => {
@@ -347,17 +355,14 @@ export default function App() {
           {/* Wenn man eingeloggt ist: logout und einstellungen*/}
           <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
           <button className='logout-button' onClick={logout}>Logout</button>
-          <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
-            <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-            </svg>
-          </button>
+          {settingsButton}
         </div>
       ) : (
         <div className="auth-bar">
         {/* Wenn man nicht eingeloggt ist: login und register */}
           <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
           <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+          {settingsButton}
         </div>
       )}
 
@@ -374,24 +379,28 @@ export default function App() {
             </div>
 
             <div className="settings-options">
-              <div className="settings-option">
-                <span>
-                  <strong>E-Mail-Adresse</strong>
-                  <small>{userEmail}</small>
-                </span>
-                <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
-                  {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
-                </span>
-              </div>
+              {userId && (
+                <>
+                  <div className="settings-option">
+                    <span>
+                      <strong>E-Mail-Adresse</strong>
+                      <small>{userEmail}</small>
+                    </span>
+                    <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                      {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
+                    </span>
+                  </div>
 
-              {!emailVerified && (
-                <button type="button" onClick={resendVerificationEmail}>
-                  Verifizierungs-E-Mail erneut senden
-                </button>
+                  {!emailVerified && (
+                    <button type="button" onClick={resendVerificationEmail}>
+                      Verifizierungs-E-Mail erneut senden
+                    </button>
+                  )}
+
+                  {settingsMessage && <p className="success-text">{settingsMessage}</p>}
+                  {settingsError && <p className="error-text">{settingsError}</p>}
+                </>
               )}
-
-              {settingsMessage && <p className="success-text">{settingsMessage}</p>}
-              {settingsError && <p className="error-text">{settingsError}</p>}
 
               <label className="settings-option">
                 <span>

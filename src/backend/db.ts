@@ -74,8 +74,30 @@ db.exec(`
   )
 `);
 
-// TODO: users Tabelle erweitern um notification_interval (INTEGER, 0=sofort, >0=Tage) und last_summary_email_at (TEXT/ISO-Date)
-// TODO: maybe Tabelle status_changes erstellen für Änderungen -> Hintergrundskript weiß was in die Sammelmail muss
+// Migration: Benachrichtigungs-Einstellungen für User
+try {
+  // 0 = sofort, >0 = Intervall,Tage
+  db.exec("ALTER TABLE users ADD COLUMN notification_interval INTEGER DEFAULT 0");
+  // Zeitpunkt der letzten Sammel-Mail
+  db.exec("ALTER TABLE users ADD COLUMN last_summary_email_at TEXT DEFAULT NULL");
+} catch {
+  // Falls es die Spalten schon gibt
+}
+
+// Tabelle für Status-Historie/Status-Mails
+db.exec(`
+  CREATE TABLE IF NOT EXISTS status_changes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mangel_id INTEGER NOT NULL,
+    old_status TEXT,
+    new_status TEXT NOT NULL,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    mail_sent INTEGER DEFAULT 0, -- 0 = noch nicht in Sammelmail verschickt
+    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
+  )
+`);
+
+
 
 // Migration: status Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {

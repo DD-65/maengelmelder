@@ -8,7 +8,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
-import { sendVerificationEmail } from "./mailer.js";
+import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
 import multer from "multer";
 import fs from "fs";
 import sharp from "sharp";
@@ -217,19 +217,40 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
       return res.status(400).json({ error: "Ungültiger Status" });
     }
 
-    let result;
-    if (status === "Gelöscht") {
-      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
-      result = stmt.run(mangelId);
-    } else {
-      const stmt = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?");
-      result = stmt.run(status, mangelId);
-    }
+    //  Infos holen, bevor der Status überschrieben wird
+    const oldMangelData = db.prepare(`
+      SELECT status, title, user_id FROM maengel WHERE id = ?
+    `).get(mangelId) as { status: string, title: string, user_id: number } | undefined;
 
-    if (result.changes === 0) {
+    if (!oldMangelData) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
     }
 
+    // Update durchführen
+    let result;
+    if (status === "Gelöscht") {
+      result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
+    } else {
+      result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
+    }
+
+    // In status_changes loggen 
+    db.prepare(`
+      INSERT INTO status_changes (mangel_id, old_status, new_status)
+      VALUES (?, ?, ?)
+    `).run(mangelId, oldMangelData.status, status);
+
+    // Prüfen, ob sofort eine Mail geschickt werden soll
+    const recipient = db.prepare(`
+      SELECT email, email_verified_at, notification_interval 
+      FROM users WHERE id = ?
+    `).get(oldMangelData.user_id) as { email: string, email_verified_at: string | null, notification_interval: number } | undefined;
+
+    if (recipient?.email_verified_at && recipient.notification_interval === 0) {
+      sendStatusUpdateEmail(recipient.email, oldMangelData.title, status).catch(err => {
+        console.error("Mail-Fehler:", err);
+      });
+    }
     res.json({ message: "Status erfolgreich aktualisiert" });
   } catch (error) {
     console.error(error);

@@ -644,8 +644,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, email_verified_at FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null } | undefined;
+    .prepare("SELECT id, email, role, email_verified_at, notification_interval AS notificationInterval FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null; notificationInterval: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -657,6 +657,7 @@ app.get("/api/auth/me", (req, res) => {
     email: user.email,
     role: user.role,
     emailVerified: Boolean(user.email_verified_at),
+    notificationInterval: user.notificationInterval,
   });
 });
 
@@ -680,6 +681,27 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Benachrichtigungs-Intervall ändern
+app.patch("/api/auth/settings/notifications", requireAuth, (req, res) => {
+  try {
+    const { interval } = req.body;
+    const userId = req.session.userId;
+
+    // 0 = sofort, >0 = Tage
+    if (typeof interval !== "number" || interval < 0) {
+      return res.status(400).json({ error: "Ungültiges Intervall" });
+    }
+
+    db.prepare("UPDATE users SET notification_interval = ? WHERE id = ?")
+      .run(interval, userId);
+
+    res.json({ message: "Benachrichtigungs-Einstellungen erfolgreich gespeichert" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Speichern der Einstellungen" });
+  }
+});
+
 // Vite Integration
 if (!isProd) {
   const { createServer: createViteServer } = await import("vite");
@@ -695,6 +717,61 @@ if (!isProd) {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
+
+
+// Intervallcheck -> Sammelmails
+setInterval(async () => {
+  console.log("Prüfe auf fällige Sammel-Mails");
+
+  try {
+    const usersToNotify = db.prepare(`
+      SELECT id, email, notification_interval, last_summary_email_at 
+      FROM users 
+      WHERE notification_interval > 0 
+        AND email_verified_at IS NOT NULL
+        AND (last_summary_email_at IS NULL OR 
+             datetime(last_summary_email_at, '+' || notification_interval || ' days') <= datetime('now'))
+    `).all() as any[];
+
+    for (const user of usersToNotify) {
+      const changes = db.prepare(`
+        SELECT sc.id, sc.new_status, m.title 
+        FROM status_changes sc
+        JOIN maengel m ON sc.mangel_id = m.id
+        WHERE m.user_id = ? AND sc.mail_sent = 0
+      `).all(user.id) as any[];
+
+      if (changes.length > 0) {
+        const summaryText = changes
+          .map(c => `• ${c.title}: Status geändert auf "${c.new_status}"`)
+          .join("\n");
+
+        const summaryHtml = `
+          <p>Hallo,</p>
+          <p>hier ist die Zusammenfassung deiner Mängel-Updates:</p>
+          <ul>
+            ${changes.map(c => `<li><strong>${c.title}</strong>: ${c.new_status}</li>`).join("")}
+          </ul>
+        `;
+
+        await sendStatusUpdateEmail(user.email, "Deine Mängel-Zusammenfassung", summaryText); 
+
+        const changeIds = changes.map(c => c.id);
+        const placeholders = changeIds.map(() => "?").join(",");
+        
+        db.prepare(`UPDATE status_changes SET mail_sent = 1 WHERE id IN (${placeholders})`)
+          .run(...changeIds);
+          
+        db.prepare("UPDATE users SET last_summary_email_at = ? WHERE id = ?")
+          .run(new Date().toISOString(), user.id);
+
+        console.log(`Sammel-Mail an ${user.email} verschickt.`);
+      }
+    }
+  } catch (error) {
+    console.error("Fehler im Sammelmail-Job:", error);
+  }
+}, 1000 * 60 * 60 * 24); // Default: alle 24h
 
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);

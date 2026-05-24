@@ -590,6 +590,8 @@ export default function App() {
         userId  ={userId}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        isArchiveMode={isArchiveMode}
+        setIsArchiveMode={setIsArchiveMode}
         />
         
         <div className='issue-display-area'>

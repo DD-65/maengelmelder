@@ -40,25 +40,28 @@ export function useSwiping(
         const deltaX = touchEndX - touchStart.x;
         const deltaY = touchEndY - touchStart.y;
 
+        // Touch-Start sofort resettem, um potenzielles doppeltes Auslösen zu verhindern
+        setTouchStart(null);
+
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) { // Horizontal swipe with some vertical tolerance
-            if (deltaX > 0) { // Swipe right
+            if (deltaX > 0) { // Swipe right (Rückwärts: Archiv -> Karte -> Liste)
                 if (isArchiveMode) {
                     setIsArchiveMode(false);
                     setViewMode('map');
                 } else if (viewMode === 'map') {
                     setViewMode('list');
                 }
-            } else { // Swipe left
-                if (!isArchiveMode && viewMode === 'list') {
-                    setViewMode('map');
-                } else if (viewMode === 'map' && isLoggedIn) {
-                    setIsArchiveMode(true);
-                    setViewMode('list');
+            } else { // Swipe left (Vorwärts: Liste -> Karte -> Archiv)
+                if (!isArchiveMode) {
+                    if (viewMode === 'list') {
+                        setViewMode('map');
+                    } else if (viewMode === 'map' && isLoggedIn) {
+                        setIsArchiveMode(true);
+                        setViewMode('list');
+                    }
                 }
             }
         }
-
-        setTouchStart(null); // Reset touch start
     };
     return{handleTouchStart, handleTouchEnd};
 }

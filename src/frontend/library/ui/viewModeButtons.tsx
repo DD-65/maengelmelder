@@ -1,15 +1,15 @@
 import { useViewMode } from "../hooks/useViewMode";
-import { useArchiveMode } from "../hooks/useArchiveMode";
 
 interface ViewModeButtonsProperties{
     viewMode : "map" | "list";
-    setViewMode: React.Dispatch<React.SetStateAction<"map" | "list">>;
+    setViewMode: (val: 'list' | 'map') => void;
+    isArchiveMode: boolean;
+    setIsArchiveMode: (val: boolean) => void;
     userId: number | null
 }
 //}: {userId: number | null}, {
-export function ViewModeButtons({viewMode, userId, setViewMode }: ViewModeButtonsProperties){
+export function ViewModeButtons({viewMode, userId, setViewMode, isArchiveMode, setIsArchiveMode }: ViewModeButtonsProperties){
     //const{viewMode, setViewMode}=useViewMode();
-    const{isArchiveMode, setIsArchiveMode}=useArchiveMode();
 
     return(
         <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', margin: '20px 0' }}>

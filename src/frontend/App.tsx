@@ -44,7 +44,7 @@ import { RegistrationLogin } from './library/ui/ERRORregistrationLogin';
 import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
 import { registerClient } from 'fuse/next/server';
-
+import { SettingsButton } from './library/ui/settingsButton';
 
 
 
@@ -60,7 +60,7 @@ export default function App() {
 
   const { loadIssues, deleteIssue } = useLoadIssues(setIssueList);
 
-  // Input      wird nicht mehr benötigt, ist das schlimm, mit dem fehlenden loadIssues und setIsArchiveMode
+  // Input      wird nicht mehr benötigt, ist das schlimm, mit dem fehlenden loadIssues und setIsArchiveMode ?
   // const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(() => {
   //   loadIssues(false);
   //   setIsArchiveMode(false);
@@ -226,159 +226,160 @@ export default function App() {
         setVerificationMessage("E-Mail-Verifizierung fehlgeschlagen");
         setVerificationMessageType("error");
       });
-  }, []);
-
-  // login handler
-  const login = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setAuthError("");
-    setAuthMessage("");
-
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: authEmail,
-        password: authPassword,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setAuthError(data.error || "Login fehlgeschlagen");
-      return;
-    }
-
-    setUserId(data.userId);
-    setUserEmail(data.email);
-    setUserRole(data.role || "user");
-    setEmailVerified(Boolean(data.emailVerified));
-    setAuthEmail("");
-    setAuthPassword("");
-    setAuthView(null);
-    loadIssues(false);
-  };
-
-  //Registrierungs-handler
-  const register = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setAuthError("");
-    setAuthMessage("");
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: authEmail,
-        password: authPassword,
-        adminSecret: registerAsAdmin ? adminCode : undefined,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setAuthError(data.error || "Registrierung fehlgeschlagen");
-      return;
-    }
-
-    setAuthEmail("");
-    setAuthPassword("");
-    setAdminCode("");
-    setRegisterAsAdmin(false);
-    setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
-    setAuthView("login");
-  };
-
-  // logout handler
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUserId(null);
-    setUserEmail("");
-    setUserRole("");
-    setEmailVerified(false);
-    setFilterOnlyOwn(false);
-    loadIssues(false);
-  };
-
-  const resendVerificationEmail = async () => {
-    setSettingsError("");
-    setSettingsMessage("");
-
-    const res = await fetch("/api/auth/resend-verification-email", {
-      method: "POST",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
-      return;
-    }
-
-    setEmailVerified(Boolean(data.emailVerified));
-    setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
-  };
-
-  const settingsButton = (
-    <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
-      <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-      </svg>
-    </button>
-  );
-
-
-  // // Delete issue
-  // const deleteIssue = async (id: number) => {
-  //   await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
-  //   loadIssues();
-  // };
-
-
-  const upvoteIssue = async (id: number) => {
-    setVoteError("");
-
-    // request
-    const res = await fetch(`/api/mangel/${id}/vote`, { method: 'PATCH' });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setVoteError(data.error || "Fehler beim Bewerten");
-      loadIssues(isArchiveMode);
-      return;
-    }
-
-    // reload
-    loadIssues(isArchiveMode);
-  };
-
-  /**
-  * Sendet eine Anfrage an das Backend, um den Status eines Mangels zu aktualisieren.
-  * Wird nur von Administratoren aufgerufen.
-  */
-  const updateStatus = async (id: number, newStatus: string) => {
-    const res = await fetch(`/api/mangel/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    if (!res.ok) {
+    }, []);
+    
+    // login handler
+    const login = async (event: React.FormEvent) => {
+      event.preventDefault();
+      setAuthError("");
+      setAuthMessage("");
+      
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: authEmail,
+          password: authPassword,
+        }),
+      });
+      
       const data = await res.json();
-      alert(data.error || "Fehler beim Aktualisieren des Status");
-    }
-    loadIssues(isArchiveMode);
-  };
-
-  // UI
-  return (
-    <div className="app-shell" style={
-      {
-        '--random-rptu-logo': `url("${randomRptuLogo}")`, // logo in CSS einfügen
-      } as React.CSSProperties
-    }
+      
+      if (!res.ok) {
+        setAuthError(data.error || "Login fehlgeschlagen");
+        return;
+      }
+      
+      setUserId(data.userId);
+      setUserEmail(data.email);
+      setUserRole(data.role || "user");
+      setEmailVerified(Boolean(data.emailVerified));
+      setAuthEmail("");
+      setAuthPassword("");
+      setAuthView(null);
+      loadIssues(false);
+    };
+    
+    //Registrierungs-handler
+    const register = async (event: React.FormEvent) => {
+      event.preventDefault();
+      setAuthError("");
+      setAuthMessage("");
+      
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: authEmail,
+          password: authPassword,
+          adminSecret: registerAsAdmin ? adminCode : undefined,
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setAuthError(data.error || "Registrierung fehlgeschlagen");
+        return;
+      }
+      
+      setAuthEmail("");
+      setAuthPassword("");
+      setAdminCode("");
+      setRegisterAsAdmin(false);
+      setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
+      setAuthView("login");
+    };
+    
+    // logout handler
+    const logout = async () => {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setUserId(null);
+      setUserEmail("");
+      setUserRole("");
+      setEmailVerified(false);
+      setFilterOnlyOwn(false);
+      loadIssues(false);
+    };
+    
+    const resendVerificationEmail = async () => {
+      setSettingsError("");
+      setSettingsMessage("");
+      
+      const res = await fetch("/api/auth/resend-verification-email", {
+        method: "POST",
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
+        return;
+      }
+      
+      setEmailVerified(Boolean(data.emailVerified));
+      setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
+    };
+    
+    //  => ausgelagert in settingsButton.tsx
+    // const settingsButton = (
+    //   <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
+    //   <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+    //   <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+    //   </svg>
+    //   </button>
+    // );
+    
+    
+    // // Delete issue => in useLoadIssue
+    // const deleteIssue = async (id: number) => {
+    //   await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
+    //   loadIssues();
+    // };
+    
+    
+    const upvoteIssue = async (id: number) => {
+      setVoteError("");
+      
+      // request
+      const res = await fetch(`/api/mangel/${id}/vote`, { method: 'PATCH' });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setVoteError(data.error || "Fehler beim Bewerten");
+        loadIssues(isArchiveMode);
+        return;
+      }
+      
+      // reload
+      loadIssues(isArchiveMode);
+    };
+    
+    /**
+    * Sendet eine Anfrage an das Backend, um den Status eines Mangels zu aktualisieren.
+    * Wird nur von Administratoren aufgerufen.
+    */
+    const updateStatus = async (id: number, newStatus: string) => {
+      const res = await fetch(`/api/mangel/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Fehler beim Aktualisieren des Status");
+      }
+      loadIssues(isArchiveMode);
+    };
+    
+    // UI
+    return (
+      <div className="app-shell" style={
+        {
+          '--random-rptu-logo': `url("${randomRptuLogo}")`, // logo in CSS einfügen
+        } as React.CSSProperties
+      }
       /* Event Listener for swiping between Tabs */
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -396,25 +397,29 @@ export default function App() {
 
 
       <div className='list-container'>
-        <div className='header-container'>
-          {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-          {userId ? (
-            <div className="auth-bar">
-              {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-              <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
-              <button className='logout-button' onClick={logout}>Logout</button>
-              {settingsButton}
-            </div>
-          ) : (
-            <div className="auth-bar">
-              {/* Wenn man nicht eingeloggt ist: login und register */}
-              <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
-              <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
-              {settingsButton}
-            </div>
-          )}
-
-          {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
+      <div className='header-container'>
+      {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+      {userId ? (
+        <div className="auth-bar">
+        {/* Wenn man eingeloggt ist: logout und einstellungen*/}
+        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
+        <button className='logout-button' onClick={logout}>Logout</button>
+        <SettingsButton     //ausgelagert, braucht setSettingsOpen
+        setSettingsOpen={setSettingsOpen}
+        />
+        </div>
+      ) : (
+        <div className="auth-bar">
+        {/* Wenn man nicht eingeloggt ist: login und register */}
+        <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
+        <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
+        <SettingsButton     //ausgelagert, braucht setSettingsOpen
+        setSettingsOpen={setSettingsOpen}
+        />
+        </div>
+      )}
+      
+      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
         Das sieht sehr ausschneidbar aus*/}
           {settingsOpen && (
             <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
@@ -631,9 +636,11 @@ export default function App() {
         </div>
 
         <ViewModeButtons
-          userId={userId}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
+        userId  ={userId}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        isArchiveMode={isArchiveMode}
+        setIsArchiveMode={setIsArchiveMode}
         />
 
         <div className='issue-display-area'>

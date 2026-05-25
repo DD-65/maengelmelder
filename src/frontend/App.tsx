@@ -449,6 +449,7 @@ export default function App() {
                         <select
                           value={notificationInterval}
                           onChange={(e) => {
+                            e.stopPropagation();
                             const val = Number(e.target.value);
                             setNotificationInterval(val); 
                             updateNotificationInterval(val); 

@@ -13,10 +13,10 @@ export function InputForm({setIssueList}: {setIssueList: React.Dispatch<React.Se
 
     return(
           <form className="issue-form" onSubmit={addIssue}>
-            <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input type="text" placeholder="Titel" value={title} onChange={(event) => {event.stopPropagation(); setTitle(event.target.value)}} />
 
             <div className="location-wrapper">
-              <input type="text" placeholder="Ort" value={location} onChange={(event) => setLocation(event.target.value)} autoComplete="off" />
+              <input type="text" placeholder="Ort" value={location} onChange={(event) => {event.stopPropagation(); setLocation(event.target.value)}} autoComplete="off" />
 
               {location.length > 0 && filteredRooms.length > 0 && (
                 <div className="room-suggestions">
@@ -36,7 +36,7 @@ export function InputForm({setIssueList}: {setIssueList: React.Dispatch<React.Se
               )}
             </div>
 
-            <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
+            <select value={kategorie} onChange={(event) => {event.stopPropagation(); setKategorie(event.target.value)}}>
               <option value="">Kategorie wählen</option>
               <option value="Steckdose">Steckdose</option>
               <option value="Schlagloch">Schlagloch</option>
@@ -44,8 +44,8 @@ export function InputForm({setIssueList}: {setIssueList: React.Dispatch<React.Se
               <option value="Mobiliar">Mobiliar</option>
               <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
             </select>
-            <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
-            <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
+            <input type="file" accept="image/*" onChange={(event) => {event.stopPropagation(); setImage(event.target.files ? event.target.files[0] : null)}} />
+            <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => {event.stopPropagation(); setDescription(event.target.value)}} maxLength={200} />
 
             <button type="submit">Posten</button>
           </form>

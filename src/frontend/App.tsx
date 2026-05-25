@@ -595,7 +595,7 @@ export default function App() {
 
             {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
             {currentFilter ? (
-              <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}>
+              <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => {event.stopPropagation(); chooseFilterValue(currentFilter, event.target.value)}}>
                 <option value="" disabled>Wert wählen</option>
                 {possibleFilterValues[currentFilter]?.map((value) => (
                   <option key={value} value={value}>{value}</option>
@@ -604,7 +604,7 @@ export default function App() {
             ) : null}
             <div className='divider'></div>
             {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
-            <select className='issue-sorting-select' value={currentSorting} onChange={(event) => chooseSorting(event.target.value)} >
+            <select className='issue-sorting-select' value={currentSorting} onChange={(event) => {event.stopPropagation(); chooseSorting(event.target.value)}} >
               <option value="" disabled>Sortierung wählen</option>
               {possibleSortings.map((sorting) => (
                 <option key={sorting} value={sorting}>{sorting}</option>
@@ -615,7 +615,7 @@ export default function App() {
 
             {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
             {currentSorting ? (
-              <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}>
+              <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => {event.stopPropagation(); chooseSortingMode(currentSorting, event.target.value)}}>
 
                 {possibleSortingModes[currentSorting]?.map((mode) => (
                   <option key={mode} value={mode}>

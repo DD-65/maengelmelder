@@ -24,8 +24,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(basicAuth); //AUSKOMMENTIEREN UM BASIC AUTH ZU DEAKTIVIEREN
-
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
 const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
@@ -52,6 +50,8 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24
   }
 }));
+
+app.use(basicAuth); //AUSKOMMENTIEREN UM BASIC AUTH ZU DEAKTIVIEREN
 
 // Multer Setup für Dateiuploads
 const upDir = path.join(__dirname, "../../uploads");
@@ -663,14 +663,20 @@ app.get("/api/auth/me", (req, res) => {
 
 // logout endpunkt
 app.post("/api/auth/logout", (req, res) => {
-  req.session.destroy((error) => {
-    if (error) {
-      return res.status(500).json({ error: "Fehler beim Logout" });
-    }
-    
-    res.clearCookie("connect.sid");
+  //Nicht die ganze Session zerstören, da sonst auch die Basic Auth (isTeamAuthenticated) verloren geht und Chromium sofort ein neues Popup zeigt.
+  // Nur userId löschen, um den Nutzer auszuloggen.
+  if (req.session) {
+    req.session.userId = undefined;
+    // Optional: Falls  die Session trotzdem weggeschrieben werden soll
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Fehler beim Logout" });
+      }
+      res.json({ message: "Logout erfolgreich" });
+    });
+  } else {
     res.json({ message: "Logout erfolgreich" });
-  });
+  }
 });
 
 // helper um routes login brauchen zu lassen

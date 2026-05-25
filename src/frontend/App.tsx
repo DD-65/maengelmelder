@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 
 import { Map } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -45,6 +45,10 @@ import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
 import { registerClient } from 'fuse/next/server';
 import { SettingsButton } from './library/ui/settingsButton';
+
+type ThemePreference = "system" | "light" | "dark";
+
+const THEME_STORAGE_KEY = "maengelmelder-theme-preference";
 
 
 
@@ -117,6 +121,14 @@ export default function App() {
 
   // State für das gespeicherte Benachrichtigungs-Intervall
   const [notificationInterval, setNotificationInterval] = useState<number>(0);
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => {
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
+  });
+
+  const stopSwipePropagation = (event: SyntheticEvent) => {
+    event.stopPropagation();
+  };
 
   // Für Status-Mails
   const updateNotificationInterval = async (interval: number) => {
@@ -153,6 +165,19 @@ export default function App() {
   useEffect(() => {
     loadIssues(isArchiveMode);
   }, [isArchiveMode, loadIssues]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (themePreference === "system") {
+      root.removeAttribute("data-theme");
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+      return;
+    }
+
+    root.dataset.theme = themePreference;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+  }, [themePreference]);
 
   // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
@@ -432,6 +457,18 @@ export default function App() {
                 </div>
 
                 <div className="settings-options">
+                  <label className="settings-field">
+                    <span>Darstellung</span>
+                    <select
+                      value={themePreference}
+                      onChange={(e) =>{e.stopPropagation(); setThemePreference(e.target.value as ThemePreference)}}
+                    >
+                      <option value="system">Browser-Setting</option>
+                      <option value="light">Hell</option>
+                      <option value="dark">Dunkel</option>
+                    </select>
+                  </label>
+
                   {userId && (
                     <>
                       <div className="settings-option">
@@ -472,22 +509,6 @@ export default function App() {
                       {settingsError && <p className="error-text">{settingsError}</p>}
                     </>
                   )}
-
-                  <label className="settings-option">
-                    <span>
-                      <strong>Kompakte Ansicht</strong>
-                      <small>Platzhalter</small>
-                    </span>
-                    <input type="checkbox" />
-                  </label>
-
-                  <label className="settings-field">
-                    <span>Sprache</span>
-                    <select defaultValue="de">
-                      <option value="de">Deutsch</option>
-                      <option value="en">Englisch</option>
-                    </select>
-                  </label>
                 </div>
               </section>
             </div>
@@ -585,7 +606,15 @@ export default function App() {
 
           <div className='issue-toolbar'>
             {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-            <select className='issue-filter-select' value={currentFilter} onChange={(event) => chooseFilter(event.target.value)}>
+            <select
+              className='issue-filter-select'
+              value={currentFilter}
+              onMouseDown={stopSwipePropagation}
+              onMouseUp={stopSwipePropagation}
+              onTouchStart={stopSwipePropagation}
+              onTouchEnd={stopSwipePropagation}
+              onChange={(event) => chooseFilter(event.target.value)}
+            >
               <option value="" disabled>Filter wählen</option>
               {possibleFilters.map((filter) => (
                 <option key={filter} value={filter}>{filter}</option>
@@ -595,7 +624,15 @@ export default function App() {
 
             {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
             {currentFilter ? (
-              <select className='issue-filter-value-select' value={currentFilterValue} onChange={(event) => {event.stopPropagation(); chooseFilterValue(currentFilter, event.target.value)}}>
+              <select
+                className='issue-filter-value-select'
+                value={currentFilterValue}
+                onMouseDown={stopSwipePropagation}
+                onMouseUp={stopSwipePropagation}
+                onTouchStart={stopSwipePropagation}
+                onTouchEnd={stopSwipePropagation}
+                onChange={(event) => {event.stopPropagation(); chooseFilterValue(currentFilter, event.target.value)}}
+              >
                 <option value="" disabled>Wert wählen</option>
                 {possibleFilterValues[currentFilter]?.map((value) => (
                   <option key={value} value={value}>{value}</option>
@@ -604,7 +641,15 @@ export default function App() {
             ) : null}
             <div className='divider'></div>
             {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
-            <select className='issue-sorting-select' value={currentSorting} onChange={(event) => {event.stopPropagation(); chooseSorting(event.target.value)}} >
+            <select
+              className='issue-sorting-select'
+              value={currentSorting}
+              onMouseDown={stopSwipePropagation}
+              onMouseUp={stopSwipePropagation}
+              onTouchStart={stopSwipePropagation}
+              onTouchEnd={stopSwipePropagation}
+              onChange={(event) => {event.stopPropagation(); chooseSorting(event.target.value)}}
+            >
               <option value="" disabled>Sortierung wählen</option>
               {possibleSortings.map((sorting) => (
                 <option key={sorting} value={sorting}>{sorting}</option>
@@ -615,7 +660,15 @@ export default function App() {
 
             {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
             {currentSorting ? (
-              <select className='issue-sorting-mode-select' value={currentSortingMode} onChange={(event) => {event.stopPropagation(); chooseSortingMode(currentSorting, event.target.value)}}>
+              <select
+                className='issue-sorting-mode-select'
+                value={currentSortingMode}
+                onMouseDown={stopSwipePropagation}
+                onMouseUp={stopSwipePropagation}
+                onTouchStart={stopSwipePropagation}
+                onTouchEnd={stopSwipePropagation}
+                onChange={(event) => {event.stopPropagation(); chooseSortingMode(currentSorting, event.target.value)}}
+              >
 
                 {possibleSortingModes[currentSorting]?.map((mode) => (
                   <option key={mode} value={mode}>

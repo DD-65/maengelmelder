@@ -82,7 +82,7 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdat
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
-            <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}> Meldung Löschen</button>
+            <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}> {issue.status === "Gelöscht" ? "Meldung endgültig löschen" : "Meldung Löschen"}</button>
             /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
           )}
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}

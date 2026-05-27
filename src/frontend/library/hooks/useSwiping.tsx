@@ -14,7 +14,12 @@ export function useSwiping(
     const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
         const target = e.target as HTMLElement;
 
-        if (target.closest('.leaflet-container')) return; // Ignore touches on the map
+        // dauerhafter fix für falsches Swiping: wenn auf unerwünschten Elementen getippt wird, wird das Swiping nicht gestartet
+        // müssen evtl laufend ergänzt werden, je nachdem, welche Elemente noch Probleme machen
+        if (target.closest('.leaflet-container, .settings-pane, select, input, textarea, button')) {
+            setTouchStart(null);
+            return;
+        }
 
         if ('touches' in e) {
             setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); // Either per Touch

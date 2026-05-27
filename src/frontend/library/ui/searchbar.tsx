@@ -23,7 +23,7 @@ export function Searchbar({query, setQuery, searchView, setSearchView, issuesToD
                 }}
             />
             {(query.length > 0 || searchView === "search") && (
-              <button className="search-clear-button" aria-label="Suche schließen" onClick={(e) => {e.stopPropagation();setQuery("");setSearchView(null);}}>
+              <button className="search-clear-button" aria-label="Suche schließen" onClick={() => {setQuery("");setSearchView(null);}}>
                 X
               </button>
             )}

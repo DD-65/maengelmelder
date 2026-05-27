@@ -1,4 +1,4 @@
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Map } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -125,10 +125,6 @@ export default function App() {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
   });
-
-  const stopSwipePropagation = (event: SyntheticEvent) => {
-    event.stopPropagation();
-  };
 
   // Für Status-Mails
   const updateNotificationInterval = async (interval: number) => {
@@ -461,7 +457,7 @@ export default function App() {
                     <span>Darstellung</span>
                     <select
                       value={themePreference}
-                      onChange={(e) =>{e.stopPropagation(); setThemePreference(e.target.value as ThemePreference)}}
+                      onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
                     >
                       <option value="system">Browser-Setting</option>
                       <option value="light">Hell</option>
@@ -486,7 +482,6 @@ export default function App() {
                         <select
                           value={notificationInterval}
                           onChange={(e) => {
-                            e.stopPropagation();
                             const val = Number(e.target.value);
                             setNotificationInterval(val); 
                             updateNotificationInterval(val); 
@@ -609,10 +604,6 @@ export default function App() {
             <select
               className='issue-filter-select'
               value={currentFilter}
-              onMouseDown={stopSwipePropagation}
-              onMouseUp={stopSwipePropagation}
-              onTouchStart={stopSwipePropagation}
-              onTouchEnd={stopSwipePropagation}
               onChange={(event) => chooseFilter(event.target.value)}
             >
               <option value="" disabled>Filter wählen</option>
@@ -627,11 +618,7 @@ export default function App() {
               <select
                 className='issue-filter-value-select'
                 value={currentFilterValue}
-                onMouseDown={stopSwipePropagation}
-                onMouseUp={stopSwipePropagation}
-                onTouchStart={stopSwipePropagation}
-                onTouchEnd={stopSwipePropagation}
-                onChange={(event) => {event.stopPropagation(); chooseFilterValue(currentFilter, event.target.value)}}
+                onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
               >
                 <option value="" disabled>Wert wählen</option>
                 {possibleFilterValues[currentFilter]?.map((value) => (
@@ -644,18 +631,14 @@ export default function App() {
             <select
               className='issue-sorting-select'
               value={currentSorting}
-              onMouseDown={stopSwipePropagation}
-              onMouseUp={stopSwipePropagation}
-              onTouchStart={stopSwipePropagation}
-              onTouchEnd={stopSwipePropagation}
-              onChange={(event) => {event.stopPropagation(); chooseSorting(event.target.value)}}
+              onChange={(event) => chooseSorting(event.target.value)}
             >
               <option value="" disabled>Sortierung wählen</option>
               {possibleSortings.map((sorting) => (
                 <option key={sorting} value={sorting}>{sorting}</option>
 
               ))}
-              <option value=""> - Kein Sortierung - </option>
+              <option value=""> - Keine Sortierung - </option>
             </select>
 
             {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
@@ -663,11 +646,7 @@ export default function App() {
               <select
                 className='issue-sorting-mode-select'
                 value={currentSortingMode}
-                onMouseDown={stopSwipePropagation}
-                onMouseUp={stopSwipePropagation}
-                onTouchStart={stopSwipePropagation}
-                onTouchEnd={stopSwipePropagation}
-                onChange={(event) => {event.stopPropagation(); chooseSortingMode(currentSorting, event.target.value)}}
+                onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
               >
 
                 {possibleSortingModes[currentSorting]?.map((mode) => (

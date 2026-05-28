@@ -175,6 +175,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.votes,
         maengel.image_url,
         maengel.thumbnail_url,
+        maengel.statusComment,
         users.email AS user_email,
         CASE
           WHEN ? IS NULL THEN 0
@@ -203,7 +204,7 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
   try {
     const userId = req.session.userId;
     const mangelId = Number(req.params.id);
-    const { status } = req.body;
+    const { status, statusComment } = req.body;
 
     // Prüfen, ob der Nutzer Admin ist
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
@@ -216,11 +217,15 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     if (!allowedStatus.includes(status)) {
       return res.status(400).json({ error: "Ungültiger Status" });
     }
+    // Länge des Statuskommentar checken
+    if (statusComment && statusComment.trim().length > 255) {
+      return res.status(400).json({ error: "Statuskommentar darf maximal 255 Zeichen lang sein" });
+    }
 
     //  Infos holen, bevor der Status überschrieben wird
     const oldMangelData = db.prepare(`
-      SELECT status, title, user_id FROM maengel WHERE id = ?
-    `).get(mangelId) as { status: string, title: string, user_id: number } | undefined;
+      SELECT status, title, user_id, statusComment FROM maengel WHERE id = ?
+    `).get(mangelId) as { status: string, title: string, user_id: number, statusComment: string } | undefined;
 
     if (!oldMangelData) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
@@ -229,16 +234,16 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     // Update durchführen
     let result;
     if (status === "Gelöscht") {
-      result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
+      result = db.prepare("UPDATE maengel SET is_deleted = 1, statusComment = ? WHERE id = ?").run(statusComment, mangelId);
     } else {
-      result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
+      result = db.prepare("UPDATE maengel SET status = ?, statusComment = ?, is_deleted = 0 WHERE id = ?").run(status, statusComment, mangelId);
     }
 
     // In status_changes loggen 
     db.prepare(`
-      INSERT INTO status_changes (mangel_id, old_status, new_status)
-      VALUES (?, ?, ?)
-    `).run(mangelId, oldMangelData.status, status);
+      INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment, new_statusComment)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment, statusComment);
 
     // Prüfen, ob sofort eine Mail geschickt werden soll
     const recipient = db.prepare(`
@@ -247,7 +252,7 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     `).get(oldMangelData.user_id) as { email: string, email_verified_at: string | null, notification_interval: number } | undefined;
 
     if (recipient?.email_verified_at && recipient.notification_interval === 0) {
-      sendStatusUpdateEmail(recipient.email, oldMangelData.title, status).catch(err => {
+      sendStatusUpdateEmail(recipient.email, oldMangelData.title, status, statusComment).catch(err => {
         console.error("Mail-Fehler:", err);
       });
     }
@@ -257,6 +262,46 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     res.status(500).json({ error: "Fehler beim Aktualisieren des Status" });
   }
 });
+
+
+// Kommentar schreiben (nur Admin)
+// app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
+//   try {
+//     const userId = req.session.userId;
+//     const mangelId = Number(req.params.id);
+//     const { comment } = req.body;
+
+//     // Prüfen, ob der Nutzer Admin ist
+//     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+//     if (user.role !== "admin") {
+//       return res.status(403).json({ error: "Nur Administratoren dürfen einen Statuskommentar schreiben" });
+//     }
+
+//     // Länge des Statuskommentar checken
+//     if (comment && comment.trim().length > 255) {
+//       return res.status(400).json({ error: "Statuskommentar darf maximal 255 Zeichen lang sein" });
+//     }
+
+//     //  Infos holen, bevor der Statuskommentar eingegeben
+//     const oldMangelData = db.prepare(`
+//       SELECT status, title, user_id FROM maengel WHERE id = ?
+//     `).get(mangelId) as { status: string, title: string, user_id: number } | undefined;
+
+//     if (!oldMangelData) {
+//       return res.status(404).json({ error: "Mangel nicht gefunden" });
+//     }
+
+//     // Update durchführen
+//     let result;
+//     if (status === "Gelöscht") {
+//       result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
+//     } else {
+//       result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
+//     }
+//   }catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Fehler beim Aktualisieren des Statuskommentar" });}
+// });
 
 // neuen Mangel anlegen
 app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {

@@ -69,6 +69,7 @@ db.exec(`
     kategorie TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
+    statusComment TEXT DEFAULT NULL CHECK(LENGTH(adminComment) <= 255 OR adminComment IS NULL),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (kategorie) REFERENCES kategorien(kategorieelem) ON DELETE SET NULL
   )
@@ -91,6 +92,8 @@ db.exec(`
     mangel_id INTEGER NOT NULL,
     old_status TEXT,
     new_status TEXT NOT NULL,
+    old_statusComment Text,
+    new_statusComment Text,
     changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     mail_sent INTEGER DEFAULT 0, -- 0 = noch nicht in Sammelmail verschickt
     FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
@@ -98,10 +101,15 @@ db.exec(`
 `);
 
 
-
 // Migration: status Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
   db.exec("ALTER TABLE maengel ADD COLUMN status TEXT NOT NULL DEFAULT 'Gemeldet' CHECK (status IN ('Gemeldet', 'Akzeptiert', 'Abgelehnt', 'In Bearbeitung', 'Behoben'))");
+} catch {
+  // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
+}
+
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN statusComment TEXT DEFAULT NULL CHECK(LENGTH(statusComment) <= 255 OR statusComment IS NULL)");
 } catch {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
@@ -139,6 +147,13 @@ try {
 } catch {
   // Falls die Spalte schon existiert, ignorieren
 }
+
+try {
+  db.exec("ALTER TABLE status_changes ADD COLUMN old_statusComment TEXT")
+} catch {/*nix machen, wie sonst auch*/}
+try {
+  db.exec("ALTER TABLE status_changes ADD COLUMN new_statusComment TEXT")
+} catch{/*nix machen, wie sonst auch*/}
 
 // Tabelle für votes, damit ein Nutzer nur einmal voten kann
 db.exec(`

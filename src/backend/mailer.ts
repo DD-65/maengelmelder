@@ -57,7 +57,7 @@ export async function sendVerificationEmail({ to, verifyUrl }: VerificationMailI
 /**
  * Benachrichtigung bei Statusänderungen eines Mangels.
  */
-export async function sendStatusUpdateEmail(to: string, title: string, status: string) {
+export async function sendStatusUpdateEmail(to: string, title: string, status: string, statusComment?: string) {
   const transporter = createTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
@@ -65,10 +65,10 @@ export async function sendStatusUpdateEmail(to: string, title: string, status: s
     from,
     to,
     subject: `Status-Update: ${title}`,
-    text: `Der Status deines Mangels "${title}" wurde auf "${status}" geändert.`,
+    text: `Der Status deines Mangels "${title}" wurde auf "${status}" geändert. Begründung: "${statusComment}"`,
     html: `
       <p>Hallo,</p>
-      <p>der Status deines Mangels <strong>"${title}"</strong> wurde auf <strong>"${status}"</strong> geändert.</p>
+      <p>der Status deines Mangels <strong>"${title}"</strong> wurde auf <strong>"${status}"</strong> geändert. Begründung: <strong>"${statusComment}"</strong></p>
     `,
   });
 }

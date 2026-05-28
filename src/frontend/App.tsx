@@ -1,23 +1,15 @@
 import { useEffect, useState } from 'react';
 
 import { Map } from './library/ui/map';
-// import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-// import L from 'leaflet';
-// import 'leaflet/dist/leaflet.css';
 
-// Konstanten und random U's importieren
-import { rooms } from './library/constants/rooms';   // unnötig, weil ausgebaut
-import { buildingCoordinates } from './library/constants/buildingCoordinates';
+// Random U's importieren
 import { randomRptuLogo } from './library/utils/rptulogo';
 
-// input importieren
-import { useInput } from './library/hooks/useInput';    //eigentlich auch unnötig, weil ausgebaut
 // suche importieren
 import { useSearch } from './library/ui/search';
 import { Searchbar } from './library/ui/searchbar';
 
 // issue components importieren
-import { Issue } from './library/types/Issue';
 import { useIssueList } from './library/hooks/useIssueList';
 import { IssueCard } from './library/ui/renderIssueCard';
 import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
@@ -379,20 +371,22 @@ export default function App() {
     /**
     * Sendet eine Anfrage an das Backend, um den Status eines Mangels zu aktualisieren.
     * Wird nur von Administratoren aufgerufen.
-    */
-    const updateStatus = async (id: number, newStatus: string) => {
-      const res = await fetch(`/api/mangel/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
+    */    
+  //   const updateStatus = async (id: number, newStatus: string, newComment: string) => {
+  //     const res = await fetch(`/api/mangel/${id}/status`, {
+  //       method: 'PATCH',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ status: newStatus, comment: newComment }),
+  //     });
       
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Fehler beim Aktualisieren des Status");
-      }
-      loadIssues(isArchiveMode);
-    };
+  //     if (!res.ok) {
+  //       const data = await res.json();
+  //       alert(data.error || "Fehler beim Aktualisieren des Status");
+  //     }
+  //     loadIssues(isArchiveMode);
+  //   };
+  // }
+
     
     // UI
     return (
@@ -700,7 +694,8 @@ export default function App() {
                         }
                       }}
                       onUpvote={upvoteIssue}
-                      onUpdateStatus={updateStatus}
+                      isArchiveMode={isArchiveMode}
+                      setIssueList={setIssueList}
                     />
                   ))}
               </ul>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Issue } from '../types/Issue';
+import { useUpdateStatus } from '../hooks/useUpdateStatus';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -7,11 +8,17 @@ interface IssueCardProperties {
   userId: number | null;
   onDelete: (id: number) => void;
   onUpvote: (id: number) => void;
-  onUpdateStatus: (id: number, status: string) => void;
+  isArchiveMode: boolean;
+  setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
+  //onUpdateStatus: (id: number, status: string) => void;
+  //onUpdateComment: (id: number, comment: string) => void;
 }
 
-export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdateStatus }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchiveMode, setIssueList/*onUpdateStatus, onUpdateComment*/ }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
+  const{updateStatus}=useUpdateStatus(isArchiveMode, setIssueList);
+  const [newStatusComment, setNewStatusComment]= useState('');
+  const [newStatus, setNewStatus] = useState(issue.status ?? '');
 
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
@@ -38,22 +45,32 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdat
 
           {/* Admin-Steuerung fuer den Status */}
           {userRole === "admin" && (
-            <select
-              className="status-select"
-              value={issue.status}
-              /* Stops card from expanding when dropdown menu is clicked */
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => issue.id && onUpdateStatus(issue.id, e.target.value)}
-            >
-              <option value="Gemeldet">Gemeldet</option>
-              <option value="Akzeptiert">Akzeptiert</option>
-              <option value="Abgelehnt">Abgelehnt</option>
-              <option value="In Bearbeitung">In Bearbeitung</option>
-              <option value="Behoben">Behoben</option>
-              <option value="Gelöscht">Gelöscht</option>
-            </select>
-          )}
+            <form onSubmit={(e) => { e.preventDefault();
+                                      e.stopPropagation();
+                                      issue.id && updateStatus(issue.id, newStatus, newStatusComment);
+                                      setNewStatusComment('')}}>
+              <select
+                className="status-select"
+                value={newStatus}
+                /* Stops card from expanding when dropdown menu is clicked */
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => issue.id && setNewStatus(e.target.value)}//nUpdateStatus(issue.id, e.target.value)
+              >
+                <option value="Gemeldet">Gemeldet</option>
+                <option value="Akzeptiert">Akzeptiert</option>
+                <option value="Abgelehnt">Abgelehnt</option>
+                <option value="In Bearbeitung">In Bearbeitung</option>
+                <option value="Behoben">Behoben</option>
+                <option value="Gelöscht">Gelöscht</option>
+              </select><br/>
+              <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment} onChange={(event) => issue.id && setNewStatusComment(event.target.value)} autoComplete="off"/>
+              <button type="submit" onClick={(e)=> {e.stopPropagation()}}>Status ändern</button>
+            </form>
+             )}
         </div>
+        <span>
+            Bgründung für Status: {issue.statusComment}
+        </span>
 
         {/* Standort des Mangels */}
         <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>

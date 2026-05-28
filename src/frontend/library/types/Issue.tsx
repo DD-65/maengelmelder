@@ -11,6 +11,7 @@ export type Issue = {
   kategorie?: string | null;
   image_url?: string | null;
   thumbnail_url?: string | null;
+  statusComment?: string;
 }
 
 

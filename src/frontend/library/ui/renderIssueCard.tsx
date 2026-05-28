@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Issue } from '../types/Issue';
 import { useUpdateStatus } from '../hooks/useUpdateStatus';
+import { Kommentar } from './renderComment';
+import { useSortedCommentList } from '../hooks/useSortedCommentList';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -16,9 +18,11 @@ interface IssueCardProperties {
 
 export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchiveMode, setIssueList/*onUpdateStatus, onUpdateComment*/ }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
-  const{updateStatus}=useUpdateStatus(isArchiveMode, setIssueList);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
+  const [commentsOpen, setCommentsOpen]= useState(false);
+  const{sortedCommentList, setCommentList} = useSortedCommentList(issue);
+  const{updateStatus}=useUpdateStatus(isArchiveMode, setIssueList, setCommentList);
 
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
@@ -63,13 +67,14 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
                 <option value="Behoben">Behoben</option>
                 <option value="Gelöscht">Gelöscht</option>
               </select><br/>
-              <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment} onChange={(event) => issue.id && setNewStatusComment(event.target.value)} autoComplete="off"/>
+              {/* irgendwie hilft stop propagation hier nicht, wenn es ums Öffnen des Bildes geht */}
+              <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment} onChange={(event) => {event.stopPropagation(); issue.id && setNewStatusComment(event.target.value)}} autoComplete="off"/>
               <button type="submit" onClick={(e)=> {e.stopPropagation()}}>Status ändern</button>
             </form>
              )}
         </div>
         <span>
-            Bgründung für Status: {issue.statusComment}
+            Begründung für Status: {issue.statusComment}
         </span>
 
         {/* Standort des Mangels */}
@@ -97,6 +102,11 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
           <p>Likes: {issue.votes || 0}</p>
           <p>Kategorie: {issue.kategorie || '-'}</p>
 
+          {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
+          <button onClick={()=> {setCommentsOpen(!commentsOpen)}}>Kommentare</button>
+          
+
+
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
             <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}> {issue.status === "Gelöscht" ? "Meldung endgültig löschen" : "Meldung Löschen"}</button>
@@ -108,7 +118,21 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
           ) : (
             <button disabled onClick={(e) => e.stopPropagation()}>Like</button>
           )}
+
         </div>
+
+        {/* Kommentare ganz unten im Issue anzeigen */}
+          {commentsOpen === true &&(
+            <ul className='commentList'>
+              {sortedCommentList.map((comment, index) => ( 
+                      <Kommentar
+                          key={index}
+                          commentStatus={comment.status}
+                          commentInhalt={comment.kommentar}
+                          commentKommentator={comment.userEmail}
+                      />
+              ))}
+            </ul>)}
       </li>
     );
   }

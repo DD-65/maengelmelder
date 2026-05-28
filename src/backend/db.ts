@@ -69,7 +69,8 @@ db.exec(`
     kategorie TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     votes INTEGER NOT NULL DEFAULT 0 CHECK (votes >= 0),
-    statusComment TEXT DEFAULT NULL CHECK(LENGTH(adminComment) <= 255 OR adminComment IS NULL),
+    statusComment_id INTEGER,
+    FOREIGN KEY (statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (kategorie) REFERENCES kategorien(kategorieelem) ON DELETE SET NULL
   )
@@ -92,11 +93,13 @@ db.exec(`
     mangel_id INTEGER NOT NULL,
     old_status TEXT,
     new_status TEXT NOT NULL,
-    old_statusComment Text,
-    new_statusComment Text,
+    old_statusComment_id INTEGER,
+    new_statusComment_id INTEGER,
     changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     mail_sent INTEGER DEFAULT 0, -- 0 = noch nicht in Sammelmail verschickt
-    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
+    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE,
+    FOREIGN KEY (old_statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL,
+    FOREIGN KEY (new_statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL
   )
 `);
 
@@ -109,10 +112,18 @@ try {
 }
 
 try {
-  db.exec("ALTER TABLE maengel ADD COLUMN statusComment TEXT DEFAULT NULL CHECK(LENGTH(statusComment) <= 255 OR statusComment IS NULL)");
+  db.exec("ALTER TABLE maengel DROP COLUMN statusComment"); 
+} catch {
+  // Falls die Spalte schon gelöscht wurde oder ein anderer Fehler auftritt, ignorieren wir das hier
+}
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN statusComment_id INTEGER"); 
 } catch {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN FOREIGN KEY (statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL")
+} catch{/*nix machen, wie sonst auch*/}
 
 // Migration: kategorie Spalte hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
@@ -149,10 +160,22 @@ try {
 }
 
 try {
-  db.exec("ALTER TABLE status_changes ADD COLUMN old_statusComment TEXT")
+  db.exec("ALTER TABLE status_changes ADD COLUMN old_statusComment_id INTEGER")
 } catch {/*nix machen, wie sonst auch*/}
 try {
-  db.exec("ALTER TABLE status_changes ADD COLUMN new_statusComment TEXT")
+  db.exec("ALTER TABLE status_changes ADD COLUMN new_statusComment_id INTEGER")
+} catch{/*nix machen, wie sonst auch*/}
+try {
+  db.exec("ALTER TABLE status_changes ADD COLUMN FOREIGN KEY (old_statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL")
+} catch{/*nix machen, wie sonst auch*/}
+try {
+  db.exec("ALTER TABLE status_changes ADD COLUMN FOREIGN KEY (new_statusComment_id) REFERENCES maengel_kommentare(id) ON DELETE SET NULL")
+} catch{/*nix machen, wie sonst auch*/}
+try {
+  db.exec("ALTER TABLE status_changes DROP COLUMN new_statusComment")
+} catch{/*nix machen, wie sonst auch*/}
+try {
+  db.exec("ALTER TABLE status_changes DROP COLUMN old_statusComment")
 } catch{/*nix machen, wie sonst auch*/}
 
 // Tabelle für votes, damit ein Nutzer nur einmal voten kann
@@ -172,6 +195,24 @@ try {
 } catch {
   // Falls die Spalte schon existiert oder ein anderer Fehler auftritt, ignorieren wir das hier
 }
+
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS maengel_kommentare (
+    user_id INTEGER NOT NULL,
+    mangel_id INTEGER NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kommentar TEXT DEFAULT NULL CHECK(LENGTH(kommentar) <= 255 OR kommentar IS NULL),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
+  )
+`);
+
+try {
+  db.exec("ALTER TABLE maengel_kommentare ADD COLUMN kommentar TEXT DEFAULT NULL CHECK(LENGTH(kommentar) <= 255 OR kommentar IS NULL)")
+} catch{/*nix machen, wie sonst auch*/}
+
 
 
 export default db;

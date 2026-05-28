@@ -97,7 +97,7 @@ export default function App() {
   //--> filteredIssues dann als input in useSorting
   // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
   const { currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode } = useSorting(filteredIssues);
-  const finalIssueList = sortedIssues;
+  const finalIssueList = sortedIssues;  // redundant, eigentlich könnte man unten bei IssueCard direkt sortedIssues übergeben
   // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
   const { verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType } = useVerificationMessage();
 

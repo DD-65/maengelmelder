@@ -175,7 +175,7 @@ app.get("/api/mangel", (req, res) => {
         maengel.votes,
         maengel.image_url,
         maengel.thumbnail_url,
-        maengel.statusComment,
+        maengel_kommentare.kommentar AS statusComment,
         users.email AS user_email,
         CASE
           WHEN ? IS NULL THEN 0
@@ -188,6 +188,7 @@ app.get("/api/mangel", (req, res) => {
         END AS has_voted
       FROM maengel
       LEFT JOIN users ON maengel.user_id = users.id
+      LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
       ${whereClause}
       ORDER BY maengel.votes DESC, maengel.created_at DESC
     `);
@@ -224,8 +225,8 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
 
     //  Infos holen, bevor der Status überschrieben wird
     const oldMangelData = db.prepare(`
-      SELECT status, title, user_id, statusComment FROM maengel WHERE id = ?
-    `).get(mangelId) as { status: string, title: string, user_id: number, statusComment: string } | undefined;
+      SELECT status, title, user_id, statusComment_id FROM maengel WHERE id = ?
+    `).get(mangelId) as { status: string, title: string, user_id: number, statusComment_id: number} | undefined;
 
     if (!oldMangelData) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
@@ -234,16 +235,19 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     // Update durchführen
     let result;
     if (status === "Gelöscht") {
-      result = db.prepare("UPDATE maengel SET is_deleted = 1, statusComment = ? WHERE id = ?").run(statusComment, mangelId);
+      result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
     } else {
-      result = db.prepare("UPDATE maengel SET status = ?, statusComment = ?, is_deleted = 0 WHERE id = ?").run(status, statusComment, mangelId);
+      result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
     }
+    const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment, oldMangelData.user_id, mangelId);
+    const kommentarid = kommentar.lastInsertRowid;
+    result = db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarid, mangelId);
 
     // In status_changes loggen 
     db.prepare(`
-      INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment, new_statusComment)
+      INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment_id, new_statusComment_id)
       VALUES (?, ?, ?, ?, ?)
-    `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment, statusComment);
+    `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment_id, kommentarid);
 
     // Prüfen, ob sofort eine Mail geschickt werden soll
     const recipient = db.prepare(`
@@ -264,6 +268,34 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
 });
 
 
+
+// Kommentare laden aktuell einfach kopie von mangel laden
+app.get("/api/comment/:mangelId", (req, res) => {
+  try {
+    const mangelId = Number(req.params.mangelId);
+
+
+const stmt = db.prepare(`
+      SELECT
+        status_changes.new_status AS status,
+        maengel_kommentare.kommentar,
+        users.email AS userEmail, 
+        maengel_kommentare.created_at AS timestamp
+      FROM maengel_kommentare LEFT JOIN status_changes
+      ON maengel_kommentare.id = status_changes.new_statusComment_id
+      LEFT JOIN users
+      ON maengel_kommentare.user_id = users.id
+      WHERE maengel_kommentare.mangel_id = ?
+      ORDER BY maengel_kommentare.created_at ASC
+    `);
+    const kommentare = stmt.all(mangelId);
+    res.json(kommentare);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim laden der Kommentare" });
+  }
+});
 // Kommentar schreiben (nur Admin)
 // app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
 //   try {

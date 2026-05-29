@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Map } from './library/ui/map';
+import type { MapSummaryItem } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 // import L from 'leaflet';
 // import 'leaflet/dist/leaflet.css';
@@ -12,15 +13,14 @@ import { randomRptuLogo } from './library/utils/rptulogo';
 
 // input importieren
 import { useInput } from './library/hooks/useInput';    //eigentlich auch unnötig, weil ausgebaut
-// suche importieren
-import { useSearch } from './library/ui/search';
 import { Searchbar } from './library/ui/searchbar';
 
-// issue components importieren
+// issue components importieren (jetzt auch mit pagination™)
 import { Issue } from './library/types/Issue';
 import { useIssueList } from './library/hooks/useIssueList';
 import { IssueCard } from './library/ui/renderIssueCard';
-import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
+import { useLoadIssues } from './library/hooks/useLoadIssues'; 
+import type { LoadIssuesOptions } from './library/hooks/useLoadIssues';
 
 // swiping & teile von Map
 import { useViewMode } from './library/hooks/useViewMode';
@@ -28,6 +28,7 @@ import { useSwiping } from './library/hooks/useSwiping';
 
 // Filter importieren
 import { useFilter } from './library/hooks/useFilter';
+import type { FilterOptionValues } from './library/hooks/useFilter';
 import { useArchiveMode } from './library/hooks/useArchiveMode';
 // Sortierung importieren
 import { useSorting } from './library/hooks/useSorting';
@@ -43,26 +44,36 @@ import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile 
 import { RegistrationLogin } from './library/ui/ERRORregistrationLogin';
 import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
-import { registerClient } from 'fuse/next/server';
+//import { registerClient } from 'fuse/next/server'; brauchen wir den import? hat nur nen fehler geschmissen
 import { SettingsButton } from './library/ui/settingsButton';
+import { IssuePagination } from './library/ui/issuePagination';
 
 type ThemePreference = "system" | "light" | "dark";
 
 const THEME_STORAGE_KEY = "maengelmelder-theme-preference";
+const ISSUE_PAGE_SIZE = 20;
 
+function buildIssueQueryParams(options: LoadIssuesOptions) {
+  const params = new URLSearchParams();
 
+  if (options.archiv) params.set("archiv", "true");
+  if (options.search) params.set("search", options.search);
+  if (options.kategorie) params.set("kategorie", options.kategorie);
+  if (options.status) params.set("status", options.status);
+  if (options.location) params.set("location", options.location);
+  if (options.onlyOwn) params.set("onlyOwn", "true");
+  if (options.sort) params.set("sort", options.sort);
+  if (options.direction) params.set("direction", options.direction);
 
-
-
-
-
+  return params;
+}
 
 export default function App() {
   // List of issues
   const { issueList, setIssueList } = useIssueList(); //so müsste es richtig sein
   //const [issueList, setIssueList] = useState<Issue[]>([]);
 
-  const { loadIssues, deleteIssue } = useLoadIssues(setIssueList);
+  const { loadIssues, deleteIssue, pagination, isLoading: issuesLoading, error: issuesError } = useLoadIssues(setIssueList);
 
   // Input      wird nicht mehr benötigt, ist das schlimm, mit dem fehlenden loadIssues und setIsArchiveMode ?
   // const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(() => {
@@ -94,19 +105,23 @@ export default function App() {
   const { handleTouchStart, handleTouchEnd } = useSwiping(viewMode, setViewMode, isArchiveMode, setIsArchiveMode, !!userId);
 
 
-  //  Suche mit useSearch
-  const { searchView, query, setSearchView, setQuery, issuesToDisplay } = useSearch(issueList);
+  // Suche läuft jetzt über das Backend, State bleibt hier für die Suchleiste
+  const [searchView, setSearchView] = useState<"search" | null>(null);
+  const [query, setQuery] = useState("");
+  const normalizedSearchQuery = query.trim();
+  const issuesToDisplay = issueList;
+  const [backendFilterOptions, setBackendFilterOptions] = useState<FilterOptionValues>({});
+  const [mapSummary, setMapSummary] = useState<MapSummaryItem[]>([]);
 
   //--> issuesToDisplay dann als input in useFilter
   //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
-  const { filteredIssues, currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue,
-    filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue, issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter } = useFilter(issuesToDisplay, userEmail);
+  const { currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue,
+    filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue } = useFilter(issuesToDisplay, userEmail, isArchiveMode, backendFilterOptions);
 
-  //--> filteredIssues dann als input in useSorting
   // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
-  const { currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode } = useSorting(filteredIssues);
-  const finalIssueList = sortedIssues;
-  // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
+  const { currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, chooseSorting, chooseSortingMode } = useSorting(issuesToDisplay);
+  const finalIssueList = issuesToDisplay;
+  // finalIssueList kommt schon fertig gefiltert und sortiert aus dem Backend
   const { verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType } = useVerificationMessage();
 
   const resetFilterAndSorting = () => {
@@ -114,6 +129,13 @@ export default function App() {
     chooseSorting("");
     setFilterOnlyOwn(false);
   };
+
+  // Statusfilter zurücksetzen, wenn er im aktuellen Archivmodus nicht angeboten wird
+  useEffect(() => {
+    if (currentFilter === "Status" && currentFilterValue && !possibleFilterValues.Status?.includes(currentFilterValue)) {
+      setCurrentFilterValue("");
+    }
+  }, [currentFilter, currentFilterValue, possibleFilterValues.Status, setCurrentFilterValue]);
 
   // State für die Bestätigung der endgültigen Löschung
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -125,6 +147,121 @@ export default function App() {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
   });
+
+  // übersetzt die deutschen UI-Filter in Backend-Query-Parameter
+  const getBackendFilterOptions = useCallback((onlyOwnOverride: boolean = filterOnlyOwn): LoadIssuesOptions => {
+    const filterOptions: LoadIssuesOptions = {};
+
+    if (currentFilterValue) {
+      if (currentFilter === "Kategorie") {
+        filterOptions.kategorie = currentFilterValue;
+      }
+
+      if (currentFilter === "Ort") {
+        filterOptions.location = currentFilterValue;
+      }
+
+      if (currentFilter === "Status") {
+        filterOptions.status = currentFilterValue;
+      }
+    }
+
+    if (onlyOwnOverride) {
+      filterOptions.onlyOwn = true;
+    }
+
+    return filterOptions;
+  }, [currentFilter, currentFilterValue, filterOnlyOwn]);
+
+  // übersetzt die deutschen UI-Sortierungen in Backend-Query-Parameter
+  const getBackendSortOptions = useCallback((): LoadIssuesOptions => {
+    if (currentSorting === "Votes") {
+      return {
+        sort: "votes",
+        direction: currentSortingMode === "Aufsteigend" ? "asc" : "desc",
+      };
+    }
+
+    if (currentSorting === "Erstellungsdatum") {
+      return {
+        sort: "createdAt",
+        direction: currentSortingMode === "Älteste zuerst" ? "asc" : "desc",
+      };
+    }
+
+    if (currentSorting === "Status") {
+      return {
+        sort: "status",
+        direction: currentSortingMode === "Aufsteigend" ? "asc" : "desc",
+      };
+    }
+
+    return {};
+  }, [currentSorting, currentSortingMode]);
+
+  // lädt eine bestimmte Seite mit den aktuellen Archiv-Einstellungen
+  const loadIssuePage = useCallback((page: number = pagination?.page ?? 1, archiv: boolean = isArchiveMode) => {
+    loadIssues({
+      archiv,
+      page,
+      pageSize: pagination?.pageSize ?? ISSUE_PAGE_SIZE,
+      search: normalizedSearchQuery || undefined,
+      ...getBackendFilterOptions(),
+      ...getBackendSortOptions(),
+    });
+  }, [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, loadIssues, normalizedSearchQuery, pagination?.page, pagination?.pageSize]);
+
+  // Optionen für Reloads nach Aktionen wie Löschen, Voting oder Statuswechsel
+  const getCurrentIssueLoadOptions = useCallback((page: number = pagination?.page ?? 1, archiv: boolean = isArchiveMode) => ({
+    archiv,
+    page,
+    pageSize: pagination?.pageSize ?? ISSUE_PAGE_SIZE,
+    search: normalizedSearchQuery || undefined,
+    ...getBackendFilterOptions(),
+    ...getBackendSortOptions(),
+  }), [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, normalizedSearchQuery, pagination?.page, pagination?.pageSize]);
+
+  // Filterwerte vom Backend holen, damit Dropdowns nicht von der aktuellen Seite abhängen
+  const fetchIssueFilterOptions = useCallback(async () => {
+    const params = buildIssueQueryParams({
+      archiv: isArchiveMode,
+      search: normalizedSearchQuery || undefined,
+      onlyOwn: filterOnlyOwn || undefined,
+    });
+
+    const queryString = params.toString();
+    const res = await fetch(`/api/mangel/filter-options${queryString ? `?${queryString}` : ""}`);
+    const data = await res.json();
+
+    if (!res.ok) return null;
+
+    return {
+      Kategorie: data.kategorien,
+      Ort: data.locations,
+      Status: data.status,
+    } as FilterOptionValues;
+  }, [filterOnlyOwn, isArchiveMode, normalizedSearchQuery]);
+
+  // Kartenzusammenfassung vom Backend holen, damit Marker alle Treffer zählen
+  const fetchIssueMapSummary = useCallback(async () => {
+    const params = buildIssueQueryParams(getCurrentIssueLoadOptions());
+    params.delete("page");
+    params.delete("pageSize");
+
+    const queryString = params.toString();
+    const res = await fetch(`/api/mangel/map-summary${queryString ? `?${queryString}` : ""}`);
+    const data = await res.json();
+
+    if (!res.ok) return null;
+
+    return data as MapSummaryItem[];
+  }, [getCurrentIssueLoadOptions]);
+
+  // nach manuellem Seitenwechsel wieder nach oben zur Liste springen
+  const changeIssuePage = (page: number) => {
+    loadIssuePage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Für Status-Mails
   const updateNotificationInterval = async (interval: number) => {
@@ -159,8 +296,45 @@ export default function App() {
   // };
 
   useEffect(() => {
-    loadIssues(isArchiveMode);
-  }, [isArchiveMode, loadIssues]);
+    loadIssues({
+      archiv: isArchiveMode,
+      page: 1,
+      pageSize: ISSUE_PAGE_SIZE,
+      search: normalizedSearchQuery || undefined,
+      ...getBackendFilterOptions(),
+      ...getBackendSortOptions(),
+    });
+  }, [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, loadIssues, normalizedSearchQuery]);
+
+  useEffect(() => {
+    let ignoreResult = false;
+
+    async function loadFilterOptions() {
+      const options = await fetchIssueFilterOptions();
+      if (!ignoreResult && options) setBackendFilterOptions(options);
+    }
+
+    loadFilterOptions();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, [fetchIssueFilterOptions]);
+
+  useEffect(() => {
+    let ignoreResult = false;
+
+    async function loadMapSummary() {
+      const summary = await fetchIssueMapSummary();
+      if (!ignoreResult && summary) setMapSummary(summary);
+    }
+
+    loadMapSummary();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, [fetchIssueMapSummary]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -198,7 +372,14 @@ export default function App() {
           setUserRole(data.role || "user");
           setEmailVerified(Boolean(data.emailVerified));
           setNotificationInterval(data.notificationInterval ?? 0);
-          loadIssues(isArchiveMode);
+          loadIssues({
+            archiv: isArchiveMode,
+            page: 1,
+            pageSize: ISSUE_PAGE_SIZE,
+            search: normalizedSearchQuery || undefined,
+            ...getBackendFilterOptions(),
+            ...getBackendSortOptions(),
+          });
         }
       })
       .catch(() => {
@@ -278,7 +459,7 @@ export default function App() {
       setAuthEmail("");
       setAuthPassword("");
       setAuthView(null);
-      loadIssues(false);
+      loadIssuePage(1, false);
     };
     
     //Registrierungs-handler
@@ -320,7 +501,14 @@ export default function App() {
       setUserRole("");
       setEmailVerified(false);
       setFilterOnlyOwn(false);
-      loadIssues(false);
+      loadIssues({
+        archiv: false,
+        page: 1,
+        pageSize: ISSUE_PAGE_SIZE,
+        search: normalizedSearchQuery || undefined,
+        ...getBackendFilterOptions(false),
+        ...getBackendSortOptions(),
+      });
     };
     
     const resendVerificationEmail = async () => {
@@ -368,12 +556,12 @@ export default function App() {
       
       if (!res.ok) {
         setVoteError(data.error || "Fehler beim Bewerten");
-        loadIssues(isArchiveMode);
+        loadIssuePage();
         return;
       }
       
       // reload
-      loadIssues(isArchiveMode);
+      loadIssuePage();
     };
     
     /**
@@ -391,7 +579,7 @@ export default function App() {
         const data = await res.json();
         alert(data.error || "Fehler beim Aktualisieren des Status");
       }
-      loadIssues(isArchiveMode);
+      loadIssuePage();
     };
     
     // UI
@@ -592,7 +780,7 @@ export default function App() {
           {userId ? (
 
             <InputForm
-              setIssueList={setIssueList}
+              onIssueCreated={() => loadIssuePage(1, false)}
             />
 
           ) : (
@@ -658,13 +846,15 @@ export default function App() {
               </select>
 
             ) : null}
-            {userId && (
-              <div className='issue-filter-only-own'>
-                <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
+            <div className='issue-filter-only-own'>
+              <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
+              {userId && (
+                <>
                 <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
                 <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{ fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</p></label>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -683,6 +873,8 @@ export default function App() {
             <div>
               {/* List of issues */}
               {voteError && <p className="error-text vote-error">{voteError}</p>}
+              {issuesError && <p className="error-text vote-error">{issuesError}</p>}
+              {issuesLoading && <p className="meta-line issue-loading">Mängel werden geladen...</p>}
               <ul className="issue-list">
                 {finalIssueList
                   .map((issue, index) => (
@@ -696,7 +888,7 @@ export default function App() {
                           setIssueToDelete(id);
                           setIsConfirmOpen(true);
                         } else {
-                          deleteIssue(id, isArchiveMode);
+                          deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
                         }
                       }}
                       onUpvote={upvoteIssue}
@@ -704,16 +896,23 @@ export default function App() {
                     />
                   ))}
               </ul>
+              {pagination && (
+                <IssuePagination
+                  page={pagination.page}
+                  total={pagination.total}
+                  totalPages={pagination.totalPages}
+                  isLoading={issuesLoading}
+                  onPageChange={changeIssuePage}
+                />
+              )}
             </div>
           ) : (
             /* Map */
             <Map
-              issuesToDisplay={issuesToDisplay}
+              mapSummary={mapSummary}
               setViewMode={setViewMode}
               setCurrentFilter={setCurrentFilter}
               setCurrentFilterValue={setCurrentFilterValue}
-              issueMatchesCurrentFilter={issueMatchesCurrentFilter}
-              issueMatchesOnlyOwnFilter={issueMatchesOnlyOwnFilter}
             />
 
           )}
@@ -730,7 +929,7 @@ export default function App() {
               <button
                 onClick={() => {
                   if (issueToDelete !== null) {
-                    deleteIssue(issueToDelete, isArchiveMode, true);
+                    deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions());
                   }
                   setIsConfirmOpen(false);
                   setIssueToDelete(null);

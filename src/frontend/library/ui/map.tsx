@@ -1,25 +1,23 @@
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Issue } from "../types/Issue";
 import { buildingCoordinates } from "../constants/buildingCoordinates";
-import { useViewMode } from "../hooks/useViewMode";
-import { useFilter } from "../hooks/useFilter";
 
+export type MapSummaryItem = {
+    building: string;
+    count: number;
+};
 
 // hier müssen die Filter importiert werden, außerdem müssen die erst aus App raus gemacht werden.
 // test commit
 interface MapProperties{
-    issuesToDisplay: Issue[];
+    mapSummary: MapSummaryItem[];
     setViewMode: React.Dispatch<React.SetStateAction<"list" | "map">>;
     setCurrentFilter: React.Dispatch<React.SetStateAction<string>>;
     setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
-    issueMatchesCurrentFilter: (issue: Issue) => boolean;
-    issueMatchesOnlyOwnFilter: (issue: Issue) => boolean
 }
 
-export function Map({issuesToDisplay,  setViewMode, setCurrentFilter, setCurrentFilterValue,
-     issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter}:MapProperties){
+export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilterValue}:MapProperties){
     //const{viewMode, setViewMode}=useViewMode();
     // const{
     //     setCurrentFilter,
@@ -36,26 +34,8 @@ export function Map({issuesToDisplay,  setViewMode, setCurrentFilter, setCurrent
 
                 {/* Pin Rendering */}
                 {(() => {
-                    // Same filters as list
-                    const filteredIssues = issuesToDisplay
-                    .filter(issueMatchesCurrentFilter)
-                    .filter(issueMatchesOnlyOwnFilter);
-
-                    // Issues per Building
-                    const buildingIssueCount: Record<string, number> = {};
-                    
-                    filteredIssues.forEach(issue => {
-                    if (issue.location) {
-                        // Split the string to only show the building via regex
-                        const building = issue.location.split(/[-\s/\\._]+/)[0];
-                        if (building) {
-                        buildingIssueCount[building] = (buildingIssueCount[building] || 0) + 1;
-                        }
-                    }
-                    });
-
-                    // Place pin for each building with at least one issue
-                    return Object.entries(buildingIssueCount).map(([building, count]) => {
+                    // Marker kommen aus dem Backend, damit sie nicht nur die aktuelle Seite zählen
+                    return mapSummary.map(({building, count}) => {
                     const coords = buildingCoordinates[building];
                     
                     // No pin for buildings without coordinates

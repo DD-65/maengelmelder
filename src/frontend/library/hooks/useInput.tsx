@@ -1,5 +1,5 @@
 import { useState } from 'react';
-export function useInput(loadIssues: () => void) {
+export function useInput(loadIssues: () => void | Promise<void>) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
@@ -32,7 +32,7 @@ export function useInput(loadIssues: () => void) {
     });
 
     // Reload aus db
-    loadIssues();
+    await loadIssues();
 
     // Clear Input
     setTitle('');

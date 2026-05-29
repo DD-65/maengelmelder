@@ -1,8 +1,6 @@
-import { useLoadComments } from "./useLoadComments";
 import { IssueComment } from "../types/IssueComment";
 
 export function usePostComment(setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>){
-    const{loadComments}=useLoadComments(setCommentList);
 
     const postComment = async (mangelid: number, newComment: string) => {
       const res = await fetch(`/api/mangel/${mangelid}/comment`, {
@@ -10,13 +8,18 @@ export function usePostComment(setCommentList: React.Dispatch<React.SetStateActi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment: newComment }),
       });
-      
+
       if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Fehler beim Abschicken des Kommentars");
+        return;
       }
-      
-      await loadComments(mangelid); // aktualisieren der Kommentarspalte
+
+      const updatedComment = await res.json();
+      setCommentList(prev => [...prev, updatedComment]); {/*das war ein Vorschlag von ChatGPT, 
+        da ich es nicht geschafft habe die neuen kommentare direkt zu laden,
+         ohne eine Endlosschleife zu verursachen und das unten hat gar nichts geladen*/}
+      // await loadComments(mangelid); // aktualisieren der Kommentarspalte
     };
     return{postComment}
 }

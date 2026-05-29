@@ -319,6 +319,12 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
     let result;
     result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
 
+    const createdComment = db.prepare(`SELECT mk.kommentar,
+                                              users.email AS userEmail, 
+                                              mk.created_at AS timestamp 
+                                              FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
+    res.status(200).json(createdComment);
+
   }catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Abschicken der Kommentar" });}

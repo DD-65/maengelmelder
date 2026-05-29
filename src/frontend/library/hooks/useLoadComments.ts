@@ -8,7 +8,7 @@ export function useLoadComments(setCommentList: React.Dispatch<React.SetStateAct
      const loadComments = useCallback( async (mangelId: Number) => {
       const res = await fetch(`/api/comment/${mangelId}`);
       const data = await res.json();
-      setCommentList(data);
+      setCommentList([...data]);
      }, [setCommentList])
     
 

@@ -3,6 +3,7 @@ import { Issue } from '../types/Issue';
 import { useUpdateStatus } from '../hooks/useUpdateStatus';
 import { Kommentar } from './renderComment';
 import { useSortedCommentList } from '../hooks/useSortedCommentList';
+import { usePostComment } from '../hooks/usePostComments';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -12,17 +13,17 @@ interface IssueCardProperties {
   onUpvote: (id: number) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
-  //onUpdateStatus: (id: number, status: string) => void;
-  //onUpdateComment: (id: number, comment: string) => void;
 }
 
-export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchiveMode, setIssueList/*onUpdateStatus, onUpdateComment*/ }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchiveMode, setIssueList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
   const [commentsOpen, setCommentsOpen]= useState(false);
+  const [newComment, setNewComment] = useState('');
   const{sortedCommentList, setCommentList} = useSortedCommentList(issue);
   const{updateStatus}=useUpdateStatus(isArchiveMode, setIssueList, setCommentList);
+  const{postComment}=usePostComment(setCommentList);
 
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
@@ -103,9 +104,10 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
           <p>Kategorie: {issue.kategorie || '-'}</p>
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-          <button onClick={()=> {setCommentsOpen(!commentsOpen)}}>Kommentare</button>
-          
-
+          <span className='kommentarknoepfe'>
+            <button className='kommentareoeffnen' onClick={()=> {setCommentsOpen(!commentsOpen)}}>Kommentare</button>
+            {/* <button className='neuenkommentaroeffnen' onClick={()=> {setNewCommentOpen(!newCommentOpen)}}>+</button> onUpdateComment: (id: number, comment: string) => void; */}
+          </span>
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
@@ -121,12 +123,26 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
 
         </div>
 
+          {commentsOpen === true &&(
+          userId ? (
+            <form className='neuerkommentar'
+                    onSubmit={(e) => { e.preventDefault();
+                                      e.stopPropagation();
+                                      if(issue.id){
+                                        postComment(issue.id, newComment);
+                                      }
+                                      setNewComment('')}}>
+              <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onChange={(event) => {event.stopPropagation(); issue.id && setNewComment(event.target.value)}} autoComplete="off"/>
+              <button type="submit" onClick={(e)=> {e.stopPropagation()}}>Abschicken</button>
+            </form>
+          ):(<span>Einloggen um selbst Kommentare zu schreiben</span>))}
+        
         {/* Kommentare ganz unten im Issue anzeigen */}
           {commentsOpen === true &&(
             <ul className='commentList'>
               {sortedCommentList.map((comment, index) => ( 
                       <Kommentar
-                          key={index}
+                          key={index} //irgendwie sinnlos, in Issue card aber auch so
                           commentStatus={comment.status}
                           commentInhalt={comment.kommentar}
                           commentKommentator={comment.userEmail}

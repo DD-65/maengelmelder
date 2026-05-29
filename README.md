@@ -16,7 +16,3 @@ Alle Befehle im Projekt-Root ausführen.
 3. Build: `npm run build` (Erzeugt `dist/`)
 4. Linting: `npm run lint` (Prüft den Code auf Fehler und Stilvorgaben)
 
-email, normale kommentare, beinhalten statuskommentare
-sortierung über die Daten automatisch von db
-kommentare als nicht admin, kommentare löschen.
-

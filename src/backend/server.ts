@@ -239,7 +239,7 @@ app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     } else {
       result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
     }
-    const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment, oldMangelData.user_id, mangelId);
+    const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment, userId, mangelId);
     const kommentarid = kommentar.lastInsertRowid;
     result = db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarid, mangelId);
 
@@ -296,44 +296,74 @@ const stmt = db.prepare(`
     res.status(500).json({ error: "Fehler beim laden der Kommentare" });
   }
 });
-// Kommentar schreiben (nur Admin)
-// app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
-//   try {
-//     const userId = req.session.userId;
-//     const mangelId = Number(req.params.id);
-//     const { comment } = req.body;
+// Kommentar schreiben (jede*r)
+app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
+    const { comment } = req.body;
 
-//     // Prüfen, ob der Nutzer Admin ist
-//     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-//     if (user.role !== "admin") {
-//       return res.status(403).json({ error: "Nur Administratoren dürfen einen Statuskommentar schreiben" });
-//     }
+    // Länge des Kommentar checken
+    if (comment && comment.trim().length > 255) {
+      return res.status(400).json({ error: "Kommentar darf maximal 255 Zeichen lang sein" });
+    }
 
-//     // Länge des Statuskommentar checken
-//     if (comment && comment.trim().length > 255) {
-//       return res.status(400).json({ error: "Statuskommentar darf maximal 255 Zeichen lang sein" });
-//     }
+    //  Prüfen, ob der Mangel noch existiert
+    const mangelData = db.prepare(`
+      SELECT title, user_id FROM maengel WHERE id = ?
+    `).get(mangelId) as { title: string, user_id: number } | undefined;
+    if (!mangelData) {
+      return res.status(404).json({ error: "Kommentar kann keinem existierenden Mangel zugeordnet werden"})}
 
-//     //  Infos holen, bevor der Statuskommentar eingegeben
-//     const oldMangelData = db.prepare(`
-//       SELECT status, title, user_id FROM maengel WHERE id = ?
-//     `).get(mangelId) as { status: string, title: string, user_id: number } | undefined;
+    // Update durchführen
+    let result;
+    result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
 
-//     if (!oldMangelData) {
-//       return res.status(404).json({ error: "Mangel nicht gefunden" });
-//     }
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Abschicken der Kommentar" });}
+});
 
-//     // Update durchführen
-//     let result;
-//     if (status === "Gelöscht") {
-//       result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
-//     } else {
-//       result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
-//     }
-//   }catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Fehler beim Aktualisieren des Statuskommentar" });}
-// });
+// Kommentar löschen (nur Admin oder Ersteller)
+app.delete("/api/comment/:id", requireAuth, (req, res) => {
+
+
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
+    const permanent = req.query.permanent === "true";
+
+    if (!Number.isInteger(mangelId)) {
+      return res.status(400).json({ error: "Ungültige Mangel-ID" });
+    }
+    
+    const mangel = db
+      .prepare("SELECT user_id, image_url, thumbnail_url FROM maengel WHERE id = ?")
+      .get(mangelId) as { user_id: number; image_url: string | null; thumbnail_url: string | null } | undefined;
+    if (!mangel) {
+      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    }
+    // Prüfen, ob der Nutzer Admin ist
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    }
+
+    if (permanent) {
+      const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
+      const result = stmt.run(mangelId);
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "Mangel nicht gefunden" });
+      }
+      return res.json({ message: "Mangel endgültig gelöscht" });
+    } else {
+      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
+      const result = stmt.run(mangelId);
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "Mangel nicht gefunden" });
+      }
+      return res.json({ message: "Mangel erfolgreich archiviert" });
+    }
+});
 
 // neuen Mangel anlegen
 app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {

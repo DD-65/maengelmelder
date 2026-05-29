@@ -5,7 +5,7 @@ import { IssueComment } from "../types/IssueComment";
 
 export function useUpdateStatus(isArchiveMode: boolean, setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>, setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>){
     const { loadIssues, deleteIssue } = useLoadIssues(setIssueList);
-    const {loadComments}=useLoadComments(setCommentList)
+    const {loadComments}=useLoadComments(setCommentList); //für direktes aktualisieren der Kommentarspalte, beim abschicken eines Statuskommentars
 
     const updateStatus = async (id: number, newStatus: string, newStatusComment: string) => {
       const res = await fetch(`/api/mangel/${id}/status`, {
@@ -19,7 +19,7 @@ export function useUpdateStatus(isArchiveMode: boolean, setIssueList: React.Disp
         alert(data.error || "Fehler beim Aktualisieren des Status");
       }
       loadIssues(isArchiveMode);
-      loadComments(id)
+      loadComments(id); // aktualisieren der Kommentarspalte
     };
   
   return{updateStatus}

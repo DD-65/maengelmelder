@@ -827,6 +827,36 @@ button.active:hover {
   padding-top: 12px;
 }
 
+.singleComment {display: flex;
+  align-items: top;
+} 
+.singleComment .kommentator {
+  text-align: left;
+  width: 200px;
+  flex-shrink: 0;
+}
+.singleComment .status {
+  text-align: left;
+  width: 120px;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+.singleComment .inhalt {
+  text-align: left;
+  flex: 1;
+}
+.kommentarknoepfe {
+  display: inline;
+  display: flex;
+  justify-content: center;
+}
+.kommentareoeffnen {
+  margin-right: 0px;
+}
+.neuenkommentaroeffnen {
+  margin-left: 0px;
+}
+
 @media (max-width: 700px) {
   #root {
     padding: 18px;

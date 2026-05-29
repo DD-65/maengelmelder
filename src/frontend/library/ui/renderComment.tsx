@@ -1,16 +1,16 @@
 interface KommentarProperties{
-    key: number;
     commentStatus:string;
     commentInhalt:string;
     commentKommentator: string;
 }
-export function Kommentar({key, commentStatus, commentInhalt, commentKommentator}: KommentarProperties){
+export function Kommentar({ commentStatus, commentInhalt, commentKommentator}: KommentarProperties){
     return(
-        <li><span>{commentKommentator}    </span>
-            {commentStatus && (
-                <span>{commentStatus}    </span>
-            )}
-            <span>{commentInhalt}</span>
+        <li className="singleComment">
+            <span className="kommentator">{commentKommentator}    </span>
+            <span className="status">
+                {commentStatus}    
+            </span>
+            <span className="inhalt">{commentInhalt}</span>
         </li>
         
     );

@@ -105,7 +105,7 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
           <span className='kommentarknoepfe'>
-            <button className='kommentareoeffnen' onClick={()=> {setCommentsOpen(!commentsOpen)}}>Kommentare</button>
+            <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}>Kommentare</button>
             {/* <button className='neuenkommentaroeffnen' onClick={()=> {setNewCommentOpen(!newCommentOpen)}}>+</button> onUpdateComment: (id: number, comment: string) => void; */}
           </span>
 

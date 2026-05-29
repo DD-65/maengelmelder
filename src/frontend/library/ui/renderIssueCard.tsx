@@ -9,13 +9,14 @@ interface IssueCardProperties {
   issue: Issue;
   userRole: string;
   userId: number | null;
+  userEmail: string;
   onDelete: (id: number) => void;
   onUpvote: (id: number) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
 }
 
-export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchiveMode, setIssueList }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvote, isArchiveMode, setIssueList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
@@ -143,6 +144,11 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
             <ul className='commentList'>
               {sortedCommentList.map((comment, index) => ( 
                       <Kommentar
+                          setCommentList={setCommentList}
+                          issue={issue}
+                          commentId={comment.commentId}
+                          userEmail={userEmail}
+                          userRole={userRole}
                           key={index} //irgendwie sinnlos, in Issue card aber auch so
                           commentStatus={comment.status}
                           commentInhalt={comment.kommentar}

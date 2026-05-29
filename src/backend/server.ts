@@ -280,7 +280,8 @@ const stmt = db.prepare(`
         status_changes.new_status AS status,
         maengel_kommentare.kommentar,
         users.email AS userEmail, 
-        maengel_kommentare.created_at AS timestamp
+        maengel_kommentare.created_at AS timestamp,
+        maengel_kommentare.id AS commentId
       FROM maengel_kommentare LEFT JOIN status_changes
       ON maengel_kommentare.id = status_changes.new_statusComment_id
       LEFT JOIN users
@@ -321,7 +322,8 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
 
     const createdComment = db.prepare(`SELECT mk.kommentar,
                                               users.email AS userEmail, 
-                                              mk.created_at AS timestamp 
+                                              mk.created_at AS timestamp,
+                                              mk.id AS commentId
                                               FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
     res.status(200).json(createdComment);
 
@@ -333,42 +335,31 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
 // Kommentar löschen (nur Admin oder Ersteller)
 app.delete("/api/comment/:id", requireAuth, (req, res) => {
 
-
     const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-    const permanent = req.query.permanent === "true";
+    const commentId = Number(req.params.id);
 
-    if (!Number.isInteger(mangelId)) {
-      return res.status(400).json({ error: "Ungültige Mangel-ID" });
+    if (!Number.isInteger(commentId)) {
+      return res.status(400).json({ error: "Ungültige Kommentar-ID" });
     }
     
-    const mangel = db
-      .prepare("SELECT user_id, image_url, thumbnail_url FROM maengel WHERE id = ?")
-      .get(mangelId) as { user_id: number; image_url: string | null; thumbnail_url: string | null } | undefined;
-    if (!mangel) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
+    const kommentar = db
+      .prepare("SELECT user_id, mangel_id FROM maengel_kommentare WHERE id = ?")
+      .get(commentId) as { user_id: number; mangel_id: number;} | undefined;
+    if (!kommentar) {
+      return res.status(404).json({ error: "Kommentar nicht gefunden" });
     }
-    // Prüfen, ob der Nutzer Admin ist
+    // Prüfen, ob der Nutzer Admin ist oder Kommentator*in
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
+    if (user.role !== "admin" && userId !== kommentar.user_id) {
       return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
     }
 
-    if (permanent) {
-      const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
-      const result = stmt.run(mangelId);
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "Mangel nicht gefunden" });
-      }
-      return res.json({ message: "Mangel endgültig gelöscht" });
-    } else {
-      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
-      const result = stmt.run(mangelId);
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "Mangel nicht gefunden" });
-      }
-      return res.json({ message: "Mangel erfolgreich archiviert" });
+    const stmt = db.prepare("DELETE FROM maengel_kommentare WHERE id = ?");
+    const result = stmt.run(commentId);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Kommentar nicht gefunden" });
     }
+    return res.json({ message: "Kommentar endgültig gelöscht" });
 });
 
 // neuen Mangel anlegen

@@ -685,6 +685,7 @@ export default function App() {
                       issue={issue}
                       userRole={userRole}
                       userId={userId}
+                      userEmail={userEmail}
                       onDelete={(id) => {
                         if (isArchiveMode && issue.status === "Gelöscht") {
                           setIssueToDelete(id);

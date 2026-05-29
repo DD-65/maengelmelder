@@ -10,14 +10,7 @@ export function useLoadComments(setCommentList: React.Dispatch<React.SetStateAct
       const data = await res.json();
       setCommentList([...data]);
      }, [setCommentList])
-    
 
-    // Kommentar in db löschen
-    const deleteComment = async (mangelid: number, archiv: boolean = false, permanent: boolean = false) => {
-    await fetch(`/api/mangel/${mangelid}${permanent ? '?permanent=true' : ''}`, { method: 'DELETE' });
-    //loadComments(mangelid);
-    };
-
-    return{loadComments, deleteComment}
+    return{loadComments}
 
 } 

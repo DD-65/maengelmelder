@@ -856,6 +856,7 @@ button.active:hover {
   margin-right: 15px;
   gap: 10px;
   background: var(--surface);
+  font-size: 15px;
 } 
 .singleComment .kommentator {
   text-align: left;
@@ -863,12 +864,13 @@ button.active:hover {
   flex-shrink: 0;
 }
 .singleComment .status {
+  font-size: 13px;
   text-align: left;
-  width: 120px;
+  width: 91px;
   flex-shrink: 0;
 }
 .singleComment .inhalt {
-  max-width: 220px;
+  max-width: 342px;
   text-align: left;
   flex: 1;
 }

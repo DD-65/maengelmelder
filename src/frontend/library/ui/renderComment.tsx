@@ -15,7 +15,8 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
     const{deleteComment}=useDeleteComment(setCommentList);
     
     return(
-        <li className="singleComment">
+        <li className="singleComment" onClick={(e)=>{e.stopPropagation();}}> 
+        {/*problem hier, ist dass man bei sehr langen Kommentaren ohne Leerzeichen nach rechts scrollen muss, das swiped zur Karte*/}
             <span className="kommentator">{commentKommentator.split('@')[0]}</span>
             <span className="status">
                 {commentStatus}    

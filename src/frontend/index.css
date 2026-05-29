@@ -829,6 +829,7 @@ button.active:hover {
 
 .singleComment {display: flex;
   align-items: top;
+  border: 1px solid var(--border);
 } 
 .singleComment .kommentator {
   text-align: left;

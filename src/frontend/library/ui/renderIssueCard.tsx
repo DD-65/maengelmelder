@@ -68,9 +68,9 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
                 <option value="Behoben">Behoben</option>
                 <option value="Gelöscht">Gelöscht</option>
               </select><br/>
-              {/* irgendwie hilft stop propagation hier nicht, wenn es ums Öffnen des Bildes geht */}
-              <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment} onChange={(event) => {event.stopPropagation(); issue.id && setNewStatusComment(event.target.value)}} autoComplete="off"/>
-              <button type="submit" onClick={(e)=> {e.stopPropagation()}}>Status ändern</button>
+              <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment}  onClick={(e)=> {e.stopPropagation();}}
+                onChange={(event) => {event.stopPropagation(); issue.id && setNewStatusComment(event.target.value)}} autoComplete="off"/>
+              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Status ändern</button>
             </form>
              )}
         </div>
@@ -132,8 +132,9 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, isArchi
                                         postComment(issue.id, newComment);
                                       }
                                       setNewComment('')}}>
-              <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onChange={(event) => {event.stopPropagation(); issue.id && setNewComment(event.target.value)}} autoComplete="off"/>
-              <button type="submit" onClick={(e)=> {e.stopPropagation()}}>Abschicken</button>
+              <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
+                onChange={(event) => {event.stopPropagation(); issue.id && setNewComment(event.target.value)}} autoComplete="off"/>
+              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken</button>
             </form>
           ):(<span>Einloggen um selbst Kommentare zu schreiben</span>))}
         

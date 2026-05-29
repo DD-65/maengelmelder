@@ -8,23 +8,40 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
-import { sendVerificationEmail } from "./mailer.js";
-import multer from "multer";
-import fs from "fs";
-import sharp from "sharp";
+import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
+
+import { basicAuth } from "./middleware/basicAuth.js";
+import { createIssueRouter, issueUploadDir } from "./issues/issueRoutes.js";
+
+
+// TODO: Nach DB Update prüfen, ob E-Mail des Users verifiziert ist, ob notification_interval === 0 und nur falls ja dann sendStatusUpdateEmail aufrufen
+// TODO: Hintergrundskript/setInterval implementieren für die Sammelmails
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
-const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar"];
 const emailTokenTtlMinutes = Number(process.env.EMAIL_TOKEN_TTL_MINUTES || 60);
 const emailVerificationResendDelayMs = 60 * 1000;
 // Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
 // eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+type UserToNotify = {
+  id: number;
+  email: string;
+  notification_interval: number;
+  last_summary_email_at: string | null;
+};
+
+type StatusChangeToNotify = {
+  id: number;
+  new_status: string;
+  title: string;
+};
 
 app.use(cors());
 app.use(express.json());
@@ -44,18 +61,10 @@ app.use(session({
   }
 }));
 
-// Multer Setup für Dateiuploads
-const upDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(upDir)) {
-  fs.mkdirSync(upDir);
-}
+app.use(basicAuth); //AUSKOMMENTIEREN UM BASIC AUTH ZU DEAKTIVIEREN
 
-const storage = multer.memoryStorage();
-
-// Storage size limit of 10MB for initial upload
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024} });
-
-app.use("/uploads", express.static(upDir));
+app.use("/uploads", express.static(issueUploadDir));
+app.use(createIssueRouter({ requireAuth }));
 
 function hashEmailVerificationToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -119,231 +128,6 @@ function canSendVerificationMail(userId: number) {
 
   return Date.now() - new Date(lastToken.created_at).getTime() >= emailVerificationResendDelayMs;
 }
-
-
-// --- API Endpunkte
-// Mängel laden
-app.get("/api/mangel", (req, res) => {
-  try {
-    const userId = req.session.userId ?? null;
-    // statement um mängel zu laden, join auf der votes tabelle um die votes zu laden / zu prüfen ob nutzer schon gevotet haben
-    const stmt = db.prepare(`
-      SELECT
-        maengel.id,
-        maengel.title,
-        maengel.description,
-        maengel.location,
-        maengel.status,
-        maengel.kategorie,
-        maengel.created_at,
-        maengel.votes,
-        maengel.image_url,
-        maengel.thumbnail_url,
-        users.email AS user_email,
-        CASE
-          WHEN ? IS NULL THEN 0
-          ELSE EXISTS (
-            SELECT 1
-            FROM mangel_votes
-            WHERE mangel_votes.user_id = ?
-              AND mangel_votes.mangel_id = maengel.id
-          )
-        END AS has_voted
-      FROM maengel
-      LEFT JOIN users ON maengel.user_id = users.id
-      ORDER BY maengel.votes DESC, maengel.created_at DESC
-    `);
-    const maengel = stmt.all(userId, userId);
-    res.json(maengel);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim laden der Mängel" });
-  }
-});
-
-// Status eines Mangels aktualisieren (nur Admin)
-app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-    const { status } = req.body;
-
-    // Prüfen, ob der Nutzer Admin ist
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
-    }
-
-    // Status validieren
-    const allowedStatus = ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung", "Behoben"];
-    if (!allowedStatus.includes(status)) {
-      return res.status(400).json({ error: "Ungültiger Status" });
-    }
-
-    const stmt = db.prepare("UPDATE maengel SET status = ? WHERE id = ?");
-    const result = stmt.run(status, mangelId);
-
-    if (result.changes === 0) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
-    }
-
-    res.json({ message: "Status erfolgreich aktualisiert" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim Aktualisieren des Status" });
-  }
-});
-
-// neuen Mangel anlegen
-app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {
-  try {
-    const { title, description, location, kategorie } = req.body;
-
-    // Image Pathing
-    let imageUrl = null;
-    let thumbnailUrl = null;
-
-    // Image Processing
-    if (req.file) {
-      const baseName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
-      const fileNameBig = `${baseName}-original.jpg`;
-      const fileNameThumb = `${baseName}-thumb.jpg`;
-
-      const filePathBig = path.join(upDir, fileNameBig);
-      const filePathThumb = path.join(upDir, fileNameThumb);
-
-      // Just convertion for the original file
-      await sharp(req.file.buffer).jpeg({ quality: 100 }).toFile(filePathBig);
-
-      // Thumbnails also gets resized
-      await sharp(req.file.buffer).resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toFile(filePathThumb);
-
-      imageUrl = `/uploads/${fileNameBig}`;
-      thumbnailUrl = `/uploads/${fileNameThumb}`;
-
-    }
-
-
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: "Titel darf nicht leer sein" });
-    }
-
-    if (location && location.trim().length > 255) {
-      return res.status(400).json({ error: "Fundort darf maximal 255 Zeichen lang sein" });
-    }
-
-    if (description && description.trim().length > 255) {
-      return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
-    }
-
-    const normalizedKategorie =
-      typeof kategorie === "string" && kategorie.trim() ? kategorie.trim() : null;
-
-    if (normalizedKategorie && !allowedKategorien.includes(normalizedKategorie)) {
-      return res.status(400).json({ error: "Ungültige Kategorie" });
-    }
-
-    // userid aus sessioncookie (Durch login endpunkt gesetzt)
-    const userId = req.session.userId;
-
-    const stmt = db.prepare(`
-      INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl, thumbnailUrl);
-
-    res.status(201).json({
-      message: "Mangel gespeichert!",
-      id: result.lastInsertRowid
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim speichern des Mangels" });
-  }
-});
-
-// Mangel löschen (nur Admin oder Ersteller)
-app.delete("/api/mangel/:id", requireAuth, (req, res) => {
-
-
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-
-    if (!Number.isInteger(mangelId)) {
-      return res.status(400).json({ error: "Ungültige Mangel-ID" });
-    }
-    
-    const mangel = db
-      .prepare("SELECT user_id, image_url, thumbnail_url FROM maengel WHERE id = ?")
-      .get(mangelId) as { user_id: number; image_url: string | null; thumbnail_url: string | null } | undefined;
-    if (!mangel) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
-    }
-    // Prüfen, ob der Nutzer Admin ist
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
-    }
-
-    const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
-    const result = stmt.run(mangelId);
-
-    res.json({ message: "Mangel erfolgreich gelöscht" });
-
-    if (result.changes === 0) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
-    }
-    // Falls ein Bild existiert, könnte man dieses ebenfalls löschen
-});
-
-// voten (braucht login)
-app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-
-    if (!userId) {
-      return res.status(401).json({ error: "Nicht angemeldet" });
-    }
-
-    if (!Number.isInteger(mangelId)) {
-      return res.status(400).json({ error: "Ungültige Mangel-ID" });
-    }
-
-    const mangel = db
-      .prepare("SELECT id FROM maengel WHERE id = ?")
-      .get(mangelId) as { id: number } | undefined;
-
-    if (!mangel) {
-      return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });    
-    }
-
-    const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
-      db.prepare(`
-        INSERT INTO mangel_votes (user_id, mangel_id)
-        VALUES (?, ?)
-      `).run(transactionUserId, transactionMangelId);
-
-      db.prepare(`
-        UPDATE maengel
-        SET votes = votes + 1
-        WHERE id = ?
-      `).run(transactionMangelId);
-    });
-
-    voteTransaction(userId, mangelId);
-
-    res.json({ message: "Bewertung erfolgreich" });
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE_CONSTRAINT")) {
-      return res.status(409).json({ error: "Du hast diesen Mangel bereits bewertet" });
-    }
-
-    console.error(error)
-    res.status(500).json({ error: "Fehler beim Bewerten"})
-  }
-});
 
 // -- Login & Registrierung zeugs
 
@@ -573,8 +357,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, email_verified_at FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null } | undefined;
+    .prepare("SELECT id, email, role, email_verified_at, notification_interval AS notificationInterval FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null; notificationInterval: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -586,19 +370,26 @@ app.get("/api/auth/me", (req, res) => {
     email: user.email,
     role: user.role,
     emailVerified: Boolean(user.email_verified_at),
+    notificationInterval: user.notificationInterval,
   });
 });
 
 // logout endpunkt
 app.post("/api/auth/logout", (req, res) => {
-  req.session.destroy((error) => {
-    if (error) {
-      return res.status(500).json({ error: "Fehler beim Logout" });
-    }
-    
-    res.clearCookie("connect.sid");
+  //Nicht die ganze Session zerstören, da sonst auch die Basic Auth (isTeamAuthenticated) verloren geht und Chromium sofort ein neues Popup zeigt.
+  // Nur userId löschen, um den Nutzer auszuloggen.
+  if (req.session) {
+    req.session.userId = undefined;
+    // Optional: Falls  die Session trotzdem weggeschrieben werden soll
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Fehler beim Logout" });
+      }
+      res.json({ message: "Logout erfolgreich" });
+    });
+  } else {
     res.json({ message: "Logout erfolgreich" });
-  });
+  }
 });
 
 // helper um routes login brauchen zu lassen
@@ -608,6 +399,27 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
   next();
 }
+
+// Benachrichtigungs-Intervall ändern
+app.patch("/api/auth/settings/notifications", requireAuth, (req, res) => {
+  try {
+    const { interval } = req.body;
+    const userId = req.session.userId;
+
+    // 0 = sofort, >0 = Tage
+    if (typeof interval !== "number" || interval < 0) {
+      return res.status(400).json({ error: "Ungültiges Intervall" });
+    }
+
+    db.prepare("UPDATE users SET notification_interval = ? WHERE id = ?")
+      .run(interval, userId);
+
+    res.json({ message: "Benachrichtigungs-Einstellungen erfolgreich gespeichert" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Speichern der Einstellungen" });
+  }
+});
 
 // Vite Integration
 if (!isProd) {
@@ -624,6 +436,53 @@ if (!isProd) {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
+
+
+// Intervallcheck -> Sammelmails
+setInterval(async () => {
+  console.log("Prüfe auf fällige Sammel-Mails");
+
+  try {
+    const usersToNotify = db.prepare(`
+      SELECT id, email, notification_interval, last_summary_email_at 
+      FROM users 
+      WHERE notification_interval > 0 
+        AND email_verified_at IS NOT NULL
+        AND (last_summary_email_at IS NULL OR 
+             datetime(last_summary_email_at, '+' || notification_interval || ' days') <= datetime('now'))
+    `).all() as UserToNotify[];
+
+    for (const user of usersToNotify) {
+      const changes = db.prepare(`
+        SELECT sc.id, sc.new_status, m.title 
+        FROM status_changes sc
+        JOIN maengel m ON sc.mangel_id = m.id
+        WHERE m.user_id = ? AND sc.mail_sent = 0
+      `).all(user.id) as StatusChangeToNotify[];
+
+      if (changes.length > 0) {
+        const summaryText = changes
+          .map(c => `• ${c.title}: Status geändert auf "${c.new_status}"`)
+          .join("\n");
+
+        await sendStatusUpdateEmail(user.email, "Deine Mängel-Zusammenfassung", summaryText); 
+
+        const changeIds = changes.map(c => c.id);
+        const placeholders = changeIds.map(() => "?").join(",");
+        
+        db.prepare(`UPDATE status_changes SET mail_sent = 1 WHERE id IN (${placeholders})`)
+          .run(...changeIds);
+          
+        db.prepare("UPDATE users SET last_summary_email_at = ? WHERE id = ?")
+          .run(new Date().toISOString(), user.id);
+
+        console.log(`Sammel-Mail an ${user.email} verschickt.`);
+      }
+    }
+  } catch (error) {
+    console.error("Fehler im Sammelmail-Job:", error);
+  }
+}, 1000 * 60 * 60 * 24); // Default: alle 24h
 
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);

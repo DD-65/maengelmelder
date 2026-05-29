@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+ 
 
 type VerificationMailInput = {
   to: string;
@@ -50,6 +51,24 @@ export async function sendVerificationEmail({ to, verifyUrl }: VerificationMailI
       <p>Bitte bestätige deine E-Mail-Adresse für den Mängelmelder.</p>
       <p><a href="${verifyUrl}">E-Mail-Adresse bestätigen</a></p>
       <p>Falls du dich nicht registriert hast, kannst du diese E-Mail ignorieren.</p>
+    `,
+  });
+}
+/**
+ * Benachrichtigung bei Statusänderungen eines Mangels.
+ */
+export async function sendStatusUpdateEmail(to: string, title: string, status: string) {
+  const transporter = createTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: `Status-Update: ${title}`,
+    text: `Der Status deines Mangels "${title}" wurde auf "${status}" geändert.`,
+    html: `
+      <p>Hallo,</p>
+      <p>der Status deines Mangels <strong>"${title}"</strong> wurde auf <strong>"${status}"</strong> geändert.</p>
     `,
   });
 }

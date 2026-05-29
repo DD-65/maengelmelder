@@ -105,10 +105,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
           <p>Kategorie: {issue.kategorie || '-'}</p>
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-          <span className='kommentarknoepfe'>
             <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}>Kommentare</button>
-            {/* <button className='neuenkommentaroeffnen' onClick={()=> {setNewCommentOpen(!newCommentOpen)}}>+</button> onUpdateComment: (id: number, comment: string) => void; */}
-          </span>
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (

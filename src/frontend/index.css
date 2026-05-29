@@ -832,6 +832,9 @@ button.active:hover {
   padding-top: 12px;
 }
 
+.neuerkommentar{
+  margin-top: 12px;
+}
 .commentList {
   display: flex;
   flex-direction: column;
@@ -845,7 +848,6 @@ button.active:hover {
   padding-inline-start: 0px;
   list-style: none;
 }
-
 .singleComment {
   display: flex;
   align-items: top;
@@ -873,14 +875,6 @@ button.active:hover {
   max-width: 342px;
   text-align: left;
   flex: 1;
-}
-.kommentarknoepfe {
-  display: inline;
-  display: flex;
-  justify-content: center;
-}
-.kommentareoeffnen {
-  margin-right: 0px;
 }
 .kommentarloeschen {
   margin-left: 0px;

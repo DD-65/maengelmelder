@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
-import L from 'leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
+import L, { LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildingCoordinates } from "../constants/buildingCoordinates";
 
@@ -17,6 +18,30 @@ interface MapProperties{
     setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
 }
 
+// Define the bounding box of the campus
+// Format: [[SouthWest Lat, SouthWest Lng], [NorthEast Lat, NorthEast Lng]]
+const campusBounds: LatLngBoundsExpression = [
+    [49.4180, 7.7450], // South-West Corner 
+    [49.4300, 7.7650]  // North-East Corner 
+];
+
+const creatClusterCustomIcon = (cluster: any) => {
+    const childMarkers = cluster.getAllChildMarkers();
+    let totalIssues = 0;
+
+    childMarkers.forEach((marker: any) => {
+        totalIssues += parseInt(marker.options.title || "0", 10);
+    });
+
+    return L.divIcon({
+            html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;">${totalIssues}</div>`,
+            className: '',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+};
+
 export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilterValue}:MapProperties){
     //const{viewMode, setViewMode}=useViewMode();
     // const{
@@ -27,33 +52,51 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     // }=useFilter(issuesToDisplay, userEmail);
 
 
-    return(<div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
-                <MapContainer center={[49.4244, 7.7531]} zoom={17} style={{ height: '100%', width: '100%' }}>
+    return(
+            <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
+                <MapContainer 
+                    center={[49.4244, 7.7531]} 
+                    zoom={17} 
+                    minZoom={15} // prevents zooming out too far
+                    maxZoom={18} // prevents zooming in too far
+                    scrollWheelZoom={true} 
+                    style={{ height: '100%', width: '100%' }}
+                    maxBounds={campusBounds} // restricts panning to the campus area
+                    >
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 
                 contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
-                {/* Pin Rendering */}
-                {(() => {
-                    // Marker kommen aus dem Backend, damit sie nicht nur die aktuelle Seite zählen
-                    return mapSummary.map(({building, count}) => {
-                    const coords = buildingCoordinates[building];
-                    
-                    // No pin for buildings without coordinates
-                    if (!coords) return null;
+                {/* Cluster Pin Rendering */}
+                <MarkerClusterGroup
+                    chunkedLoading
+                    iconCreateFunction={creatClusterCustomIcon}
+                    maxClusterRadius={40} // Adjust cluster radius as needed
+                    >
 
-                    // HTML Pin with count
-                    const countIcon = L.divIcon({
-                        html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
-                        border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
-                        className: '',
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 16]
-                    });
+                    {/* Pin Rendering */}
+                    {(() => {
+                        // Marker kommen aus dem Backend, damit sie nicht nur die aktuelle Seite zählen
+                        return mapSummary.map(({building, count}) => {
+                        const coords = buildingCoordinates[building];
+                        
+                        // No pin for buildings without coordinates
+                        if (!coords) return null;
 
-                    return (<Marker key={building} position={coords} icon={countIcon} eventHandlers={{click: () => 
-                        {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
-                    });
-                })()}
+                        // HTML Pin with count
+                        const countIcon = L.divIcon({
+                            html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
+                            className: '',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        return (<Marker key={building} position={coords} icon={countIcon} title={count.toString()} eventHandlers={{click: () => 
+                            {setCurrentFilter("Ort"); setCurrentFilterValue(building); setViewMode("list")}}}/>);
+                        });
+                    })()}
+                </MarkerClusterGroup>
                 </MapContainer>
-            </div>)
+            </div>
+            );
     }

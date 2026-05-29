@@ -669,6 +669,37 @@ input:checked {
   text-align: center;
 }
 
+.issue-loading {
+  justify-content: center;
+  text-align: center;
+}
+
+.issue-pagination {
+  width: min(100%, var(--issue-width));
+  margin: 18px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.issue-pagination-info {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.issue-pagination button {
+  min-width: 96px;
+}
+
+.issue-pagination .issue-pagination-small-button {
+  min-width: 64px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

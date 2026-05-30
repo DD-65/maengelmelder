@@ -1,6 +1,7 @@
 import type { Request } from "express";
 import db from "../db.js";
 import { buildIssueWhere } from "./issueWhere.js";
+import { getBuildingFromLocation } from "./locationUtils.js";
 
 type LocationRow = {
   location: string | null;
@@ -10,10 +11,6 @@ export type IssueMapSummaryItem = {
   building: string;
   count: number;
 };
-
-function getBuildingFromLocation(location: string) {
-  return location.split(/[-\s/\\._]+/)[0];
-}
 
 // zählt Mängel pro gebäude über alle passenden Treffer unabhängig von der jeweils geladenen seite
 export function getIssueMapSummary(userId: number | null, query: Request["query"]): IssueMapSummaryItem[] {

@@ -1,6 +1,7 @@
 import type { Request } from "express";
 import db from "../db.js";
 import { buildIssueWhere } from "./issueWhere.js";
+import { getBuildingFromLocation } from "./locationUtils.js";
 
 type FilterOptionRow = {
   kategorie: string | null;
@@ -18,10 +19,6 @@ function sortValues(values: Set<string>) {
   return Array.from(values).sort((a, b) => a.localeCompare(b, "de"));
 }
 
-// denselben Gebäude-Teil verwenden wie bisher im Frontend
-function getBuildingFromLocation(location: string) {
-  return location.split(/[-\s/\\._]+/)[0];
-}
 
 // liefert alle Filterwerte, nicht nur die Werte der aktuellen Seite
 export function getIssueFilterOptions(userId: number | null, query: Request["query"]): IssueFilterOptionsResponse {

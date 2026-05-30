@@ -4,6 +4,7 @@ import { useUpdateStatus } from '../hooks/useUpdateStatus';
 import { Kommentar } from './renderComment';
 import { useSortedCommentList } from '../hooks/useSortedCommentList';
 import { usePostComment } from '../hooks/usePostComments';
+import {CommentIcon, TrashIcon} from '../icons/icons';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -105,11 +106,11 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
           <p>Kategorie: {issue.kategorie || '-'}</p>
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-            <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}>Kommentare</button>
+            <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}><CommentIcon className="comment-icon" aria-hidden="true"/>Kommentare</button>
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
-            <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}> {issue.status === "Gelöscht" ? "Meldung endgültig löschen" : "Meldung Löschen"}</button>
+            <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}><TrashIcon className="trash-icon" aria-hidden="true"/> {issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
             /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
           )}
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}

@@ -851,6 +851,8 @@ button.active:hover {
   width: 25px;
   height: 25px;
   flex-shrink: 0;
+  position: relative;
+  border-radius: 50%;
 }
 
 .neuerkommentar{
@@ -858,13 +860,49 @@ button.active:hover {
 }
 
 .comment-icon, 
-.trash-icon {
+.trash-icon, 
+.like-icon,
+.modify-icon,
+.send-icon {
   display: inline-block;
   vertical-align: middle;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  margin-right: 2px;
 }
+.send-icon {
+  margin-left: 2px;
+  width: 16px;
+  height: 16px;
+  fill:whitesmoke;
+}
+
+.liked-icon-active {
+  fill:  whitesmoke;
+  display: inline-block;
+  vertical-align: middle;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+button:hover > .send-icon {
+  fill: var(--accent-2);
+}
+button:hover > .trash-icon {
+  fill: rgb(240, 76, 76);
+}
+button:hover > .like-icon {
+  fill: whitesmoke;
+}
+button:hover > .comment-icon {
+  color: rgb(93, 215, 93);
+}
+button:hover > .modify-icon {
+  fill: whitesmoke;
+}
+
 .commentList {
   display: flex;
   flex-direction: column;
@@ -884,39 +922,74 @@ button.active:hover {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px;
-  padding-left:0 px;
-  margin-right: 15px;
   gap: 10px;
   background: var(--surface);
   font-size: 15px;
-} 
+  width: fit-content;
+  max-width: 90%;
+  align-self: flex-start;
+  overflow-wrap: anywhere;
+}
+
 .singleComment .kommentator {
   text-align: left;
   width: 120px;
   flex-shrink: 0;
 }
+
 .singleComment .status {
   font-size: 13px;
-  text-align: left;
+  font-family: monospace;
+  text-align: center;
   width: 91px;
   flex-shrink: 0;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
 }
 .singleComment .inhalt {
-  max-width: 342px;
+  max-width: 100%;
   text-align: left;
   flex: 1;
 }
 .kommentarloeschen {
   margin-left: 0px;
-  margin-right: 10px;
-  background: linear-gradient(135deg, var(--danger), var(--danger-2));
+  color: var(--danger);
   width: 30px;
   height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: transparent;
+  box-shadow: none;
 }
-.kommentarloeschen-wronguser {
+.kommentarloeschen:hover {
+  translate: none;
+  transform: none;
+  background: var(--danger);
+  color: white;
+}
+.ownComment{
+  background: var(--surface-strong);
+  align-self: flex-end;
+  margin-right: 15px;
+}
+.ownComment .kommentator {
+  text-align: right;
+}
+.ownComment .status {
+  font-size: 13px;
+  font-family: monospace;
+  text-align: center;
+  width: 91px;
+  flex-shrink: 0;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+/* .kommentarloeschen-wronguser {
   margin-left: 0px;
   margin-right: 10px;
   background: linear-gradient(135deg, var(--text), var(--border));
@@ -925,7 +998,7 @@ button.active:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} */
 
 @media (max-width: 700px) {
   #root {

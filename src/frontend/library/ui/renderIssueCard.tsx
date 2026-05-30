@@ -4,7 +4,7 @@ import { useUpdateStatus } from '../hooks/useUpdateStatus';
 import { Kommentar } from './renderComment';
 import { useSortedCommentList } from '../hooks/useSortedCommentList';
 import { usePostComment } from '../hooks/usePostComments';
-import {CommentIcon, TrashIcon} from '../icons/icons';
+import {CommentIcon, TrashIcon, LikeIcon, ModifyIcon, SendIcon} from '../icons/icons';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -72,7 +72,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
               </select><br/>
               <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment}  onClick={(e)=> {e.stopPropagation();}}
                 onChange={(event) => {event.stopPropagation(); issue.id && setNewStatusComment(event.target.value)}} autoComplete="off"/>
-              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Status ändern</button>
+              <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Status ändern</button>
             </form>
              )}
         </div>
@@ -115,9 +115,9 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
           )}
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
           {userId ? (
-            <button className={hasVoted ? "voted-button" : undefined} disabled={hasVoted} onClick={(e) => { e.stopPropagation(); if (issue.id) onUpvote(issue.id); }}>{hasVoted ? "Geliked" : "Liken"}</button>
+            <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onUpvote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true"/>{hasVoted ? "Geliked" : "Liken"}</button>
           ) : (
-            <button disabled onClick={(e) => e.stopPropagation()}>Like</button>
+            <button disabled onClick={(e) => e.stopPropagation()}><LikeIcon className="like-icon" aria-hidden="true"/>Like</button>
           )}
 
         </div>
@@ -133,7 +133,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
                                       setNewComment('')}}>
               <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
                 onChange={(event) => {event.stopPropagation(); issue.id && setNewComment(event.target.value)}} autoComplete="off"/>
-              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken</button>
+              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken<SendIcon className="send-icon" aria-hidden="true"/></button>
             </form>
           ):(<span>Einloggen um selbst Kommentare zu schreiben</span>))}
         

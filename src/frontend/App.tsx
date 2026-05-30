@@ -130,6 +130,14 @@ export default function App() {
     setFilterOnlyOwn(false);
   };
 
+  // reseting filter when switching to map view
+  useEffect(() => {
+    if (viewMode === "map") {
+      chooseFilter("");
+      setFilterOnlyOwn(false);
+    }
+  }, [viewMode]);
+
   // Statusfilter zurücksetzen, wenn er im aktuellen Archivmodus nicht angeboten wird
   useEffect(() => {
     if (currentFilter === "Status" && currentFilterValue && !possibleFilterValues.Status?.includes(currentFilterValue)) {

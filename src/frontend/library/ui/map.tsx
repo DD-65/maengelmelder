@@ -38,6 +38,10 @@ const campusBounds = {
     }
 };
 
+const formatCompactNumber = (num: number): string => {
+    return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
+};
+
 // Moves Map to either Kaiserslautern or Landau campus based on toggle Button
 function CampusSwitcher({ campus }: { campus: "KL" | "LD" }) {
     const map = useMap();
@@ -82,7 +86,7 @@ function CampusSwitcher({ campus }: { campus: "KL" | "LD" }) {
 }
 
 // creates custom cluster icon showing the total count of issues in the cluster
-const creatClusterCustomIcon = (cluster: any) => {
+const createClusterCustomIcon = (cluster: any) => {
     const childMarkers = cluster.getAllChildMarkers();
     let totalIssues = 0;
 
@@ -91,12 +95,20 @@ const creatClusterCustomIcon = (cluster: any) => {
         totalIssues += parseInt(marker.options.title || "0", 10);
     });
 
+    const displayTotal = formatCompactNumber(totalIssues);
+
     return L.divIcon({
-            html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;">${totalIssues}</div>`,
+            html: `
+            <div style="display: flex; justify-content: center;">
+                <svg viewBox="0 0 36 48" width="42" height="56" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="var(--accent)" />
+                    <circle cx="18" cy="18" r="12" fill="white" />
+                    <text x="18" y="22.5" fill="var(--accent)" font-size="12px" font-weight="900" font-family="sans-serif" text-anchor="middle">${displayTotal}</text>
+                </svg>
+            </div>`,
             className: '',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            iconSize: [42, 56],
+            iconAnchor: [21, 56] 
         });
 };
 
@@ -163,7 +175,7 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
                 {/* Cluster Pin Rendering */}
                 <MarkerClusterGroup
                     chunkedLoading
-                    iconCreateFunction={creatClusterCustomIcon}
+                    iconCreateFunction={createClusterCustomIcon}
                     maxClusterRadius={40} // Adjust cluster radius as needed
                     >
 
@@ -180,13 +192,21 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
                         // No pin for buildings without coordinates
                         if (!coords) return null;
 
+                        const displayCount = formatCompactNumber(count);
+
                         // HTML Pin with count
                         const countIcon = L.divIcon({
-                            html: `<div style="background-color: var(--danger); color: white; width: 32px; height: 32px; 
-                            border-radius: 50%; display: flex; align-items: center; justify-content: center;">${count}</div>`,
+                            html: `
+                            <div style="display: flex; justify-content: center;">
+                                <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="var(--danger)" />
+                                    <circle cx="18" cy="18" r="12" fill="white" />
+                                    <text x="18" y="22" fill="var(--danger)" font-size="11px" font-weight="900" font-family="sans-serif" text-anchor="middle">${displayCount}</text>
+                                </svg>
+                            </div>`,
                             className: '',
-                            iconSize: [32, 32],
-                            iconAnchor: [16, 16]
+                            iconSize: [36, 48],
+                            iconAnchor: [18, 48]
                         });
 
                         return (<Marker key={building} position={coords} icon={countIcon} title={count.toString()} eventHandlers={{click: () => 

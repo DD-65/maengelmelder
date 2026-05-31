@@ -1,7 +1,7 @@
 
 // Dictionary for Building Coordinates 
 export const buildingCoordinates: Record<string, [number, number]> = {
-  "Audimax" : [49.424910, 7.750627],
+  "Audimax" : [49.424468, 7.750061],
   "Sporthalle": [49.426183, 7.750959],
   "Unifit": [49.426337, 7.750498],
   "01": [49.426959, 7.759883],

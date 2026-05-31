@@ -344,6 +344,11 @@ export default function App() {
     };
   }, [fetchIssueMapSummary]);
 
+  const refreshMapData = useCallback(async () => {
+    const summary = await fetchIssueMapSummary();
+    if (summary) setMapSummary(summary);
+  }, [fetchIssueMapSummary]);
+
   useEffect(() => {
     const root = document.documentElement;
 
@@ -588,6 +593,7 @@ export default function App() {
         alert(data.error || "Fehler beim Aktualisieren des Status");
       }
       loadIssuePage();
+      refreshMapData();
     };
     
     // UI
@@ -788,7 +794,10 @@ export default function App() {
           {userId ? (
 
             <InputForm
-              onIssueCreated={() => loadIssuePage(1, false)}
+              onIssueCreated={() => {
+                loadIssuePage(1, false);
+                refreshMapData(); 
+              }}
             />
 
           ) : (
@@ -897,6 +906,7 @@ export default function App() {
                           setIsConfirmOpen(true);
                         } else {
                           deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
+                          refreshMapData();
                         }
                       }}
                       onUpvote={upvoteIssue}
@@ -935,9 +945,10 @@ export default function App() {
             <p style={{ marginBottom: '20px' }}>Möchten Sie diese Meldung wirklich endgültig aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button
-                onClick={() => {
+                onClick={async () => { 
                   if (issueToDelete !== null) {
-                    deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions());
+                    await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
+                    refreshMapData(); 
                   }
                   setIsConfirmOpen(false);
                   setIssueToDelete(null);

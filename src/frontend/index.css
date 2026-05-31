@@ -465,41 +465,32 @@ code {
   font-weight: 700;
 }
 
-.settings-overlay {
+.modal-overlay, .settings-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1000;
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.48);
+  background: rgba(0, 0, 0, 0.75);
   box-sizing: border-box;
 }
 
-.settings-pane {
-  width: min(100%, 420px);
-  padding: 18px;
-  background: var(--surface);
+.modal-content, .settings-pane {
+  width: min(100%, 520px);
+  padding: 24px;
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(14px);
   box-sizing: border-box;
+  position: relative;
 }
 
-.settings-pane-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.settings-pane-header h2 {
-  margin: 0;
-}
-
-.settings-close-button {
+.modal-close-btn, .settings-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -509,12 +500,15 @@ code {
   background: var(--surface-strong);
   color: var(--text-h);
   box-shadow: none;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.settings-close-button:hover:not(:disabled) {
+.modal-close-btn:hover, .settings-close-button:hover:not(:disabled) {
   background: var(--danger);
+  color: white;
   transform: none;
-  box-shadow: var(--shadow-sm);
 }
 
 .settings-options {

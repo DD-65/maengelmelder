@@ -118,7 +118,7 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     const [selectedCampus, setSelectedCampus] = useState<"KL" | "LD">("KL");
 
     return(
-            <div style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
+            <div className="map-container" style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
 
                 {/* FLOATING CAMPUS TOGGLE */}
                 <div style={{

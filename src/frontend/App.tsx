@@ -140,6 +140,8 @@ export default function App() {
     return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
   });
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   // übersetzt die deutschen UI-Filter in Backend-Query-Parameter
   const getBackendFilterOptions = useCallback((onlyOwnOverride: boolean = filterOnlyOwn): LoadIssuesOptions => {
     const filterOptions: LoadIssuesOptions = {};
@@ -578,108 +580,233 @@ export default function App() {
       }
       loadIssuePage();
       refreshMapData();
-    };
-    
-    // UI
-    return (
-      <div className="app-layout"
-      /* Event Listener for swiping between Tabs */
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleTouchStart}
-      onMouseUp={handleTouchEnd}
-    >
-      <aside className="sidebar-left">
-        <div className="sidebar-header">
-          <Reportunfall /> {/* Seitenüberschrift mit random RPTU U */}
-        </div>
-        
-        <div className="sidebar-content">
-          {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-          <h3>Filter & Sortierung</h3>
+      };
+
+      const filterContent = (
+      <div className="sidebar-content">
+        {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
+        <h3>Filter & Sortierung</h3>
+        <select
+          className='issue-filter-select'
+          value={currentFilter}
+          onChange={(event) => chooseFilter(event.target.value)}
+        >
+          <option value="" disabled>Filter wählen</option>
+          {possibleFilters.map((filter) => (
+            <option key={filter} value={filter}>{filter}</option>
+          ))}
+          <option value=""> - Kein Filter - </option>
+        </select>
+
+        {currentFilter && (
           <select
-            className='issue-filter-select'
-            value={currentFilter}
-            onChange={(event) => chooseFilter(event.target.value)}
+            className='issue-filter-value-select'
+            value={currentFilterValue}
+            onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
           >
-            <option value="" disabled>Filter wählen</option>
-            {possibleFilters.map((filter) => (
-              <option key={filter} value={filter}>{filter}</option>
+            <option value="" disabled>Wert wählen</option>
+            {possibleFilterValues[currentFilter]?.map((value) => (
+              <option key={value} value={value}>{value}</option>
             ))}
-            <option value=""> - Kein Filter - </option>
           </select>
+        )}
 
-          {currentFilter && (
-            <select
-              className='issue-filter-value-select'
-              value={currentFilterValue}
-              onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
-            >
-              <option value="" disabled>Wert wählen</option>
-              {possibleFilterValues[currentFilter]?.map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
-          )}
+        <select
+          className='issue-sorting-select'
+          value={currentSorting}
+          onChange={(event) => chooseSorting(event.target.value)}
+        >
+          <option value="" disabled>Sortierung wählen</option>
+          {possibleSortings.map((sorting) => (
+            <option key={sorting} value={sorting}>{sorting}</option>
+          ))}
+          <option value=""> - Keine Sortierung - </option>
+        </select>
 
+        {currentSorting && (
           <select
-            className='issue-sorting-select'
-            value={currentSorting}
-            onChange={(event) => chooseSorting(event.target.value)}
+            className='issue-sorting-mode-select'
+            value={currentSortingMode}
+            onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
           >
-            <option value="" disabled>Sortierung wählen</option>
-            {possibleSortings.map((sorting) => (
-              <option key={sorting} value={sorting}>{sorting}</option>
+            {possibleSortingModes[currentSorting]?.map((mode) => (
+              <option key={mode} value={mode}>{mode}</option>
             ))}
-            <option value=""> - Keine Sortierung - </option>
           </select>
+        )}
 
-          {currentSorting && (
-            <select
-              className='issue-sorting-mode-select'
-              value={currentSortingMode}
-              onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
-            >
-              {possibleSortingModes[currentSorting]?.map((mode) => (
-                <option key={mode} value={mode}>{mode}</option>
-              ))}
-            </select>
-          )}
+        <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting} style={{ width: '100%', margin: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          Filter zurücksetzen
+        </button>
+        {userId && (
+          <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
+            <label htmlFor="onlyOwnIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</label>
+          </div>
+        )}
+      </div>
+      );
 
-          <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting} style={{ width: '100%', margin: '0' }}>
-            Filter zurücksetzen
+      const accountContent = (
+      <div className="sidebar-content">
+        <h3>Account</h3>
+        {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+        {userId ? (
+          <div className="auth-card" style={{ width: '100%', margin: '0' }}>
+            {/* Wenn man eingeloggt ist: logout und einstellungen*/}
+            <p className="auth-status" style={{ marginBottom: '10px' }}>
+              Eingeloggt als<br />
+              <strong>{userEmail}</strong><br />
+              <small>({userRole === "admin" ? "Admin" : "Nutzer"})</small>
+            </p>
+            <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
+          </div>
+        ) : (
+          <div className="auth-forms">
+            {/* Wenn man nicht eingeloggt ist: login und register */}
+            {!authView ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
+                <button onClick={() => setAuthView("login")}>Login</button>
+                <button onClick={() => setAuthView("register")}>Registrieren</button>
+              </div>
+            ) : (
+              <>
+                <form
+                  className="auth-card"
+                  onSubmit={authView === "login" ? login : register}
+                  style={{ width: '100%', margin: '0' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h2 style={{ fontSize: '18px', margin: '0' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
+                    <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none' }}>X</button>
+                  </div>
+
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={authEmail}
+                    onChange={(event) => setAuthEmail(event.target.value)}
+                  />
+
+                  <input
+                    type="password"
+                    placeholder="Passwort"
+                    value={authPassword}
+                    onChange={(event) => setAuthPassword(event.target.value)}
+                  />
+
+                  {authView === "register" && (
+                    <div className="admin-checkbox">
+                      <input
+                        type="checkbox"
+                        id="registerAsAdmin"
+                        checked={registerAsAdmin}
+                        onChange={(e) => setRegisterAsAdmin(e.target.checked)}
+                      />
+                      <label htmlFor="registerAsAdmin">als Admin registrieren</label>
+                    </div>
+                  )}
+
+                  {authView === "register" && registerAsAdmin && (
+                    <input
+                      type="password"
+                      placeholder="Admin-Code"
+                      value={adminCode}
+                      onChange={(event) => setAdminCode(event.target.value)}
+                    />
+                  )}
+
+                  {authError && <p className="error-text">{authError}</p>}
+                  {authMessage && <p className="success-text">{authMessage}</p>}
+
+                  <button type="submit">
+                    {authView === "login" ? "Einloggen" : "Registrieren"}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      );
+
+      // UI
+      return (
+      <div className={`app-layout ${isMenuOpen ? 'menu-open' : ''}`}
+        /* Event Listener for swiping between Tabs */
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
+      >
+        <header className="mobile-header">
+          <Reportunfall />
+          <button 
+            className="hamburger-menu-btn" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Menü öffnen"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
           </button>
-
-          {userId && (
-            <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-              <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
-              <label htmlFor="onlyOwnIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</label>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <header className="main-header">
-          <div className="header-view-switch">
-            <ViewModeButtons
-              userId={userId}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              isArchiveMode={isArchiveMode}
-              setIsArchiveMode={setIsArchiveMode}
-            />
-          </div>
-          <div className="header-search">
-            {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
-            <Searchbar
-              query={query}
-              setQuery={setQuery}
-              searchView={searchView}
-              setSearchView={setSearchView}
-            />
-          </div>
         </header>
+
+        {isMenuOpen && (
+          <div className="mobile-menu-overlay" onClick={() => setIsMenuOpen(false)}>
+            <aside className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-menu-header">
+                <Reportunfall />
+                <button className="mobile-menu-close" onClick={() => setIsMenuOpen(false)}>X</button>
+              </div>
+              <div className="mobile-menu-scroll">
+                <div className="mobile-menu-settings">
+                   <SettingsButton setSettingsOpen={setSettingsOpen} />
+                   <span>Einstellungen</span>
+                </div>
+                {filterContent}
+                {accountContent}
+              </div>
+            </aside>
+          </div>
+        )}
+
+        <aside className="sidebar-left">
+          <div className="sidebar-header">
+            <Reportunfall /> {/* Seitenüberschrift mit random RPTU U */}
+          </div>
+          {filterContent}
+        </aside>
+
+        <main className="main-content">
+          <header className="main-header">
+            <div className="header-view-switch">
+              <ViewModeButtons
+                userId={userId}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isArchiveMode={isArchiveMode}
+                setIsArchiveMode={setIsArchiveMode}
+              />
+            </div>
+            <div className="header-search">
+                          {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
+              <Searchbar
+                query={query}
+                setQuery={setQuery}
+                searchView={searchView}
+                setSearchView={setSearchView}
+                issuesToDisplay={issuesToDisplay}
+              />
+            </div>
+          </header>
 
         {verificationMessage && (
           <p className={`verification-notice verification-${verificationMessageType}`}>
@@ -747,106 +874,11 @@ export default function App() {
       <aside className="sidebar-right">
         <div className="sidebar-header" style={{ justifyContent: 'center' }}>
           <SettingsButton     //ausgelagert, braucht setSettingsOpen
-          setSettingsOpen={setSettingsOpen}
+            setSettingsOpen={setSettingsOpen}
           />
         </div>
         
-        <div className="sidebar-content">
-          <h3>Account</h3>
-          {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-          {userId ? (
-            <div className="auth-card" style={{ width: '100%', margin: '0' }}>
-              {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-              <p className="auth-status" style={{ marginBottom: '10px' }}>
-                Eingeloggt als<br />
-                <strong>{userEmail}</strong><br />
-                <small>({userRole === "admin" ? "Admin" : "Nutzer"})</small>
-              </p>
-              <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
-            </div>
-          ) : (
-            <div className="auth-forms">
-              {/* Wenn man nicht eingeloggt ist: login und register */}
-              {!authView ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
-                  <button onClick={() => setAuthView("login")}>Login</button>
-                  <button onClick={() => setAuthView("register")}>Registrieren</button>
-                </div>
-              ) : (
-                <>
-                  {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
-                  {/* <RegistrationLogin             Funktioniert nicht, beim Drücken vom Login Knopf läuft wird nciht eingeloggt
-                    authView={authView}              Wahrscheinlich wieder das erstellen von States innerhalb einer Hilfsdatei, die so nie etwas verändern.
-                    authEmail={authEmail}            Liegt dann aber an der implementierung von useLoginHandler und useRegistrationHandler
-                    setAuthEmail={setAuthEmail}
-                    authPassword={authPassword}
-                    setAuthPassword={setAuthPassword}
-                    registerAsAdmin={registerAsAdmin}
-                    setRegisterAsAdmin={setRegisterAsAdmin}
-                    adminCode={adminCode}
-                    setAdminCode={setAdminCode}
-                    authError={authError}
-                    authMessage={authMessage}
-                  /> */}
-
-                  <form
-                    className="auth-card"
-                    onSubmit={authView === "login" ? login : register}
-                    style={{ width: '100%', margin: '0' }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h2 style={{ fontSize: '18px', margin: '0' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
-                      <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none' }}>X</button>
-                    </div>
-
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={authEmail}
-                      onChange={(event) => setAuthEmail(event.target.value)}
-                    />
-
-                    <input
-                      type="password"
-                      placeholder="Passwort"
-                      value={authPassword}
-                      onChange={(event) => setAuthPassword(event.target.value)}
-                    />
-
-                    {authView === "register" && (
-                      <div className="admin-checkbox">
-                        <input
-                          type="checkbox"
-                          id="registerAsAdmin"
-                          checked={registerAsAdmin}
-                          onChange={(e) => setRegisterAsAdmin(e.target.checked)}
-                        />
-                        <label htmlFor="registerAsAdmin">als Admin registrieren</label>
-                      </div>
-                    )}
-
-                    {authView === "register" && registerAsAdmin && (
-                      <input
-                        type="password"
-                        placeholder="Admin-Code"
-                        value={adminCode}
-                        onChange={(event) => setAdminCode(event.target.value)}
-                      />
-                    )}
-
-                    {authError && <p className="error-text">{authError}</p>}
-                    {authMessage && <p className="success-text">{authMessage}</p>}
-
-                    <button type="submit">
-                      {authView === "login" ? "Einloggen" : "Registrieren"}
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {accountContent}
       </aside>
 
       {/* Input Pop-up */}

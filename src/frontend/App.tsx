@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Map } from './library/ui/map';
 import type { MapSummaryItem } from './library/ui/map';
@@ -64,13 +64,31 @@ function buildIssueQueryParams(options: LoadIssuesOptions) {
 }
 
 export default function App() {
-// Liste der Mängel
+  // Liste der Mängel
   const { issueList, setIssueList } = useIssueList(); 
 
   const { loadIssues, deleteIssue, pagination, isLoading: issuesLoading, error: issuesError } = useLoadIssues(setIssueList);
 
   // Ansichtsmodus (Liste oder Karte)
   const { viewMode, setViewMode } = useViewMode();
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [canScrollTop, setCanScrollTop] = useState(false);
+  const [canScrollBottom, setCanScrollBottom] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    if (scrollAreaRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      setCanScrollTop(scrollTop > 0);
+      setCanScrollBottom(scrollTop + clientHeight < scrollHeight - 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [checkScroll, issueList, viewMode]);
 
   // Archiv-Modus
   const { isArchiveMode, setIsArchiveMode } = useArchiveMode();
@@ -814,7 +832,11 @@ export default function App() {
           </p>
         )}
 
-        <div className='issue-display-area'>
+        <div
+          className={`issue-display-area ${viewMode === 'list' ? 'with-scroll-fade' : ''} ${canScrollTop ? 'can-scroll-top' : ''} ${canScrollBottom ? 'can-scroll-bottom' : ''}`}
+          ref={scrollAreaRef}
+          onScroll={checkScroll}
+        >
           {viewMode === 'list' ? (
             <div>
               {voteError && <p className="error-text vote-error">{voteError}</p>}

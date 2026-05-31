@@ -391,6 +391,35 @@ code {
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
+  
+  /* native scrollbar ausblenden */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE und Edge */
+}
+
+.issue-display-area::-webkit-scrollbar {
+  display: none; /* Chrome, Safari und Opera */
+}
+
+/* Dynamic scroll fade indicators */
+.with-scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 100%);
+}
+
+.with-scroll-fade.can-scroll-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 50px);
+}
+
+.with-scroll-fade.can-scroll-bottom {
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, black 50px);
+  mask-image: linear-gradient(to top, transparent 0%, black 50px);
+}
+
+.with-scroll-fade.can-scroll-top.can-scroll-bottom {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black calc(100% - 50px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black calc(100% - 50px), transparent 100%);
 }
 
 .floating-add-btn {
@@ -405,8 +434,13 @@ code {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), 0 0 20px var(--accent-soft);
   padding: 0;
+}
+
+.floating-add-btn:hover {
+  box-shadow: var(--shadow-md), 0 0 30px var(--accent);
+  transform: translateY(-2px);
 }
 
 .mobile-header {

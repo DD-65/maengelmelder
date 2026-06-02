@@ -729,37 +729,58 @@ export default function App() {
 
       const accountContent = (
       <div className="sidebar-content">
-        <h3>Account</h3>
-        {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-        {userId ? (
-          <div className="auth-card" style={{ width: '100%', margin: '0' }}>
-            {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-            <p className="auth-status" style={{ marginBottom: '10px' }}>
-              Eingeloggt als<br />
-              <strong>{userEmail}</strong><br />
-              <small>({userRole === "admin" ? "Admin" : "Nutzer"})</small>
-            </p>
-            <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
-          </div>
-        ) : (
-          <div className="auth-forms">
-            {/* Wenn man nicht eingeloggt ist: login und register */}
-            {!authView ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
-                <button onClick={() => setAuthView("login")}>Login</button>
-                <button onClick={() => setAuthView("register")}>Registrieren</button>
-              </div>
-            ) : (
-              <>
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            {/*User-Icon Platzhalter*/}
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Account
+          </h3>
+          {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+          {userId ? (
+            <>
+              {/* Wenn man eingeloggt ist: logout und einstellungen*/}
+              <p className="auth-status" style={{ marginBottom: '15px', lineHeight: '1.5' }}>
+                <strong>{userEmail}</strong><br />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                    {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
+                  </span>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    padding: '4px 10px', 
+                    borderRadius: '999px', 
+                    backgroundColor: 'var(--surface-strong)',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-muted)'
+                  }}>
+                    {userRole === "admin" ? "Admin" : "Nutzer"}
+                  </span>
+                </span>
+              </p>
+
+              <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
+            </>
+          ) : (
+            <>
+              {/* Wenn man nicht eingeloggt ist: login und register */}
+              {!authView ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p className="login-hint" style={{ margin: '0 0 5px', fontSize: '14px' }}>Bitte einloggen, um einen Mangel zu melden.</p>
+                  <button onClick={() => setAuthView("login")}>Login</button>
+                  <button onClick={() => setAuthView("register")}>Registrieren</button>
+                </div>
+              ) : (
                 <form
-                  className="auth-card"
                   onSubmit={authView === "login" ? login : register}
-                  style={{ width: '100%', margin: '0' }}
+                  style={{ width: '100%', margin: '0', display: 'flex', flexDirection: 'column', gap: '12px' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h2 style={{ fontSize: '18px', margin: '0' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
-                    <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none' }}>X</button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
+                    <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none', border: 'none', minWidth: 'auto' }}>X</button>
                   </div>
 
                   <input
@@ -777,14 +798,14 @@ export default function App() {
                   />
 
                   {authView === "register" && (
-                    <div className="admin-checkbox">
+                    <div className="admin-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
                       <input
                         type="checkbox"
                         id="registerAsAdmin"
                         checked={registerAsAdmin}
                         onChange={(e) => setRegisterAsAdmin(e.target.checked)}
                       />
-                      <label htmlFor="registerAsAdmin">als Admin registrieren</label>
+                      <label htmlFor="registerAsAdmin" style={{ fontSize: '14px' }}>als Admin registrieren</label>
                     </div>
                   )}
 
@@ -797,19 +818,19 @@ export default function App() {
                     />
                   )}
 
-                  {authError && <p className="error-text">{authError}</p>}
-                  {authMessage && <p className="success-text">{authMessage}</p>}
+                  {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
+                  {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
 
-                  <button type="submit">
+                  <button type="submit" style={{ marginTop: '8px' }}>
                     {authView === "login" ? "Einloggen" : "Registrieren"}
                   </button>
                 </form>
-              </>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          )}
       </div>
-      );
+    </div>
+    );
 
       // UI
       return (
@@ -952,10 +973,50 @@ export default function App() {
       </main>
 
       <aside className="sidebar-right">
-        <div className="sidebar-header" style={{ justifyContent: 'center' }}>
-          <SettingsButton     //ausgelagert, braucht setSettingsOpen
-            setSettingsOpen={setSettingsOpen}
-          />
+        <div className="sidebar-header" style={{ padding: '0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            {/* Profilbild Platzhalter */}
+            <div style={{
+              width: '38px', 
+              height: '38px', 
+              borderRadius: '50%', 
+              backgroundColor: 'var(--surface-strong)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--text)', 
+              fontWeight: 'bold',
+              fontSize: '16px',
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              flexShrink: 0
+            }}>
+              {userId ? userEmail?.charAt(0).toUpperCase() : '?'}
+            </div>
+            {/* Name und Rolle */}
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <span style={{ 
+                fontWeight: '600', 
+                fontSize: '14px', 
+                color: 'var(--text-h)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {userId ? userEmail.split('@')[0] : 'Gast'}
+              </span>
+              <span style={{ 
+                fontSize: '11px', 
+                color: 'var(--text-muted)', 
+                marginTop: '1px' 
+              }}>
+                {userId ? (userRole === "admin" ? "Administrator" : "Nutzer") : "Nicht angemeldet"}
+              </span>
+            </div>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <SettingsButton setSettingsOpen={setSettingsOpen} />
+          </div>
         </div>
         
         {accountContent}

@@ -600,59 +600,115 @@ export default function App() {
       refreshMapData();
       };
 
+      // Gemeinsame Styles für die Container-Cards in der Sidebar
+      const sidebarCardStyle = {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '14px',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      };
+
+      // Styles für die Card-Überschriften
+      const sidebarHeaderStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        margin: '0',
+        fontSize: '16px',
+        color: 'var(--text-h)'
+      };
+
       const filterContent = (
-      <div className="sidebar-content">
-        {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
-        <h3>Filter & Sortierung</h3>
-        <select
-          className='issue-filter-select'
-          value={currentFilter}
-          onChange={(event) => chooseFilter(event.target.value)}
-        >
-          <option value="" disabled>Filter wählen</option>
-          {possibleFilters.map((filter) => (
-            <option key={filter} value={filter}>{filter}</option>
-          ))}
-          <option value=""> - Kein Filter - </option>
-        </select>
+      <div className="sidebar-content" style={{ gap: '16px' }}>
+        
+        {/* --- FILTER SEKTION --- */}
+        {/* Container-Card für alle Filter-Optionen */}
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            Filter
+          </h3>
 
-        {currentFilter && (
+          {/* Auswahl des Filter-Typs (Kategorie, Ort, etc.) */}
           <select
-            className='issue-filter-value-select'
-            value={currentFilterValue}
-            onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
+            className='issue-filter-select'
+            value={currentFilter}
+            onChange={(event) => chooseFilter(event.target.value)}
+            style={{ width: '100%' }}
           >
-            <option value="" disabled>Wert wählen</option>
-            {possibleFilterValues[currentFilter]?.map((value) => (
-              <option key={value} value={value}>{value}</option>
+            <option value="" disabled>Filter wählen</option>
+            {possibleFilters.map((filter) => (
+              <option key={filter} value={filter}>{filter}</option>
             ))}
+            <option value=""> - Kein Filter - </option>
           </select>
-        )}
 
-        <select
-          className='issue-sorting-select'
-          value={currentSorting}
-          onChange={(event) => chooseSorting(event.target.value)}
-        >
-          <option value="" disabled>Sortierung wählen</option>
-          {possibleSortings.map((sorting) => (
-            <option key={sorting} value={sorting}>{sorting}</option>
-          ))}
-          <option value=""> - Keine Sortierung - </option>
-        </select>
+          {/* Auswahl des konkreten Filter-Werts (erscheint nur, wenn ein Typ gewählt wurde) */}
+          {currentFilter && (
+            <select
+              className='issue-filter-value-select'
+              value={currentFilterValue}
+              onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
+              style={{ width: '100%' }}
+            >
+              <option value="" disabled>Wert wählen</option>
+              {possibleFilterValues[currentFilter]?.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          )}
+        </div>
 
-        {currentSorting && (
+        {/* --- SORTIERUNG SEKTION --- */}
+        {/* Container-Card für alle Sortier-Optionen */}
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Sortierung
+          </h3>
+
+          {/* Auswahl des Feldes, nach dem sortiert werden soll */}
           <select
-            className='issue-sorting-mode-select'
-            value={currentSortingMode}
-            onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
+            className='issue-sorting-select'
+            value={currentSorting}
+            onChange={(event) => chooseSorting(event.target.value)}
+            style={{ width: '100%' }}
           >
-            {possibleSortingModes[currentSorting]?.map((mode) => (
-              <option key={mode} value={mode}>{mode}</option>
+            <option value="" disabled>Sortierung wählen</option>
+            {possibleSortings.map((sorting) => (
+              <option key={sorting} value={sorting}>{sorting}</option>
             ))}
+            <option value=""> - Keine Sortierung - </option>
           </select>
-        )}
 
+          {/* Auswahl der Richtung (Aufsteigend/Absteigend) */}
+          {currentSorting && (
+            <select
+              className='issue-sorting-mode-select'
+              value={currentSortingMode}
+              onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
+              style={{ width: '100%' }}
+            >
+              {possibleSortingModes[currentSorting]?.map((mode) => (
+                <option key={mode} value={mode}>{mode}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Button zum kompletten Zurücksetzen aller Einstellungen */}
         <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting} style={{ width: '100%', margin: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -660,6 +716,8 @@ export default function App() {
           </svg>
           Filter zurücksetzen
         </button>
+
+        {/* Checkbox für "Nur eigene Mängel" (nur sichtbar für eingeloggte User) */}
         {userId && (
           <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
             <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />

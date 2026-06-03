@@ -24,13 +24,14 @@ export function InputForm({onIssueCreated}: InputFormProperties){
                     .filter(room => room !== location)
                     .slice(0, 6)
                     .map((room) => (
-                      <div
+                      <button
                         key={room}
+                        type="button"
                         className="room-item"
                         onClick={() => setLocation(room)}
                       >
                         {room}
-                      </div>
+                      </button>
                     ))}
                 </div>
               )}

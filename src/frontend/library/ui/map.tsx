@@ -10,8 +10,7 @@ export type MapSummaryItem = {
     count: number;
 };
 
-// hier müssen die Filter importiert werden, außerdem müssen die erst aus App raus gemacht werden.
-// test commit
+// Importing of Filters
 interface MapProperties{
     mapSummary: MapSummaryItem[];
     setViewMode: React.Dispatch<React.SetStateAction<"list" | "map">>;
@@ -99,7 +98,7 @@ const createClusterCustomIcon = (cluster: any) => {
 
     return L.divIcon({
             html: `
-            <div style="display: flex; justify-content: center;">
+            <div aria-label="${totalIssues} Mängel in diesem Bereich zusammengefasst" role="button" tabindex="0" style="display: flex; justify-content: center;">
                 <svg viewBox="0 0 36 48" width="42" height="56" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="var(--accent)" />
                     <circle cx="18" cy="18" r="12" fill="white" />
@@ -120,42 +119,64 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     return(
             <div className="map-container" style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
 
-                {/* FLOATING CAMPUS TOGGLE */}
                 <div style={{
                     position: 'absolute',
                     top: '15px',
                     right: '15px',
-                    zIndex: 1000, // Forcing toogle to be above map
+                    zIndex: 1000, 
                     display: 'flex',
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
-                    borderRadius: '10px',
+                    borderRadius: '10px', 
+                    padding: '0', 
                     overflow: 'hidden',
                     boxShadow: 'var(--shadow-md)',
                     backdropFilter: 'blur(10px)'
                 }}>
-                <div 
+                <button 
+                    type="button"
+                    aria-label="Campus Kaiserslautern anzeigen"
+                    aria-pressed={selectedCampus === 'KL'}
                     onClick={() => setSelectedCampus('KL')}
                     style={{
+                        appearance: 'none', 
+                        outline: 'none',
+                        border: 'none',
+                        margin: 0,
+                        fontFamily: 'inherit',
                         padding: '8px 14px',
                         fontSize: '13px',
                         fontWeight: 800,
                         cursor: 'pointer',
-                        backgroundColor: selectedCampus === 'KL' ? 'var(--accent)' : 'transparent',
+                        background: selectedCampus === 'KL' ? 'var(--accent)' : 'transparent',
                         color: selectedCampus === 'KL' ? 'white' : 'var(--text)',
+                        borderRadius: 0,
+                        boxShadow: 'none',
+                        opacity: 1,
                         transition: 'all 0.2s ease'
-                    }}>Kaiserslautern</div>
-                <div 
+                    }}>Kaiserslautern</button>
+                <button 
+                    type="button"
+                    aria-label="Campus Landau anzeigen"
+                    aria-pressed={selectedCampus === 'LD'}
                     onClick={() => setSelectedCampus('LD')}
                     style={{
+                        appearance: 'none', 
+                        outline: 'none',
+                        border: 'none',
+                        margin: 0,
+                        fontFamily: 'inherit',
                         padding: '8px 14px',
                         fontSize: '13px',
                         fontWeight: 800,
                         cursor: 'pointer',
-                        backgroundColor: selectedCampus === 'LD' ? 'var(--accent)' : 'transparent',
+                        background: selectedCampus === 'LD' ? 'var(--accent)' : 'transparent', 
                         color: selectedCampus === 'LD' ? 'white' : 'var(--text)',
+                        borderRadius: 0, 
+                        boxShadow: 'none', 
+                        opacity: 1, 
                         transition: 'all 0.2s ease'
-                    }}>Landau</div>
+                    }}>Landau</button>
                 </div>
 
                 <MapContainer 
@@ -197,7 +218,7 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
                         // HTML Pin with count
                         const countIcon = L.divIcon({
                             html: `
-                            <div style="display: flex; justify-content: center;">
+                            <div aria-label="${count} Mängel an Gebäude ${building}" role="button" tabindex="0" style="display: flex; justify-content: center;">
                                 <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="var(--danger)" />
                                     <circle cx="18" cy="18" r="12" fill="white" />

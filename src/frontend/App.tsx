@@ -601,7 +601,7 @@ export default function App() {
       };
 
       // Gemeinsame Styles für die Container-Cards in der Sidebar
-      const sidebarCardStyle = {
+      const sidebarCardStyle: React.CSSProperties = {
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: '14px',
@@ -612,7 +612,7 @@ export default function App() {
       };
 
       // Styles für die Card-Überschriften
-      const sidebarHeaderStyle = {
+      const sidebarHeaderStyle: React.CSSProperties = {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
@@ -841,6 +841,8 @@ export default function App() {
         onMouseDown={handleTouchStart}
         onMouseUp={handleTouchEnd}
       >
+        <a href="#main-content" className="skip-link">Zum Hauptinhalt springen</a>
+
         <header className="mobile-header">
           <Reportunfall />
           <button 
@@ -882,7 +884,7 @@ export default function App() {
           {filterContent}
         </aside>
 
-        <main className="main-content">
+        <main id="main-content" className="main-content" tabIndex={-1}>
           <header className="main-header">
             <div className="header-view-switch">
               <ViewModeButtons

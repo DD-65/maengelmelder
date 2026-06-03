@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Issue } from '../types/Issue';
+import { formatTimestamp, getRelativeTime } from '../utils/timeUtils';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -21,6 +22,26 @@ export function IssueCard({ issue, userRole, userId, onDelete, onUpvote, onUpdat
     return (
       // makes the whole issue card clickable, but only if there is an image to show
       <li className="card issue-card" key={issue.id} onClick={() => {if (issue.id && issue.image_url) toggleImage(issue.id)}}>
+        
+        {/* Timestamp */}
+        {issue.created_at && (
+          <div 
+            title={formatTimestamp(issue.created_at)} 
+            style={{
+              position: 'absolute',
+              top: '14px',
+              right: '16px',
+              fontSize: '12px',
+              color: 'var(--muted)',
+              fontWeight: '600',
+              cursor: 'help',
+              zIndex: 10
+            }}
+          >
+            {getRelativeTime(issue.created_at)}
+          </div>
+        )}
+
         {/* Nutzername (email) */}
         <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
 

@@ -7,7 +7,7 @@ import type { MapSummaryItem } from './library/ui/map';
 // import 'leaflet/dist/leaflet.css';
 
 // Konstanten und random U's importieren
-import { randomRptuLogo } from './library/utils/rptulogo';
+// import { randomRptuLogo } from './library/utils/rptulogo';
 
 // input importieren
 import { Searchbar } from './library/ui/searchbar';
@@ -42,6 +42,7 @@ import { ViewModeButtons } from './library/ui/viewModeButtons';
 //import { registerClient } from 'fuse/next/server'; brauchen wir den import? hat nur nen fehler geschmissen
 import { SettingsButton } from './library/ui/settingsButton';
 import { IssuePagination } from './library/ui/issuePagination';
+import { getSecondaryUserColor, getUserColor } from './library/utils/getUserColor';
 
 type ThemePreference = "system" | "light" | "dark";
 
@@ -366,7 +367,6 @@ export default function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
   }, [themePreference]);
 
-  // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   // beim Laden der Seite checken ob man eingeloggt ist um userID zu setzen
   useEffect(() => {
     fetch('/api/auth/me')
@@ -714,7 +714,7 @@ export default function App() {
         <div style={sidebarCardStyle}>
           <h3 style={sidebarHeaderStyle}>
             {/*User-Icon Platzhalter*/}
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
@@ -954,7 +954,7 @@ export default function App() {
             onClick={() => setShowInputModal(true)}
             title="Mangel melden"
           >
-            +
+            <div>+</div>
           </button>
         )}
       </main>
@@ -967,13 +967,13 @@ export default function App() {
               width: '38px', 
               height: '38px', 
               borderRadius: '50%', 
-              backgroundColor: 'var(--surface-strong)', 
+              backgroundColor: getUserColor(userEmail), 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              color: 'var(--text)', 
+              color: getSecondaryUserColor(userEmail), 
               fontWeight: 'bold',
-              fontSize: '16px',
+              fontSize: '24px',
               overflow: 'hidden',
               border: '1px solid var(--border)',
               flexShrink: 0

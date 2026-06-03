@@ -112,7 +112,7 @@ body {
 
 .app-layout {
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: 280px 1fr 280px; /* evtl sollten Seiten breiter sein, bspw mit minmax(280px, 1fr) */
   height: 100vh;
   width: 100%;
   gap: 0;
@@ -386,6 +386,7 @@ code {
   position: relative;
   height: 100%;
   overflow: hidden;
+  width: 100%;
 }
 
 .main-header {
@@ -454,18 +455,18 @@ code {
 
 .floating-add-btn {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
+  bottom: 32px;
+  right: 32px;
   width: 60px;
   height: 60px;
-  border-radius: 8px;
+  border-radius: 50%;
   font-size: 32px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 100;
   box-shadow: var(--shadow-md), 0 0 20px var(--accent-soft);
-  padding: 0;
+  padding: 0 0 3px 0;
 }
 
 .floating-add-btn:hover {

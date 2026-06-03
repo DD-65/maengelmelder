@@ -84,6 +84,89 @@ function CampusSwitcher({ campus }: { campus: "KL" | "LD" }) {
     return null;
 }
 
+// Indicator component that shows glowing edges when there are pins outside the current map view and in which direction they are located
+function EdgeGlowIndicator({ mapSummary, selectedCampus }: { mapSummary: MapSummaryItem[], selectedCampus: "KL" | "LD" }) {
+    const map = useMap();
+    const [glowDirs, setGlowDirs] = useState({ top: false, bottom: false, left: false, right: false });
+
+    useEffect(() => {
+        const updateGlows = () => {
+            const bounds = map.getBounds();
+            
+            // Waits for map to fully render
+            if (!bounds.isValid()) return;
+
+            const newGlows = { top: false, bottom: false, left: false, right: false };
+
+            const activeCampusBounds = L.latLngBounds(campusBounds[selectedCampus].bounds as [[number, number], [number, number]]);
+
+            mapSummary.forEach(({ building }) => {
+                const buildingKey = Object.keys(buildingCoordinates).find(
+                    (key) => key.toLowerCase() === building.toLowerCase()
+                );
+                
+                if (!buildingKey) return;
+                
+                const coords = buildingCoordinates[buildingKey];
+                const latLng = L.latLng(coords);
+
+                // Pins outside the active campus get excluded
+                if (!activeCampusBounds.contains(latLng)) return;
+                
+                // Visible pins get excluded
+                if (bounds.contains(latLng)) return;
+
+                // Direction of pin relative to the current view
+                if (latLng.lat > bounds.getNorth()) newGlows.top = true;
+                if (latLng.lat < bounds.getSouth()) newGlows.bottom = true;
+                if (latLng.lng > bounds.getEast()) newGlows.right = true;
+                if (latLng.lng < bounds.getWest()) newGlows.left = true;
+            });
+
+            setGlowDirs(newGlows);
+        };
+
+        // Recalculating for user movement, zoom and resizing
+        map.on('move', updateGlows);
+        map.on('zoomend', updateGlows);
+        map.on('resize', updateGlows);
+        
+        updateGlows(); 
+
+        return () => {
+            map.off('move', updateGlows);
+            map.off('zoomend', updateGlows);
+            map.off('resize', updateGlows);
+        };
+    }, [map, mapSummary, selectedCampus]);
+
+    const shadows = [];
+    const glowColor = 'rgba(255, 107, 138, 0.4)'; // Color
+    const spread = '15px'; // Size
+
+    if (glowDirs.top) shadows.push(`inset 0 ${spread} 20px -10px ${glowColor}`);
+    if (glowDirs.bottom) shadows.push(`inset 0 -${spread} 20px -10px ${glowColor}`);
+    if (glowDirs.left) shadows.push(`inset ${spread} 0 20px -10px ${glowColor}`);
+    if (glowDirs.right) shadows.push(`inset -${spread} 0 20px -10px ${glowColor}`);
+
+    if (shadows.length === 0) return null;
+
+    return (
+        <div 
+            style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 999, // Over the map, but under UI elements
+                pointerEvents: 'none', // User can click through the glow
+                boxShadow: shadows.join(', '),
+                transition: 'box-shadow 0.3s ease-in-out',
+                borderRadius: 'inherit'
+            }} 
+        />
+    );
+}
+
+
 // creates custom cluster icon showing the total count of issues in the cluster
 const createClusterCustomIcon = (cluster: any) => {
     const childMarkers = cluster.getAllChildMarkers();
@@ -192,6 +275,8 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
 
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 
                 contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+
+                <EdgeGlowIndicator mapSummary={mapSummary} selectedCampus={selectedCampus} />
 
                 {/* Cluster Pin Rendering */}
                 <MarkerClusterGroup

@@ -9,11 +9,9 @@ import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
 import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
-import multer from "multer";
-import fs from "fs";
-import sharp from "sharp";
 
 import { basicAuth } from "./middleware/basicAuth.js";
+import { createIssueRouter, issueUploadDir } from "./issues/issueRoutes.js";
 
 
 // TODO: Nach DB Update prüfen, ob E-Mail des Users verifiziert ist, ob notification_interval === 0 und nur falls ja dann sendStatusUpdateEmail aufrufen
@@ -26,12 +24,24 @@ const app = express();
 
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
-const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
 const emailTokenTtlMinutes = Number(process.env.EMAIL_TOKEN_TTL_MINUTES || 60);
 const emailVerificationResendDelayMs = 60 * 1000;
 // Das Regex enthält bewusst Escapes, die ESLint sonst als unnötig markiert.
 // eslint-disable-next-line no-useless-escape
 const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+type UserToNotify = {
+  id: number;
+  email: string;
+  notification_interval: number;
+  last_summary_email_at: string | null;
+};
+
+type StatusChangeToNotify = {
+  id: number;
+  new_status: string;
+  title: string;
+};
 
 app.use(cors());
 app.use(express.json());
@@ -53,18 +63,8 @@ app.use(session({
 
 app.use(basicAuth); //AUSKOMMENTIEREN UM BASIC AUTH ZU DEAKTIVIEREN
 
-// Multer Setup für Dateiuploads
-const upDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(upDir)) {
-  fs.mkdirSync(upDir);
-}
-
-const storage = multer.memoryStorage();
-
-// Storage size limit of 10MB for initial upload
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024} });
-
-app.use("/uploads", express.static(upDir));
+app.use("/uploads", express.static(issueUploadDir));
+app.use(createIssueRouter({ requireAuth }));
 
 function hashEmailVerificationToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -128,397 +128,6 @@ function canSendVerificationMail(userId: number) {
 
   return Date.now() - new Date(lastToken.created_at).getTime() >= emailVerificationResendDelayMs;
 }
-
-
-// --- API Endpunkte
-// Mängel laden
-app.get("/api/mangel", (req, res) => {
-  try {
-    const userId = req.session.userId ?? null;
-    const isArchive = req.query.archiv === "true";
-
-    let role = "user";
-    if (userId) {
-      const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
-      if (user) role = user.role;
-    }
-
-    let whereClause = "";
-    const params: any[] = [userId, userId];
-
-    if (isArchive) {
-      if (role === "admin") {
-        whereClause = "WHERE (maengel.status = 'Behoben' OR maengel.is_deleted = 1)";
-      } else if (userId) {
-        whereClause = "WHERE (maengel.status = 'Behoben' OR maengel.is_deleted = 1) AND maengel.user_id = ?";
-        params.push(userId);
-      } else {
-        return res.json([]);
-      }
-    } else {
-      whereClause = "WHERE (maengel.status != 'Behoben' OR maengel.status IS NULL) AND maengel.is_deleted = 0";
-    }
-
-    // statement um mängel zu laden, join auf der votes tabelle um die votes zu laden / zu prüfen ob nutzer schon gevotet haben
-    const stmt = db.prepare(`
-      SELECT
-        maengel.id,
-        maengel.title,
-        maengel.description,
-        maengel.location,
-        CASE 
-          WHEN maengel.is_deleted = 1 THEN 'Gelöscht'
-          ELSE maengel.status
-        END AS status,
-        maengel.kategorie,
-        maengel.created_at,
-        maengel.votes,
-        maengel.image_url,
-        maengel.thumbnail_url,
-        maengel_kommentare.kommentar AS statusComment,
-        users.email AS user_email,
-        CASE
-          WHEN ? IS NULL THEN 0
-          ELSE EXISTS (
-            SELECT 1
-            FROM mangel_votes
-            WHERE mangel_votes.user_id = ?
-              AND mangel_votes.mangel_id = maengel.id
-          )
-        END AS has_voted
-      FROM maengel
-      LEFT JOIN users ON maengel.user_id = users.id
-      LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
-      ${whereClause}
-      ORDER BY maengel.votes DESC, maengel.created_at DESC
-    `);
-    const maengel = stmt.all(...params);
-    res.json(maengel);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim laden der Mängel" });
-  }
-});
-
-// Status eines Mangels aktualisieren (nur Admin)
-app.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-    const { status, statusComment } = req.body;
-
-    // Prüfen, ob der Nutzer Admin ist
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
-    }
-
-    // Status validieren
-    const allowedStatus = ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung", "Behoben", "Gelöscht"];
-    if (!allowedStatus.includes(status)) {
-      return res.status(400).json({ error: "Ungültiger Status" });
-    }
-    // Länge des Statuskommentar checken
-    if (statusComment && statusComment.trim().length > 255) {
-      return res.status(400).json({ error: "Statuskommentar darf maximal 255 Zeichen lang sein" });
-    }
-
-    //  Infos holen, bevor der Status überschrieben wird
-    const oldMangelData = db.prepare(`
-      SELECT status, title, user_id, statusComment_id FROM maengel WHERE id = ?
-    `).get(mangelId) as { status: string, title: string, user_id: number, statusComment_id: number} | undefined;
-
-    if (!oldMangelData) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
-    }
-
-    // Update durchführen
-    let result;
-    if (status === "Gelöscht") {
-      result = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
-    } else {
-      result = db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
-    }
-    const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment, userId, mangelId);
-    const kommentarid = kommentar.lastInsertRowid;
-    result = db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarid, mangelId);
-
-    // In status_changes loggen 
-    db.prepare(`
-      INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment_id, new_statusComment_id)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment_id, kommentarid);
-
-    // Prüfen, ob sofort eine Mail geschickt werden soll
-    const recipient = db.prepare(`
-      SELECT email, email_verified_at, notification_interval 
-      FROM users WHERE id = ?
-    `).get(oldMangelData.user_id) as { email: string, email_verified_at: string | null, notification_interval: number } | undefined;
-
-    if (recipient?.email_verified_at && recipient.notification_interval === 0) {
-      sendStatusUpdateEmail(recipient.email, oldMangelData.title, status, statusComment).catch(err => {
-        console.error("Mail-Fehler:", err);
-      });
-    }
-    res.json({ message: "Status erfolgreich aktualisiert" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim Aktualisieren des Status" });
-  }
-});
-
-
-
-// Kommentare laden aktuell einfach kopie von mangel laden
-app.get("/api/comment/:mangelId", (req, res) => {
-  try {
-    const mangelId = Number(req.params.mangelId);
-
-
-const stmt = db.prepare(`
-      SELECT
-        status_changes.new_status AS status,
-        maengel_kommentare.kommentar,
-        users.email AS userEmail, 
-        maengel_kommentare.created_at AS timestamp,
-        maengel_kommentare.id AS commentId
-      FROM maengel_kommentare LEFT JOIN status_changes
-      ON maengel_kommentare.id = status_changes.new_statusComment_id
-      LEFT JOIN users
-      ON maengel_kommentare.user_id = users.id
-      WHERE maengel_kommentare.mangel_id = ?
-      ORDER BY maengel_kommentare.created_at ASC
-    `);
-    const kommentare = stmt.all(mangelId);
-    res.json(kommentare);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim laden der Kommentare" });
-  }
-});
-// Kommentar schreiben (jede*r)
-app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-    const { comment } = req.body;
-
-    // Länge des Kommentar checken
-    if (comment && comment.trim().length > 255) {
-      return res.status(400).json({ error: "Kommentar darf maximal 255 Zeichen lang sein" });
-    }
-
-    //  Prüfen, ob der Mangel noch existiert
-    const mangelData = db.prepare(`
-      SELECT title, user_id FROM maengel WHERE id = ?
-    `).get(mangelId) as { title: string, user_id: number } | undefined;
-    if (!mangelData) {
-      return res.status(404).json({ error: "Kommentar kann keinem existierenden Mangel zugeordnet werden"})}
-
-    // Update durchführen
-    let result;
-    result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
-
-    const createdComment = db.prepare(`SELECT mk.kommentar,
-                                              users.email AS userEmail, 
-                                              mk.created_at AS timestamp,
-                                              mk.id AS commentId
-                                              FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
-    res.status(200).json(createdComment);
-
-  }catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim Abschicken der Kommentar" });}
-});
-
-// Kommentar löschen (nur Admin oder Ersteller)
-app.delete("/api/comment/:id", requireAuth, (req, res) => {
-
-    const userId = req.session.userId;
-    const commentId = Number(req.params.id);
-
-    if (!Number.isInteger(commentId)) {
-      return res.status(400).json({ error: "Ungültige Kommentar-ID" });
-    }
-    
-    const kommentar = db
-      .prepare("SELECT user_id, mangel_id FROM maengel_kommentare WHERE id = ?")
-      .get(commentId) as { user_id: number; mangel_id: number;} | undefined;
-    if (!kommentar) {
-      return res.status(404).json({ error: "Kommentar nicht gefunden" });
-    }
-    // Prüfen, ob der Nutzer Admin ist oder Kommentator*in
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin" && userId !== kommentar.user_id) {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
-    }
-
-    const stmt = db.prepare("DELETE FROM maengel_kommentare WHERE id = ?");
-    const result = stmt.run(commentId);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: "Kommentar nicht gefunden" });
-    }
-    return res.json({ message: "Kommentar endgültig gelöscht" });
-});
-
-// neuen Mangel anlegen
-app.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {
-  try {
-    const { title, description, location, kategorie } = req.body;
-
-    // Image Pathing
-    let imageUrl = null;
-    let thumbnailUrl = null;
-
-    // Image Processing
-    if (req.file) {
-      const baseName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
-      const fileNameBig = `${baseName}-original.jpg`;
-      const fileNameThumb = `${baseName}-thumb.jpg`;
-
-      const filePathBig = path.join(upDir, fileNameBig);
-      const filePathThumb = path.join(upDir, fileNameThumb);
-
-      // Just convertion for the original file
-      await sharp(req.file.buffer).jpeg({ quality: 100 }).toFile(filePathBig);
-
-      // Thumbnails also gets resized
-      await sharp(req.file.buffer).resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toFile(filePathThumb);
-
-      imageUrl = `/uploads/${fileNameBig}`;
-      thumbnailUrl = `/uploads/${fileNameThumb}`;
-
-    }
-
-
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: "Titel darf nicht leer sein" });
-    }
-
-    if (location && location.trim().length > 255) {
-      return res.status(400).json({ error: "Fundort darf maximal 255 Zeichen lang sein" });
-    }
-
-    if (description && description.trim().length > 255) {
-      return res.status(400).json({ error: "Beschreibung darf maximal 255 Zeichen lang sein" });
-    }
-
-    const normalizedKategorie =
-      typeof kategorie === "string" && kategorie.trim() ? kategorie.trim() : null;
-
-    if (normalizedKategorie && !allowedKategorien.includes(normalizedKategorie)) {
-      return res.status(400).json({ error: "Ungültige Kategorie" });
-    }
-
-    // userid aus sessioncookie (Durch login endpunkt gesetzt)
-    const userId = req.session.userId;
-
-    const stmt = db.prepare(`
-      INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl, thumbnailUrl);
-
-    res.status(201).json({
-      message: "Mangel gespeichert!",
-      id: result.lastInsertRowid
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Fehler beim speichern des Mangels" });
-  }
-});
-
-// Mangel löschen (nur Admin oder Ersteller)
-app.delete("/api/mangel/:id", requireAuth, (req, res) => {
-
-
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-    const permanent = req.query.permanent === "true";
-
-    if (!Number.isInteger(mangelId)) {
-      return res.status(400).json({ error: "Ungültige Mangel-ID" });
-    }
-    
-    const mangel = db
-      .prepare("SELECT user_id, image_url, thumbnail_url FROM maengel WHERE id = ?")
-      .get(mangelId) as { user_id: number; image_url: string | null; thumbnail_url: string | null } | undefined;
-    if (!mangel) {
-      return res.status(404).json({ error: "Mangel nicht gefunden" });
-    }
-    // Prüfen, ob der Nutzer Admin ist
-    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
-    }
-
-    if (permanent) {
-      const stmt = db.prepare("DELETE FROM maengel WHERE id = ?");
-      const result = stmt.run(mangelId);
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "Mangel nicht gefunden" });
-      }
-      return res.json({ message: "Mangel endgültig gelöscht" });
-    } else {
-      const stmt = db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?");
-      const result = stmt.run(mangelId);
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "Mangel nicht gefunden" });
-      }
-      return res.json({ message: "Mangel erfolgreich archiviert" });
-    }
-});
-
-// voten (braucht login)
-app.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const mangelId = Number(req.params.id);
-
-    if (!userId) {
-      return res.status(401).json({ error: "Nicht angemeldet" });
-    }
-
-    if (!Number.isInteger(mangelId)) {
-      return res.status(400).json({ error: "Ungültige Mangel-ID" });
-    }
-
-    const mangel = db
-      .prepare("SELECT id FROM maengel WHERE id = ?")
-      .get(mangelId) as { id: number } | undefined;
-
-    if (!mangel) {
-      return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });    
-    }
-
-    const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
-      db.prepare(`
-        INSERT INTO mangel_votes (user_id, mangel_id)
-        VALUES (?, ?)
-      `).run(transactionUserId, transactionMangelId);
-
-      db.prepare(`
-        UPDATE maengel
-        SET votes = votes + 1
-        WHERE id = ?
-      `).run(transactionMangelId);
-    });
-
-    voteTransaction(userId, mangelId);
-
-    res.json({ message: "Bewertung erfolgreich" });
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE_CONSTRAINT")) {
-      return res.status(409).json({ error: "Du hast diesen Mangel bereits bewertet" });
-    }
-
-    console.error(error)
-    res.status(500).json({ error: "Fehler beim Bewerten"})
-  }
-});
 
 // -- Login & Registrierung zeugs
 
@@ -812,6 +421,102 @@ app.patch("/api/auth/settings/notifications", requireAuth, (req, res) => {
   }
 });
 
+
+
+
+// Kommentare laden aktuell einfach kopie von mangel laden
+app.get("/api/comment/:mangelId", (req, res) => {
+  try {
+    const mangelId = Number(req.params.mangelId);
+
+
+const stmt = db.prepare(`
+      SELECT
+        status_changes.new_status AS status,
+        maengel_kommentare.kommentar,
+        users.email AS userEmail, 
+        maengel_kommentare.created_at AS timestamp,
+        maengel_kommentare.id AS commentId
+      FROM maengel_kommentare LEFT JOIN status_changes
+      ON maengel_kommentare.id = status_changes.new_statusComment_id
+      LEFT JOIN users
+      ON maengel_kommentare.user_id = users.id
+      WHERE maengel_kommentare.mangel_id = ?
+      ORDER BY maengel_kommentare.created_at ASC
+    `);
+    const kommentare = stmt.all(mangelId);
+    res.json(kommentare);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim laden der Kommentare" });
+  }
+});
+// Kommentar schreiben (jede*r)
+app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
+    const { comment } = req.body;
+
+    // Länge des Kommentar checken
+    if (comment && comment.trim().length > 255) {
+      return res.status(400).json({ error: "Kommentar darf maximal 255 Zeichen lang sein" });
+    }
+
+    //  Prüfen, ob der Mangel noch existiert
+    const mangelData = db.prepare(`
+      SELECT title, user_id FROM maengel WHERE id = ?
+    `).get(mangelId) as { title: string, user_id: number } | undefined;
+    if (!mangelData) {
+      return res.status(404).json({ error: "Kommentar kann keinem existierenden Mangel zugeordnet werden"})}
+
+    // Update durchführen
+    let result;
+    result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
+
+    const createdComment = db.prepare(`SELECT mk.kommentar,
+                                              users.email AS userEmail, 
+                                              mk.created_at AS timestamp,
+                                              mk.id AS commentId
+                                              FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
+    res.status(200).json(createdComment);
+
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Abschicken der Kommentar" });}
+});
+
+// Kommentar löschen (nur Admin oder Ersteller)
+app.delete("/api/comment/:id", requireAuth, (req, res) => {
+
+    const userId = req.session.userId;
+    const commentId = Number(req.params.id);
+
+    if (!Number.isInteger(commentId)) {
+      return res.status(400).json({ error: "Ungültige Kommentar-ID" });
+    }
+    
+    const kommentar = db
+      .prepare("SELECT user_id, mangel_id FROM maengel_kommentare WHERE id = ?")
+      .get(commentId) as { user_id: number; mangel_id: number;} | undefined;
+    if (!kommentar) {
+      return res.status(404).json({ error: "Kommentar nicht gefunden" });
+    }
+    // Prüfen, ob der Nutzer Admin ist oder Kommentator*in
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin" && userId !== kommentar.user_id) {
+      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    }
+
+    const stmt = db.prepare("DELETE FROM maengel_kommentare WHERE id = ?");
+    const result = stmt.run(commentId);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Kommentar nicht gefunden" });
+    }
+    return res.json({ message: "Kommentar endgültig gelöscht" });
+});
+
 // Vite Integration
 if (!isProd) {
   const { createServer: createViteServer } = await import("vite");
@@ -841,7 +546,7 @@ setInterval(async () => {
         AND email_verified_at IS NOT NULL
         AND (last_summary_email_at IS NULL OR 
              datetime(last_summary_email_at, '+' || notification_interval || ' days') <= datetime('now'))
-    `).all() as any[];
+    `).all() as UserToNotify[];
 
     for (const user of usersToNotify) {
       const changes = db.prepare(`
@@ -849,20 +554,12 @@ setInterval(async () => {
         FROM status_changes sc
         JOIN maengel m ON sc.mangel_id = m.id
         WHERE m.user_id = ? AND sc.mail_sent = 0
-      `).all(user.id) as any[];
+      `).all(user.id) as StatusChangeToNotify[];
 
       if (changes.length > 0) {
         const summaryText = changes
           .map(c => `• ${c.title}: Status geändert auf "${c.new_status}"`)
           .join("\n");
-
-        const summaryHtml = `
-          <p>Hallo,</p>
-          <p>hier ist die Zusammenfassung deiner Mängel-Updates:</p>
-          <ul>
-            ${changes.map(c => `<li><strong>${c.title}</strong>: ${c.new_status}</li>`).join("")}
-          </ul>
-        `;
 
         await sendStatusUpdateEmail(user.email, "Deine Mängel-Zusammenfassung", summaryText); 
 

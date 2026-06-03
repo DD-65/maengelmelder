@@ -1,14 +1,14 @@
-import { Issue } from "../types/Issue";
 import { useInput } from "../hooks/useInput"
 import { rooms } from "../constants/rooms";
-import { useLoadIssues } from "../hooks/useLoadIssues";
 // import "../../index.css"
 
+type InputFormProperties = {
+  onIssueCreated: () => void;
+};
 
 //  Ort Eingabe zerschossen, dropdwn geht nicht zu
-export function InputForm({setIssueList}: {setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>}){
-  const{loadIssues, deleteIssue}=useLoadIssues(setIssueList);
-  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(loadIssues);
+export function InputForm({onIssueCreated}: InputFormProperties){
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, addIssue}=useInput(onIssueCreated);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));  // hier hin gebaut, da nur hier genutzt
 
     return(
@@ -24,13 +24,14 @@ export function InputForm({setIssueList}: {setIssueList: React.Dispatch<React.Se
                     .filter(room => room !== location)
                     .slice(0, 6)
                     .map((room) => (
-                      <div
+                      <button
                         key={room}
+                        type="button"
                         className="room-item"
                         onClick={() => setLocation(room)}
                       >
                         {room}
-                      </div>
+                      </button>
                     ))}
                 </div>
               )}

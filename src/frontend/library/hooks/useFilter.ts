@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Issue } from "../types/Issue";
 
+export type FilterOptionValues = Partial<Record<"Kategorie" | "Ort" | "Status" | "User", string[]>>;
 
-export function useFilter(unfilteredIssueList: Issue[], userEmail: string) {
+export function useFilter(unfilteredIssueList: Issue[], userEmail: string, isArchiveMode: boolean = false, backendFilterOptions: FilterOptionValues = {}) {
     // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
     const [currentFilter, setCurrentFilter] = useState("");
     const [currentFilterValue, setCurrentFilterValue] = useState("");
@@ -18,17 +19,19 @@ export function useFilter(unfilteredIssueList: Issue[], userEmail: string) {
     //tatsächliche Filterung der Issues basierend auf dem aktuellen Filter und Filterwert
     const filteredIssues = unfilteredIssueList.filter(issue => issueMatchesCurrentFilter(issue) && issueMatchesOnlyOwnFilter(issue));
 
-    // Constants für mögliche Filterwerte je Filter, dynamisch abgeleitet basierend auf den Daten der Issues
+    // Constants für mögliche Filterwerte je Filter
 
     const possibleFilterValues: Record<string, string[]> = {
-        Kategorie: Array.from(new Set(unfilteredIssueList.map(issue => issue.kategorie).filter((x): x is string => Boolean(x)))),
-        Ort: Array.from(new Set(unfilteredIssueList.flatMap(issue => {
+        Kategorie: backendFilterOptions.Kategorie ?? ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"],
+        Ort: backendFilterOptions.Ort ?? Array.from(new Set(unfilteredIssueList.flatMap(issue => {
             if (!issue.location) return [];
             const building = issue.location.split(/[-\s/\\._]+/)[0];
             return [building, issue.location]; // Returns both "46" and "46-210"
         }))).sort(),
         User: Array.from(new Set(unfilteredIssueList.map(issue => issue.user_email).filter((x): x is string => Boolean(x)))),
-        Status: Array.from(new Set(unfilteredIssueList.map(issue => issue.status).filter((x): x is string => Boolean(x)))),
+        Status: backendFilterOptions.Status ?? (isArchiveMode
+            ? ["Behoben", "Gelöscht"]
+            : ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung"]),
     };
     
 

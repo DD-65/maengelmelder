@@ -1,18 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Map } from './library/ui/map';
+import type { MapSummaryItem } from './library/ui/map';
+// import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+// import L from 'leaflet';
+// import 'leaflet/dist/leaflet.css';
 
-// Random U's importieren
+// Konstanten und random U's importieren
 import { randomRptuLogo } from './library/utils/rptulogo';
 
-// suche importieren
-import { useSearch } from './library/ui/search';
+// input importieren
 import { Searchbar } from './library/ui/searchbar';
 
-// issue components importieren
+// issue components importieren (jetzt auch mit pagination™)
 import { useIssueList } from './library/hooks/useIssueList';
 import { IssueCard } from './library/ui/renderIssueCard';
-import { useLoadIssues } from './library/hooks/useLoadIssues'; // leider läd es die issues nicht
+import { useLoadIssues } from './library/hooks/useLoadIssues'; 
+import type { LoadIssuesOptions } from './library/hooks/useLoadIssues';
 
 // swiping & teile von Map
 import { useViewMode } from './library/hooks/useViewMode';
@@ -20,6 +24,7 @@ import { useSwiping } from './library/hooks/useSwiping';
 
 // Filter importieren
 import { useFilter } from './library/hooks/useFilter';
+import type { FilterOptionValues } from './library/hooks/useFilter';
 import { useArchiveMode } from './library/hooks/useArchiveMode';
 // Sortierung importieren
 import { useSorting } from './library/hooks/useSorting';
@@ -32,84 +37,119 @@ import { useVerificationMessage } from './library/hooks/useVerificationMessage';
 
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
-import { RegistrationLogin } from './library/ui/ERRORregistrationLogin';
 import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
-import { registerClient } from 'fuse/next/server';
+//import { registerClient } from 'fuse/next/server'; brauchen wir den import? hat nur nen fehler geschmissen
 import { SettingsButton } from './library/ui/settingsButton';
+import { IssuePagination } from './library/ui/issuePagination';
 
 type ThemePreference = "system" | "light" | "dark";
 
 const THEME_STORAGE_KEY = "maengelmelder-theme-preference";
+const ISSUE_PAGE_SIZE = 20;
 
+function buildIssueQueryParams(options: LoadIssuesOptions) {
+  const params = new URLSearchParams();
 
+  if (options.archiv) params.set("archiv", "true");
+  if (options.search) params.set("search", options.search);
+  if (options.kategorie) params.set("kategorie", options.kategorie);
+  if (options.status) params.set("status", options.status);
+  if (options.location) params.set("location", options.location);
+  if (options.onlyOwn) params.set("onlyOwn", "true");
+  if (options.sort) params.set("sort", options.sort);
+  if (options.direction) params.set("direction", options.direction);
 
-
-
-
-
+  return params;
+}
 
 export default function App() {
-  // List of issues
-  const { issueList, setIssueList } = useIssueList(); //so müsste es richtig sein
-  //const [issueList, setIssueList] = useState<Issue[]>([]);
+  // Liste der Mängel
+  const { issueList, setIssueList } = useIssueList(); 
 
-  const { loadIssues, deleteIssue } = useLoadIssues(setIssueList);
+  const { loadIssues, deleteIssue, pagination, isLoading: issuesLoading, error: issuesError } = useLoadIssues(setIssueList);
 
-  // Input      wird nicht mehr benötigt, ist das schlimm, mit dem fehlenden loadIssues und setIsArchiveMode ?
-  // const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}=useInput(() => {
-  //   loadIssues(false);
-  //   setIsArchiveMode(false);
-  // });
-  // const [title, setTitle] = useState('');
-  // const [description, setDescription] = useState('');
-  // const [location, setLocation] = useState('');
-  // const [kategorie, setKategorie] = useState('');
-  // const [image, setImage] = useState<File | null>(null);
-  // const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));
-
-
-  // State of Viewing (List or Map)
+  // Ansichtsmodus (Liste oder Karte)
   const { viewMode, setViewMode } = useViewMode();
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [canScrollTop, setCanScrollTop] = useState(false);
+  const [canScrollBottom, setCanScrollBottom] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    if (scrollAreaRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      setCanScrollTop(scrollTop > 0);
+      setCanScrollBottom(scrollTop + clientHeight < scrollHeight - 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [checkScroll, issueList, viewMode]);
 
   // Archiv-Modus
   const { isArchiveMode, setIsArchiveMode } = useArchiveMode();
 
-  // Views fuer Registrierung und Login
+  // Ansichten für Registrierung und Login
   const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
     authView, setAuthView, authEmail, setAuthEmail, authPassword, setAuthPassword,
     registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, authError, setAuthError, authMessage, setAuthMessage,
     voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
   } = useRegistrationLogin();
 
-  // Swiping using view mode
+  // Swiping zum Wechseln der Ansichten
   const { handleTouchStart, handleTouchEnd } = useSwiping(viewMode, setViewMode, isArchiveMode, setIsArchiveMode, !!userId);
 
 
-  //  Suche mit useSearch
-  const { searchView, query, setSearchView, setQuery, issuesToDisplay } = useSearch(issueList);
+  // Suche über das Backend
+  const [searchView, setSearchView] = useState<"search" | null>(null);
+  const [query, setQuery] = useState("");
+  const normalizedSearchQuery = query.trim();
+  const issuesToDisplay = issueList;
+  const [backendFilterOptions, setBackendFilterOptions] = useState<FilterOptionValues>({});
+  const [mapSummary, setMapSummary] = useState<MapSummaryItem[]>([]);
 
-  //--> issuesToDisplay dann als input in useFilter
-  //Variablen fuer Filterung und gefilterte Issues + Funktionen um Filter zu setzen
-  const { filteredIssues, currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue,
-    filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue, issueMatchesCurrentFilter, issueMatchesOnlyOwnFilter } = useFilter(issuesToDisplay, userEmail);
+  // Variablen für Filterung und Funktionen zum Setzen der Filter
+  const { currentFilter, currentFilterValue, possibleFilters, possibleFilterValues, chooseFilter, chooseFilterValue,
+    filterOnlyOwn, setFilterOnlyOwn, setCurrentFilter, setCurrentFilterValue } = useFilter(issuesToDisplay, userEmail, isArchiveMode, backendFilterOptions);
 
-  //--> filteredIssues dann als input in useSorting
-  // Variablen fuer Sortierung und Sortiermodus + Funktionen um diese zu setten
-  const { currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, sortedIssues, chooseSorting, chooseSortingMode } = useSorting(filteredIssues);
-  const finalIssueList = sortedIssues;  // redundant, eigentlich könnte man unten bei IssueCard direkt sortedIssues übergeben
-  // finalIssueList  dann unten in der UI als Basis für die Anzeige der Issues verwenden, damit wird alles kombiniert: Suche -> Filter -> Sortierung -> map auf IssueCard
+  // Variablen für Sortierung und Funktionen zum Setzen der Sortierung
+  const { currentSorting, currentSortingMode, possibleSortings, possibleSortingModes, chooseSorting, chooseSortingMode } = useSorting(issuesToDisplay);
+  const finalIssueList = issuesToDisplay;
+  
+  // Nachrichten für die Benutzer-Verifizierung
   const { verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType } = useVerificationMessage();
 
-  const resetFilterAndSorting = () => {
+  const resetFilterAndSorting = useCallback(() => {
     chooseFilter("");
     chooseSorting("");
     setFilterOnlyOwn(false);
-  };
+  }, [chooseFilter, chooseSorting, setFilterOnlyOwn]);
+
+  // Filter zurücksetzen beim Wechsel zur Kartenansicht
+  useEffect(() => {
+    if (viewMode === "map") {
+      chooseFilter("");
+      setFilterOnlyOwn(false);
+    }
+  }, [viewMode, chooseFilter, setFilterOnlyOwn]);
+
+  // Statusfilter zurücksetzen, wenn er im aktuellen Archivmodus nicht angeboten wird
+  useEffect(() => {
+    if (currentFilter === "Status" && currentFilterValue && !possibleFilterValues.Status?.includes(currentFilterValue)) {
+      setCurrentFilterValue("");
+    }
+  }, [currentFilter, currentFilterValue, possibleFilterValues.Status, setCurrentFilterValue]);
 
   // State für die Bestätigung der endgültigen Löschung
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [issueToDelete, setIssueToDelete] = useState<number | null>(null);
+
+  // State für das Input-Modal
+  const [showInputModal, setShowInputModal] = useState(false);
 
   // State für das gespeicherte Benachrichtigungs-Intervall
   const [notificationInterval, setNotificationInterval] = useState<number>(0);
@@ -117,6 +157,123 @@ export default function App() {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
   });
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // übersetzt die deutschen UI-Filter in Backend-Query-Parameter
+  const getBackendFilterOptions = useCallback((onlyOwnOverride: boolean = filterOnlyOwn): LoadIssuesOptions => {
+    const filterOptions: LoadIssuesOptions = {};
+
+    if (currentFilterValue) {
+      if (currentFilter === "Kategorie") {
+        filterOptions.kategorie = currentFilterValue;
+      }
+
+      if (currentFilter === "Ort") {
+        filterOptions.location = currentFilterValue;
+      }
+
+      if (currentFilter === "Status") {
+        filterOptions.status = currentFilterValue;
+      }
+    }
+
+    if (onlyOwnOverride) {
+      filterOptions.onlyOwn = true;
+    }
+
+    return filterOptions;
+  }, [currentFilter, currentFilterValue, filterOnlyOwn]);
+
+  // übersetzt die deutschen UI-Sortierungen in Backend-Query-Parameter
+  const getBackendSortOptions = useCallback((): LoadIssuesOptions => {
+    if (currentSorting === "Votes") {
+      return {
+        sort: "votes",
+        direction: currentSortingMode === "Aufsteigend" ? "asc" : "desc",
+      };
+    }
+
+    if (currentSorting === "Erstellungsdatum") {
+      return {
+        sort: "createdAt",
+        direction: currentSortingMode === "Älteste zuerst" ? "asc" : "desc",
+      };
+    }
+
+    if (currentSorting === "Status") {
+      return {
+        sort: "status",
+        direction: currentSortingMode === "Aufsteigend" ? "asc" : "desc",
+      };
+    }
+
+    return {};
+  }, [currentSorting, currentSortingMode]);
+
+  // lädt eine bestimmte Seite mit den aktuellen Archiv-Einstellungen
+  const loadIssuePage = useCallback((page: number = pagination?.page ?? 1, archiv: boolean = isArchiveMode) => {
+    loadIssues({
+      archiv,
+      page,
+      pageSize: pagination?.pageSize ?? ISSUE_PAGE_SIZE,
+      search: normalizedSearchQuery || undefined,
+      ...getBackendFilterOptions(),
+      ...getBackendSortOptions(),
+    });
+  }, [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, loadIssues, normalizedSearchQuery, pagination?.page, pagination?.pageSize]);
+
+  // Optionen für Reloads nach Aktionen wie Löschen, Voting oder Statuswechsel
+  const getCurrentIssueLoadOptions = useCallback((page: number = pagination?.page ?? 1, archiv: boolean = isArchiveMode) => ({
+    archiv,
+    page,
+    pageSize: pagination?.pageSize ?? ISSUE_PAGE_SIZE,
+    search: normalizedSearchQuery || undefined,
+    ...getBackendFilterOptions(),
+    ...getBackendSortOptions(),
+  }), [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, normalizedSearchQuery, pagination?.page, pagination?.pageSize]);
+
+  // Filterwerte vom Backend holen, damit Dropdowns nicht von der aktuellen Seite abhängen
+  const fetchIssueFilterOptions = useCallback(async () => {
+    const params = buildIssueQueryParams({
+      archiv: isArchiveMode,
+      search: normalizedSearchQuery || undefined,
+      onlyOwn: filterOnlyOwn || undefined,
+    });
+
+    const queryString = params.toString();
+    const res = await fetch(`/api/mangel/filter-options${queryString ? `?${queryString}` : ""}`);
+    const data = await res.json();
+
+    if (!res.ok) return null;
+
+    return {
+      Kategorie: data.kategorien,
+      Ort: data.locations,
+      Status: data.status,
+    } as FilterOptionValues;
+  }, [filterOnlyOwn, isArchiveMode, normalizedSearchQuery]);
+
+  // Kartenzusammenfassung vom Backend holen, damit Marker alle Treffer zählen
+  const fetchIssueMapSummary = useCallback(async () => {
+    const params = buildIssueQueryParams(getCurrentIssueLoadOptions());
+    params.delete("page");
+    params.delete("pageSize");
+
+    const queryString = params.toString();
+    const res = await fetch(`/api/mangel/map-summary${queryString ? `?${queryString}` : ""}`);
+    const data = await res.json();
+
+    if (!res.ok) return null;
+
+    return data as MapSummaryItem[];
+  }, [getCurrentIssueLoadOptions]);
+
+  // nach manuellem Seitenwechsel wieder nach oben zur Liste springen
+  const changeIssuePage = (page: number) => {
+    loadIssuePage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Für Status-Mails
   const updateNotificationInterval = async (interval: number) => {
@@ -138,7 +295,7 @@ export default function App() {
       }
 
       setSettingsMessage("Benachrichtigungs-Intervall aktualisiert!");
-    } catch (err) {
+    } catch {
       setSettingsError("Netzwerkfehler beim Speichern der Einstellungen");
     }
   };
@@ -151,8 +308,50 @@ export default function App() {
   // };
 
   useEffect(() => {
-    loadIssues(isArchiveMode);
-  }, [isArchiveMode, loadIssues]);
+    loadIssues({
+      archiv: isArchiveMode,
+      page: 1,
+      pageSize: ISSUE_PAGE_SIZE,
+      search: normalizedSearchQuery || undefined,
+      ...getBackendFilterOptions(),
+      ...getBackendSortOptions(),
+    });
+  }, [getBackendFilterOptions, getBackendSortOptions, isArchiveMode, loadIssues, normalizedSearchQuery]);
+
+  useEffect(() => {
+    let ignoreResult = false;
+
+    async function loadFilterOptions() {
+      const options = await fetchIssueFilterOptions();
+      if (!ignoreResult && options) setBackendFilterOptions(options);
+    }
+
+    loadFilterOptions();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, [fetchIssueFilterOptions]);
+
+  useEffect(() => {
+    let ignoreResult = false;
+
+    async function loadMapSummary() {
+      const summary = await fetchIssueMapSummary();
+      if (!ignoreResult && summary) setMapSummary(summary);
+    }
+
+    loadMapSummary();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, [fetchIssueMapSummary]);
+
+  const refreshMapData = useCallback(async () => {
+    const summary = await fetchIssueMapSummary();
+    if (summary) setMapSummary(summary);
+  }, [fetchIssueMapSummary]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -190,7 +389,14 @@ export default function App() {
           setUserRole(data.role || "user");
           setEmailVerified(Boolean(data.emailVerified));
           setNotificationInterval(data.notificationInterval ?? 0);
-          loadIssues(isArchiveMode);
+          loadIssues({
+            archiv: isArchiveMode,
+            page: 1,
+            pageSize: ISSUE_PAGE_SIZE,
+            search: normalizedSearchQuery || undefined,
+            ...getBackendFilterOptions(),
+            ...getBackendSortOptions(),
+          });
         }
       })
       .catch(() => {
@@ -270,7 +476,7 @@ export default function App() {
       setAuthEmail("");
       setAuthPassword("");
       setAuthView(null);
-      loadIssues(false);
+      loadIssuePage(1, false);
     };
     
     //Registrierungs-handler
@@ -312,7 +518,14 @@ export default function App() {
       setUserRole("");
       setEmailVerified(false);
       setFilterOnlyOwn(false);
-      loadIssues(false);
+      loadIssues({
+        archiv: false,
+        page: 1,
+        pageSize: ISSUE_PAGE_SIZE,
+        search: normalizedSearchQuery || undefined,
+        ...getBackendFilterOptions(false),
+        ...getBackendSortOptions(),
+      });
     };
     
     const resendVerificationEmail = async () => {
@@ -360,12 +573,12 @@ export default function App() {
       
       if (!res.ok) {
         setVoteError(data.error || "Fehler beim Bewerten");
-        loadIssues(isArchiveMode);
+        loadIssuePage();
         return;
       }
       
       // reload
-      loadIssues(isArchiveMode);
+      loadIssuePage();
     };
     
     /**
@@ -379,304 +592,337 @@ export default function App() {
   //       body: JSON.stringify({ status: newStatus, comment: newComment }),
   //     });
       
-  //     if (!res.ok) {
-  //       const data = await res.json();
-  //       alert(data.error || "Fehler beim Aktualisieren des Status");
-  //     }
-  //     loadIssues(isArchiveMode);
-  //   };
-  // }
-
-    
-    // UI
-    return (
-      <div className="app-shell" style={
-        {
-          '--random-rptu-logo': `url("${randomRptuLogo}")`, // logo in CSS einfügen
-        } as React.CSSProperties
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Fehler beim Aktualisieren des Status");
       }
-      /* Event Listener for swiping between Tabs */
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleTouchStart}
-      onMouseUp={handleTouchEnd}
-    >
+      loadIssuePage();
+      refreshMapData();
+      };
 
-      <Reportunfall /> {/* Seitenüberschrift mit random RPTU U */}
+      // Gemeinsame Styles für die Container-Cards in der Sidebar
+      const sidebarCardStyle: React.CSSProperties = {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '14px',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      };
 
-      {verificationMessage && (
-        <p className={`verification-notice verification-${verificationMessageType}`}>
-          {verificationMessage}
-        </p>
-      )}
+      // Styles für die Card-Überschriften
+      const sidebarHeaderStyle: React.CSSProperties = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        margin: '0',
+        fontSize: '16px',
+        color: 'var(--text-h)'
+      };
 
+      const filterContent = (
+      <div className="sidebar-content" style={{ gap: '16px' }}>
+        
+        {/* --- FILTER SEKTION --- */}
+        {/* Container-Card für alle Filter-Optionen */}
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            Filter
+          </h3>
 
-      <div className='list-container'>
-      <div className='header-container'>
-      {/* Buttons fuer Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-      {userId ? (
-        <div className="auth-bar">
-        {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-        <span className="auth-status">Eingeloggt als <strong>{userEmail}</strong> ({userRole === "admin" ? "Admin" : "Nutzer"})</span>
-        <button className='logout-button' onClick={logout}>Logout</button>
-        <SettingsButton     //ausgelagert, braucht setSettingsOpen
-        setSettingsOpen={setSettingsOpen}
-        />
-        </div>
-      ) : (
-        <div className="auth-bar">
-        {/* Wenn man nicht eingeloggt ist: login und register */}
-        <button onClick={() => setAuthView(authView === "login" ? null : "login")}>Login</button>
-        <button onClick={() => setAuthView(authView === "register" ? null : "register")}>Registrieren</button>
-        <SettingsButton     //ausgelagert, braucht setSettingsOpen
-        setSettingsOpen={setSettingsOpen}
-        />
-        </div>
-      )}
-      
-      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
-        Das sieht sehr ausschneidbar aus*/}
-          {settingsOpen && (
-            <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
-              <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
-                <div className="settings-pane-header">
-                  <h2 id="settings-title">Einstellungen</h2>
-                  <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
-                    X
-                  </button>
-                </div>
+          {/* Auswahl des Filter-Typs (Kategorie, Ort, etc.) */}
+          <select
+            className='issue-filter-select'
+            value={currentFilter}
+            onChange={(event) => chooseFilter(event.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="" disabled>Filter wählen</option>
+            {possibleFilters.map((filter) => (
+              <option key={filter} value={filter}>{filter}</option>
+            ))}
+            <option value=""> - Kein Filter - </option>
+          </select>
 
-                <div className="settings-options">
-                  <label className="settings-field">
-                    <span>Darstellung</span>
-                    <select
-                      value={themePreference}
-                      onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
-                    >
-                      <option value="system">Browser-Setting</option>
-                      <option value="light">Hell</option>
-                      <option value="dark">Dunkel</option>
-                    </select>
-                  </label>
-
-                  {userId && (
-                    <>
-                      <div className="settings-option">
-                        <span>
-                          <strong>E-Mail-Adresse</strong>
-                          <small>{userEmail}</small>
-                        </span>
-                        <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
-                          {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
-                        </span>
-                      </div>
-
-                      <label className="settings-field">
-                        <span>Benachrichtigungen</span>
-                        <select
-                          value={notificationInterval}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setNotificationInterval(val); 
-                            updateNotificationInterval(val); 
-                          }}
-                        >
-                          <option value="0">Sofort</option>
-                          <option value="1">Täglich</option>
-                          <option value="7">Wöchentlich</option>
-                          <option value="30">Monatlich</option>
-                        </select>
-                      </label>
-
-                      {!emailVerified && (
-                        <button type="button" onClick={resendVerificationEmail}>
-                          Verifizierungs-E-Mail erneut senden
-                        </button>
-                      )}
-
-                      {settingsMessage && <p className="success-text">{settingsMessage}</p>}
-                      {settingsError && <p className="error-text">{settingsError}</p>}
-                    </>
-                  )}
-                </div>
-              </section>
-            </div>
-          )}
-
-          {/* Login/Register Form, wird nur angezeigt wenn authView gesetzt ist dh man nicht eingeloggt ist und auf einen der Buttons geklickt hat*/}
-          {authView && (
-
-            // <RegistrationLogin             Funktioniert nicht, beim Drücken vom Login Knopf läuft wird nciht eingeloggt
-            //   authView={authView}              Wahrscheinlich wieder das erstellen von States innerhalb einer Hilfsdatei, die so nie etwas verändern.
-            //   authEmail={authEmail}            Liegt dann aber an der implementierung von useLoginHandler und useRegistrationHandler
-            //   setAuthEmail={setAuthEmail}
-            //   authPassword={authPassword}
-            //   setAuthPassword={setAuthPassword}
-            //   registerAsAdmin={registerAsAdmin}
-            //   setRegisterAsAdmin={setRegisterAsAdmin}
-            //   adminCode={adminCode}
-            //   setAdminCode={setAdminCode}
-            //   authError={authError}
-            //   authMessage={authMessage}
-            // />
-
-            <form
-              className="auth-card"
-              onSubmit={authView === "login" ? login : register}
-            >
-              <h2>{authView === "login" ? "Login" : "Registrieren"}</h2>
-
-              <input
-                type="email"
-                placeholder="Email"
-                value={authEmail}
-                onChange={(event) => setAuthEmail(event.target.value)}
-              />
-
-              <input
-                type="password"
-                placeholder="Passwort"
-                value={authPassword}
-                onChange={(event) => setAuthPassword(event.target.value)}
-              />
-
-              {authView === "register" && (
-                <div className="admin-checkbox">
-                  <input
-                    type="checkbox"
-                    id="registerAsAdmin"
-                    checked={registerAsAdmin}
-                    onChange={(e) => setRegisterAsAdmin(e.target.checked)}
-                  />
-                  <label htmlFor="registerAsAdmin">als Admin registrieren</label>
-                </div>
-              )}
-
-              {authView === "register" && registerAsAdmin && (
-                <input
-                  type="password"
-                  placeholder="Admin-Code"
-                  value={adminCode}
-                  onChange={(event) => setAdminCode(event.target.value)}
-                />
-              )}
-
-              {authError && <p className="error-text">{authError}</p>}
-              {authMessage && <p className="success-text">{authMessage}</p>}
-
-              <button type="submit">
-                {authView === "login" ? "Einloggen" : "Registrieren"}
-              </button>
-            </form>
-
-          )}
-
-
-          {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
-          <Searchbar
-            query={query}
-            setQuery={setQuery}
-            searchView={searchView}
-            setSearchView={setSearchView}
-            issuesToDisplay={issuesToDisplay}
-          />
-
-
-          {/* Input form nur sichtbar wenn man eingeloggt ist*/}
-          {userId ? (
-
-            <InputForm
-              setIssueList={setIssueList}
-            />
-
-          ) : (
-            <p className="login-hint">Bitte einloggen, um einen Mangel zu melden.</p>
-          )}
-
-          <div className='issue-toolbar'>
-            {/* Filter Auswahl, Filter wird in einem Select-Feld gewaehlt */}
+          {/* Auswahl des konkreten Filter-Werts (erscheint nur, wenn ein Typ gewählt wurde) */}
+          {currentFilter && (
             <select
-              className='issue-filter-select'
-              value={currentFilter}
-              onChange={(event) => chooseFilter(event.target.value)}
+              className='issue-filter-value-select'
+              value={currentFilterValue}
+              onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
+              style={{ width: '100%' }}
             >
-              <option value="" disabled>Filter wählen</option>
-              {possibleFilters.map((filter) => (
-                <option key={filter} value={filter}>{filter}</option>
+              <option value="" disabled>Wert wählen</option>
+              {possibleFilterValues[currentFilter]?.map((value) => (
+                <option key={value} value={value}>{value}</option>
               ))}
-              <option value=""> - Kein Filter - </option>
             </select>
+          )}
+        </div>
 
-            {/* in zweitem Select-Feld kann dann dynamisch einer der verfuegbaren Werte gewaehlt werden. */}
-            {currentFilter ? (
-              <select
-                className='issue-filter-value-select'
-                value={currentFilterValue}
-                onChange={(event) => chooseFilterValue(currentFilter, event.target.value)}
-              >
-                <option value="" disabled>Wert wählen</option>
-                {possibleFilterValues[currentFilter]?.map((value) => (
-                  <option key={value} value={value}>{value}</option>
-                ))}
-              </select>
-            ) : null}
-            <div className='divider'></div>
-            {/* Sorting Auswahl, Sorting wird in einem Select-Feld gewaehlt */}
+        {/* --- SORTIERUNG SEKTION --- */}
+        {/* Container-Card für alle Sortier-Optionen */}
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Sortierung
+          </h3>
+
+          {/* Auswahl des Feldes, nach dem sortiert werden soll */}
+          <select
+            className='issue-sorting-select'
+            value={currentSorting}
+            onChange={(event) => chooseSorting(event.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="" disabled>Sortierung wählen</option>
+            {possibleSortings.map((sorting) => (
+              <option key={sorting} value={sorting}>{sorting}</option>
+            ))}
+            <option value=""> - Keine Sortierung - </option>
+          </select>
+
+          {/* Auswahl der Richtung (Aufsteigend/Absteigend) */}
+          {currentSorting && (
             <select
-              className='issue-sorting-select'
-              value={currentSorting}
-              onChange={(event) => chooseSorting(event.target.value)}
+              className='issue-sorting-mode-select'
+              value={currentSortingMode}
+              onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
+              style={{ width: '100%' }}
             >
-              <option value="" disabled>Sortierung wählen</option>
-              {possibleSortings.map((sorting) => (
-                <option key={sorting} value={sorting}>{sorting}</option>
-
+              {possibleSortingModes[currentSorting]?.map((mode) => (
+                <option key={mode} value={mode}>{mode}</option>
               ))}
-              <option value=""> - Keine Sortierung - </option>
             </select>
+          )}
+        </div>
 
-            {/* in zweitem Select-Feld kann dann ein entsprechender Sortiermodus gewählt werden */}
-            {currentSorting ? (
-              <select
-                className='issue-sorting-mode-select'
-                value={currentSortingMode}
-                onChange={(event) => chooseSortingMode(currentSorting, event.target.value)}
-              >
+        {/* Button zum kompletten Zurücksetzen aller Einstellungen */}
+        <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting} style={{ width: '100%', margin: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          Filter zurücksetzen
+        </button>
 
-                {possibleSortingModes[currentSorting]?.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode}
-                  </option>
-                ))}
-
-              </select>
-
-            ) : null}
-            {userId && (
-              <div className='issue-filter-only-own'>
-                <button type="button" className="issue-filter-reset-button" onClick={resetFilterAndSorting}>Filter zurücksetzen</button>
-                <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
-                <label htmlFor="onlyOwnIssues" className='issue-filter-only-own-label'><p style={{ fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</p></label>
-              </div>
-            )}
+        {/* Checkbox für "Nur eigene Mängel" (nur sichtbar für eingeloggte User) */}
+        {userId && (
+          <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
+            <label htmlFor="onlyOwnIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</label>
           </div>
-        </div>
+        )}
+      </div>
+      );
 
-        <ViewModeButtons
-        userId  ={userId}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        isArchiveMode={isArchiveMode}
-        setIsArchiveMode={setIsArchiveMode}
-        />
+      const accountContent = (
+      <div className="sidebar-content">
+        <div style={sidebarCardStyle}>
+          <h3 style={sidebarHeaderStyle}>
+            {/*User-Icon Platzhalter*/}
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Account
+          </h3>
+          {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
+          {userId ? (
+            <>
+              {/* Wenn man eingeloggt ist: logout und einstellungen*/}
+              <p className="auth-status" style={{ marginBottom: '15px', lineHeight: '1.5' }}>
+                <strong>{userEmail}</strong><br />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                    {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
+                  </span>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    padding: '4px 10px', 
+                    borderRadius: '999px', 
+                    backgroundColor: 'var(--surface-strong)',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-muted)'
+                  }}>
+                    {userRole === "admin" ? "Admin" : "Nutzer"}
+                  </span>
+                </span>
+              </p>
 
-        <div className='issue-display-area'>
-          {/* BEDINGTES RENDERN: Liste ODER Karte */}
+              <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
+            </>
+          ) : (
+            <>
+              {/* Wenn man nicht eingeloggt ist: login und register */}
+              {!authView ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p className="login-hint" style={{ margin: '0 0 5px', fontSize: '14px' }}>Bitte einloggen, um einen Mangel zu melden.</p>
+                  <button onClick={() => setAuthView("login")}>Login</button>
+                  <button onClick={() => setAuthView("register")}>Registrieren</button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={authView === "login" ? login : register}
+                  style={{ width: '100%', margin: '0', display: 'flex', flexDirection: 'column', gap: '12px' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
+                    <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none', border: 'none', minWidth: 'auto' }}>X</button>
+                  </div>
+
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={authEmail}
+                    onChange={(event) => setAuthEmail(event.target.value)}
+                  />
+
+                  <input
+                    type="password"
+                    placeholder="Passwort"
+                    value={authPassword}
+                    onChange={(event) => setAuthPassword(event.target.value)}
+                  />
+
+                  {authView === "register" && (
+                    <div className="admin-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
+                      <input
+                        type="checkbox"
+                        id="registerAsAdmin"
+                        checked={registerAsAdmin}
+                        onChange={(e) => setRegisterAsAdmin(e.target.checked)}
+                      />
+                      <label htmlFor="registerAsAdmin" style={{ fontSize: '14px' }}>als Admin registrieren</label>
+                    </div>
+                  )}
+
+                  {authView === "register" && registerAsAdmin && (
+                    <input
+                      type="password"
+                      placeholder="Admin-Code"
+                      value={adminCode}
+                      onChange={(event) => setAdminCode(event.target.value)}
+                    />
+                  )}
+
+                  {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
+                  {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
+
+                  <button type="submit" style={{ marginTop: '8px' }}>
+                    {authView === "login" ? "Einloggen" : "Registrieren"}
+                  </button>
+                </form>
+              )}
+            </>
+          )}
+      </div>
+    </div>
+    );
+
+      // UI
+      return (
+      <div className={`app-layout ${isMenuOpen ? 'menu-open' : ''}`}
+        /* Event Listener for swiping between Tabs */
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
+      >
+        <a href="#main-content" className="skip-link">Zum Hauptinhalt springen</a>
+
+        <header className="mobile-header">
+          <Reportunfall />
+          <button 
+            className="hamburger-menu-btn" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Menü öffnen"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        {isMenuOpen && (
+          <div className="mobile-menu-overlay" onClick={() => setIsMenuOpen(false)}>
+            <aside className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-menu-header">
+                <Reportunfall />
+                <button className="mobile-menu-close" onClick={() => setIsMenuOpen(false)}>X</button>
+              </div>
+              <div className="mobile-menu-scroll">
+                <div className="mobile-menu-settings">
+                   <SettingsButton setSettingsOpen={setSettingsOpen} />
+                   <span>Einstellungen</span>
+                </div>
+                {filterContent}
+                {accountContent}
+              </div>
+            </aside>
+          </div>
+        )}
+
+        <aside className="sidebar-left">
+          <div className="sidebar-header">
+            <Reportunfall /> {/* Seitenüberschrift mit random RPTU U */}
+          </div>
+          {filterContent}
+        </aside>
+
+        <main id="main-content" className="main-content" tabIndex={-1}>
+          <header className="main-header">
+            <div className="header-view-switch">
+              <ViewModeButtons
+                userId={userId}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isArchiveMode={isArchiveMode}
+                setIsArchiveMode={setIsArchiveMode}
+              />
+            </div>
+            <div className="header-search">
+                          {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
+              <Searchbar
+                query={query}
+                setQuery={setQuery}
+                searchView={searchView}
+                setSearchView={setSearchView}
+                issuesToDisplay={issuesToDisplay}
+              />
+            </div>
+          </header>
+
+        {verificationMessage && (
+          <p className={`verification-notice verification-${verificationMessageType}`}>
+            {verificationMessage}
+          </p>
+        )}
+
+        <div
+          className={`issue-display-area ${viewMode === 'list' ? 'with-scroll-fade' : ''} ${canScrollTop ? 'can-scroll-top' : ''} ${canScrollBottom ? 'can-scroll-bottom' : ''}`}
+          ref={scrollAreaRef}
+          onScroll={checkScroll}
+        >
           {viewMode === 'list' ? (
-            /* Liste wird angezeigt */
             <div>
-              {/* List of issues */}
               {voteError && <p className="error-text vote-error">{voteError}</p>}
+              {issuesError && <p className="error-text vote-error">{issuesError}</p>}
+              {issuesLoading && <p className="meta-line issue-loading">Mängel werden geladen...</p>}
               <ul className="issue-list">
                 {finalIssueList
                   .map((issue, index) => (
@@ -700,21 +946,172 @@ export default function App() {
                     />
                   ))}
               </ul>
+              {pagination && (
+                <IssuePagination
+                  page={pagination.page}
+                  total={pagination.total}
+                  totalPages={pagination.totalPages}
+                  isLoading={issuesLoading}
+                  onPageChange={changeIssuePage}
+                />
+              )}
             </div>
           ) : (
-            /* Map */
             <Map
-              issuesToDisplay={issuesToDisplay}
+              mapSummary={mapSummary}
               setViewMode={setViewMode}
               setCurrentFilter={setCurrentFilter}
               setCurrentFilterValue={setCurrentFilterValue}
-              issueMatchesCurrentFilter={issueMatchesCurrentFilter}
-              issueMatchesOnlyOwnFilter={issueMatchesOnlyOwnFilter}
             />
-
           )}
         </div>
-      </div>
+
+        {userId && (
+          <button
+            className="floating-add-btn"
+            onClick={() => setShowInputModal(true)}
+            title="Mangel melden"
+          >
+            +
+          </button>
+        )}
+      </main>
+
+      <aside className="sidebar-right">
+        <div className="sidebar-header" style={{ padding: '0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            {/* Profilbild Platzhalter */}
+            <div style={{
+              width: '38px', 
+              height: '38px', 
+              borderRadius: '50%', 
+              backgroundColor: 'var(--surface-strong)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--text)', 
+              fontWeight: 'bold',
+              fontSize: '16px',
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              flexShrink: 0
+            }}>
+              {userId ? userEmail?.charAt(0).toUpperCase() : '?'}
+            </div>
+            {/* Name und Rolle */}
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <span style={{ 
+                fontWeight: '600', 
+                fontSize: '14px', 
+                color: 'var(--text-h)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {userId ? userEmail.split('@')[0] : 'Gast'}
+              </span>
+              <span style={{ 
+                fontSize: '11px', 
+                color: 'var(--text-muted)', 
+                marginTop: '1px' 
+              }}>
+                {userId ? (userRole === "admin" ? "Administrator" : "Nutzer") : "Nicht angemeldet"}
+              </span>
+            </div>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <SettingsButton setSettingsOpen={setSettingsOpen} />
+          </div>
+        </div>
+        
+        {accountContent}
+      </aside>
+
+      {/* Input Pop-up */}
+      {showInputModal && (
+        <div className="modal-overlay" onClick={() => setShowInputModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setShowInputModal(false)}>X</button>
+            <h2 style={{ marginBottom: '20px' }}>Mangel melden</h2>
+            {/* Input form nur sichtbar wenn man eingeloggt ist*/}
+            <InputForm
+              onIssueCreated={() => {
+                loadIssuePage(1, false);
+                setShowInputModal(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Einstellungs zeug (hier neue einstellungen darunter einfügen 
+        Das sieht sehr ausschneidbar aus*/}
+      {settingsOpen && (
+        <div className="settings-overlay" role="presentation" onClick={() => setSettingsOpen(false)}>
+          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-pane-header">
+              <h2 id="settings-title">Einstellungen</h2>
+              <button className="settings-close-button" type="button" aria-label="Einstellungen schließen" onClick={() => setSettingsOpen(false)}>
+                X
+              </button>
+            </div>
+
+            <div className="settings-options">
+              <label className="settings-field">
+                <span>Darstellung</span>
+                <select
+                  value={themePreference}
+                  onChange={(e) => setThemePreference(e.target.value as ThemePreference)}
+                >
+                  <option value="system">Browser-Setting</option>
+                  <option value="light">Hell</option>
+                  <option value="dark">Dunkel</option>
+                </select>
+              </label>
+
+              {userId && (
+                <>
+                  <div className="settings-option">
+                    <span>
+                      <strong>E-Mail-Adresse</strong>
+                      <small>{userEmail}</small>
+                    </span>
+                    <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                      {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
+                    </span>
+                  </div>
+
+                  <label className="settings-field">
+                    <span>Benachrichtigungen</span>
+                    <select
+                      value={notificationInterval}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setNotificationInterval(val); 
+                        updateNotificationInterval(val); 
+                      }}
+                    >
+                      <option value="0">Sofort</option>
+                      <option value="1">Täglich</option>
+                      <option value="7">Wöchentlich</option>
+                      <option value="30">Monatlich</option>
+                    </select>
+                  </label>
+
+                  {!emailVerified && (
+                    <button type="button" onClick={resendVerificationEmail}>
+                      Verifizierungs-E-Mail erneut senden
+                    </button>
+                  )}
+
+                  {settingsMessage && <p className="success-text">{settingsMessage}</p>}
+                  {settingsError && <p className="error-text">{settingsError}</p>}
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Bestätigungs-Modal für endgültiges Löschen */}
       {isConfirmOpen && (
@@ -724,9 +1121,10 @@ export default function App() {
             <p style={{ marginBottom: '20px' }}>Möchten Sie diese Meldung wirklich endgültig aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button
-                onClick={() => {
+                onClick={async () => { 
                   if (issueToDelete !== null) {
-                    deleteIssue(issueToDelete, isArchiveMode, true);
+                    await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
+                    refreshMapData(); 
                   }
                   setIsConfirmOpen(false);
                   setIssueToDelete(null);
@@ -749,6 +1147,5 @@ export default function App() {
         </div>
       )}
     </div>
-
   );
 }

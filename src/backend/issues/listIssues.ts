@@ -16,6 +16,7 @@ type IssueRow = {
   votes: number;
   image_url: string | null;
   thumbnail_url: string | null;
+  statusComment: string | null;
   user_email: string | null;
   has_voted: number;
 };
@@ -69,6 +70,7 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
       maengel.votes,
       maengel.image_url,
       maengel.thumbnail_url,
+      maengel_kommentare.kommentar AS statusComment,
       users.email AS user_email,
       CASE
         WHEN ? IS NULL THEN 0
@@ -81,6 +83,7 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
       END AS has_voted
     FROM maengel
     LEFT JOIN users ON maengel.user_id = users.id
+    LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
     -- hier werden die verschiedensten Bedingungen aus den Filtern angehängt (muss als sql kommentar ups)
     ${whereClause}
     ${orderByClause}

@@ -77,7 +77,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       // ID und neuer Status kommen aus URL und Body
       const userId = req.session.userId;
       const mangelId = Number(req.params.id);
-      const { status } = req.body;
+      const { status, statusComment } = req.body;
 
       // nur Admins dürfen Status und Archiv-Zustand ändern
       const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
@@ -91,10 +91,14 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         return res.status(400).json({ error: "Ungültiger Status" });
       }
 
+      if (statusComment && statusComment.trim().length > 255) {
+        return res.status(400).json({ error: "Statuskommentar darf maximal 255 Zeichen lang sein" });
+      }
+
       // alten Status vorher laden, damit die Status-Historie stimmt
       const oldMangelData = db.prepare(`
-        SELECT status, title, user_id FROM maengel WHERE id = ?
-      `).get(mangelId) as { status: string, title: string, user_id: number } | undefined;
+        SELECT status, title, user_id, statusComment_id FROM maengel WHERE id = ?
+      `).get(mangelId) as { status: string, title: string, user_id: number, statusComment_id: number | null } | undefined;
 
       if (!oldMangelData) {
         return res.status(404).json({ error: "Mangel nicht gefunden" });
@@ -107,19 +111,24 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
       }
 
+      // Statuskommentar speichern und am Mangel verknüpfen
+      const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment ?? null, userId, mangelId);
+      const kommentarId = kommentar.lastInsertRowid;
+      db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarId, mangelId);
+
       // Statuswechsel für spätere Sammelmails merken
       db.prepare(`
-        INSERT INTO status_changes (mangel_id, old_status, new_status)
-        VALUES (?, ?, ?)
-      `).run(mangelId, oldMangelData.status, status);
+        INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment_id, new_statusComment_id)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment_id, kommentarId);
 
       const recipient = db.prepare(`
-        SELECT email, email_verified_at, notification_interval 
+        SELECT email, email_verified_at, notification_interval
         FROM users WHERE id = ?
       `).get(oldMangelData.user_id) as { email: string, email_verified_at: string | null, notification_interval: number } | undefined;
 
       if (recipient?.email_verified_at && recipient.notification_interval === 0) {
-        sendStatusUpdateEmail(recipient.email, oldMangelData.title, status).catch(err => {
+        sendStatusUpdateEmail(recipient.email, oldMangelData.title, status, statusComment).catch(err => {
           console.error("Mail-Fehler:", err);
         });
       }

@@ -581,24 +581,6 @@ export default function App() {
       loadIssuePage();
     };
     
-    /**
-    * Sendet eine Anfrage an das Backend, um den Status eines Mangels zu aktualisieren.
-    * Wird nur von Administratoren aufgerufen.
-    */    
-  //   const updateStatus = async (id: number, newStatus: string, newComment: string) => {
-  //     const res = await fetch(`/api/mangel/${id}/status`, {
-  //       method: 'PATCH',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ status: newStatus, comment: newComment }),
-  //     });
-      
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Fehler beim Aktualisieren des Status");
-      }
-      loadIssuePage();
-      refreshMapData();
-      };
 
       // Gemeinsame Styles für die Container-Cards in der Sidebar
       const sidebarCardStyle: React.CSSProperties = {
@@ -937,7 +919,7 @@ export default function App() {
                           setIssueToDelete(id);
                           setIsConfirmOpen(true);
                         } else {
-                          deleteIssue(id, isArchiveMode);
+                          deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
                         }
                       }}
                       onUpvote={upvoteIssue}

@@ -251,7 +251,6 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
   // voten (braucht login)
   router.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
-    try {
       // gevotet wird immer für nur einen Mangel aus der URL
       const userId = req.session.userId;
       const mangelId = Number(req.params.id);
@@ -272,6 +271,35 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       if (!mangel) {
         return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
       }
+
+      const existingVote = db.prepare("SELECT user_id, mangel_id FROM mangel_votes WHERE user_id = ? AND mangel_id = ?").get(userId, mangelId);
+
+      if (existingVote) {
+        try {
+        // wenn schon ein Vote existiert, wird er zurückgenommen (also gelöscht) und der Zähler entsprechend dekrementiert
+        const deleteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
+          db.prepare(`
+            DELETE FROM mangel_votes
+            WHERE user_id = ? AND mangel_id = ?
+          `).run(transactionUserId, transactionMangelId);
+
+          db.prepare(`
+            UPDATE maengel
+            SET votes = votes - 1
+            WHERE id = ? and votes > 0
+          `).run(transactionMangelId);
+        }
+        );
+        deleteTransaction(userId, mangelId);
+        return res.json({ message: "Bewertung zurückgenommen" });
+      }catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Fehler beim Zurücknehmen der Bewertung" });
+      }
+      }else {
+        try {
+
+      // wenn kein Vote existiert, wird er neu angelegt und der Zähler inkrementiert
 
       // Insert und Zähler-Update müssen zusammen passieren
       const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
@@ -298,6 +326,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
       console.error(error);
       res.status(500).json({ error: "Fehler beim Bewerten" });
+    }
     }
   });
 

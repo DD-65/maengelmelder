@@ -13,12 +13,12 @@ interface IssueCardProperties {
   userId: number | null;
   userEmail: string;
   onDelete: (id: number) => void;
-  onUpvote: (id: number) => void;
+  onToggleVote: (id: number) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
 }
 
-export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvote, isArchiveMode, setIssueList }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onToggleVote, isArchiveMode, setIssueList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
@@ -136,7 +136,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onUpvo
           )}
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
           {userId ? (
-            <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onUpvote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true"/>{hasVoted ? "Geliked" : "Liken"}</button>
+            <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true"/></button>
           ) : (
             <button disabled onClick={(e) => e.stopPropagation()}><LikeIcon className="like-icon" aria-hidden="true"/>Like</button>
           )}

@@ -564,7 +564,7 @@ export default function App() {
     // };
     
     
-    const upvoteIssue = async (id: number) => {
+    const toggleUpvote = async (id: number) => {
       setVoteError("");
       
       // request
@@ -922,7 +922,7 @@ export default function App() {
                           deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
                         }
                       }}
-                      onUpvote={upvoteIssue}
+                      onToggleVote={toggleUpvote}
                       isArchiveMode={isArchiveMode}
                       setIssueList={setIssueList}
                     />

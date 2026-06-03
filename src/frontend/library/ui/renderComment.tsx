@@ -2,7 +2,7 @@ import { useDeleteComment } from "../hooks/useDeleteComment";
 import { Issue } from "../types/Issue";
 import { IssueComment } from "../types/IssueComment";
 import {UserIcon} from '../icons/icons';
-import {getUserColor, getSecondaryUserColor} from "../utils/getUserColor";   
+import {getUserColor} from "../utils/getUserColor";   
 interface KommentarProperties{
     setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>
     issue: Issue;

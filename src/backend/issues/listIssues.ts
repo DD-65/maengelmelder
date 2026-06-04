@@ -17,6 +17,7 @@ type IssueRow = {
   image_url: string | null;
   thumbnail_url: string | null;
   statusComment: string | null;
+  commentCount: number;
   user_email: string | null;
   has_voted: number;
 };
@@ -45,6 +46,7 @@ function parsePositiveInt(value: QueryValue, fallback: number) {
 }
 
 // debug query plan 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function explainQueryPlan(sql: string, params: unknown[]) {
   if (process.env.NODE_ENV === "production") return;
 
@@ -71,6 +73,11 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
       maengel.image_url,
       maengel.thumbnail_url,
       maengel_kommentare.kommentar AS statusComment,
+      (
+        SELECT COUNT(*)
+        FROM maengel_kommentare alle_kommentare
+        WHERE alle_kommentare.mangel_id = maengel.id
+      ) AS commentCount,
       users.email AS user_email,
       CASE
         WHEN ? IS NULL THEN 0

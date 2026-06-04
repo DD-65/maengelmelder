@@ -24,9 +24,11 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
   const [commentsOpen, setCommentsOpen]= useState(false);
   const [newComment, setNewComment] = useState('');
-  const{sortedCommentList, setCommentList} = useSortedCommentList(issue);
+  const{sortedCommentList, setCommentList} = useSortedCommentList(issue, commentsOpen);
   const{updateStatus}=useUpdateStatus(isArchiveMode, setIssueList, setCommentList);
   const{postComment}=usePostComment(setCommentList);
+  const commentCount = commentsOpen || sortedCommentList.length > 0 ? sortedCommentList.length : issue.commentCount || 0;
+  const commentButtonText = commentCount === 0 ? "Kommentare" : `${commentCount} ${commentCount === 1 ? "Kommentar" : "Kommentare"}`;
 
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
@@ -75,7 +77,9 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
           {userRole === "admin" && (
             <form onSubmit={(e) => { e.preventDefault();
                                       e.stopPropagation();
-                                      issue.id && updateStatus(issue.id, newStatus, newStatusComment);
+                                      if(issue.id){
+                                        updateStatus(issue.id, newStatus, newStatusComment);
+                                      }
                                       setNewStatusComment('')}}>
               <select
                 className="status-select"
@@ -92,7 +96,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                 <option value="Gelöscht">Gelöscht</option>
               </select><br/>
               <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment}  onClick={(e)=> {e.stopPropagation();}}
-                onChange={(event) => {event.stopPropagation(); issue.id && setNewStatusComment(event.target.value)}} autoComplete="off"/>
+                onChange={(event) => {event.stopPropagation(); if(issue.id){setNewStatusComment(event.target.value)}}} autoComplete="off"/>
               <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Status ändern</button>
             </form>
              )}
@@ -127,7 +131,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
           <p>Kategorie: {issue.kategorie || '-'}</p>
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-            <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}><CommentIcon className="comment-icon" aria-hidden="true"/>Kommentare</button>
+            <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}><CommentIcon className="comment-icon" aria-hidden="true"/>{commentButtonText}</button>
 
           {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
           {userRole === "admin" && (
@@ -153,7 +157,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                                       }
                                       setNewComment('')}}>
               <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
-                onChange={(event) => {event.stopPropagation(); issue.id && setNewComment(event.target.value)}} autoComplete="off"/>
+                onChange={(event) => {event.stopPropagation(); if(issue.id){setNewComment(event.target.value)}}} autoComplete="off"/>
               <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken<SendIcon className="send-icon" aria-hidden="true"/></button>
             </form>
           ):(<span>Einloggen um selbst Kommentare zu schreiben</span>))}
@@ -161,14 +165,14 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
         {/* Kommentare ganz unten im Issue anzeigen */}
           {commentsOpen === true &&(
             <ul className='commentList'>
-              {sortedCommentList.map((comment, index) => ( 
+              {sortedCommentList.map((comment) => ( 
                       <Kommentar
                           setCommentList={setCommentList}
                           issue={issue}
                           commentId={comment.commentId}
                           userEmail={userEmail}
                           userRole={userRole}
-                          key={index} //irgendwie sinnlos, in Issue card aber auch so
+                          key={comment.commentId}
                           commentStatus={comment.status}
                           commentInhalt={comment.kommentar}
                           commentKommentator={comment.userEmail}

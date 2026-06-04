@@ -176,6 +176,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                           commentStatus={comment.status}
                           commentInhalt={comment.kommentar}
                           commentKommentator={comment.userEmail}
+                          commentTimestamp={comment.timestamp}
                       />
               ))}
             </ul>)}

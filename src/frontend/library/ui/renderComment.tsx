@@ -3,6 +3,7 @@ import { Issue } from "../types/Issue";
 import { IssueComment } from "../types/IssueComment";
 import {UserIcon} from '../icons/icons';
 import {getUserColor} from "../utils/getUserColor";   
+import { formatTimestamp, getRelativeTime } from "../utils/timeUtils";
 interface KommentarProperties{
     setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>
     issue: Issue;
@@ -12,6 +13,7 @@ interface KommentarProperties{
     commentStatus:string;
     commentInhalt:string;
     commentKommentator: string;
+    commentTimestamp: string;
 }
 // const getUserColor = (email = '') => {
 //     const s = email.toLowerCase();
@@ -23,7 +25,7 @@ interface KommentarProperties{
 //     return `rgb(${r}, ${g}, ${b})`;
 // };
 
-export function Kommentar({setCommentList, issue, commentId, userEmail, commentStatus, commentInhalt, commentKommentator}: KommentarProperties){
+export function Kommentar({setCommentList, issue, commentId, userEmail, commentStatus, commentInhalt, commentKommentator, commentTimestamp}: KommentarProperties){
     const{deleteComment}=useDeleteComment(setCommentList);
     
     return(
@@ -34,7 +36,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, commentS
                     {(commentStatus) && <span className="status">{commentStatus}</span>}
                     <span className="inhalt">{commentInhalt}</span>
 
-                    <span className="kommentator"><div>{commentStatus ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div></span>
+                    <span className="kommentator"><div>{commentStatus ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                     <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
                     <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>
                 </li>
@@ -43,7 +45,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, commentS
                 <li className="singleComment" onClick={(e)=>{e.stopPropagation();}}>
                 {/*problem hier, ist dass man bei sehr langen Kommentaren ohne Leerzeichen nach rechts scrollen muss, das swiped zur Karte*/}
                 <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)}/>
-                <span className="kommentator"><div style={{fontFamily:'monospace', color:'orange', fontSize:'10px', marginBottom:'-5px', fontWeight:'bold'}}>{commentStatus ? 'Admin-Nachricht' : ''}</div> <div style={{textAlign:'left', color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div></span>
+                <span className="kommentator"><div style={{fontFamily:'monospace', color:'orange', fontSize:'10px', marginBottom:'-5px', fontWeight:'bold'}}>{commentStatus ? 'Admin-Nachricht' : ''}</div> <div style={{textAlign:'left', color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                 {(commentStatus) && <span className="status">{commentStatus}</span>}
                 <span className="inhalt">{commentInhalt}</span>
                 </li>

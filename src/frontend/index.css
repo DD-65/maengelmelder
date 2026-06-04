@@ -1253,6 +1253,13 @@ button:hover > .modify-icon {
   flex-shrink: 0;
 }
 
+.singleComment .kommentarzeit {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: help;
+}
+
 .singleComment .status {
   font-size: 13px;
   font-family: monospace;
@@ -1619,4 +1626,3 @@ button:hover > .modify-icon {
   display: block !important;
   margin: 0 auto !important;
 }
-

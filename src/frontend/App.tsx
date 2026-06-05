@@ -44,6 +44,8 @@ import { SettingsButton } from './library/ui/settingsButton';
 import { IssuePagination } from './library/ui/issuePagination';
 import { getSecondaryUserColor, getUserColor } from './library/utils/getUserColor';
 
+import { toast } from 'react-toastify';
+
 type ThemePreference = "system" | "light" | "dark";
 
 const THEME_STORAGE_KEY = "maengelmelder-theme-preference";
@@ -296,8 +298,12 @@ export default function App() {
       }
 
       setSettingsMessage("Benachrichtigungs-Intervall aktualisiert!");
+      // Toast Notification
+      toast.success("Benachrichtigungs-Intervall aktualisiert!");
     } catch {
       setSettingsError("Netzwerkfehler beim Speichern der Einstellungen");
+      // Toast Notification
+      toast.error("Netzwerkfehler beim Speichern der Einstellungen");
     }
   };
 
@@ -424,12 +430,14 @@ export default function App() {
         if (!res.ok) {
           setVerificationMessage(data.error || "E-Mail-Verifizierung fehlgeschlagen");
           setVerificationMessageType("error");
+          toast.error(data.error || "E-Mail-Verifizierung fehlgeschlagen");
           return;
         }
 
         setVerificationMessage(data.message || "E-Mail-Adresse erfolgreich verifiziert");
         setVerificationMessageType("success");
         setEmailVerified(true);
+        toast.success("E-Mail-Adresse erfolgreich verifiziert");
 
         fetch('/api/auth/me')
           .then((meRes) => meRes.ok ? meRes.json() : null)
@@ -444,6 +452,7 @@ export default function App() {
       .catch(() => {
         setVerificationMessage("E-Mail-Verifizierung fehlgeschlagen");
         setVerificationMessageType("error");
+        toast.error("E-Mail-Verifizierung fehlgeschlagen");
       });
     }, []);
     
@@ -466,6 +475,7 @@ export default function App() {
       
       if (!res.ok) {
         setAuthError(data.error || "Login fehlgeschlagen");
+        toast.error(data.error || "Login fehlgeschlagen");
         return;
       }
       
@@ -476,6 +486,7 @@ export default function App() {
       setAuthEmail("");
       setAuthPassword("");
       setAuthView(null);
+      toast.success("Login erfolgreich");
       loadIssuePage(1, false);
     };
     
@@ -499,6 +510,7 @@ export default function App() {
       
       if (!res.ok) {
         setAuthError(data.error || "Registrierung fehlgeschlagen");
+        toast.error(data.error || "Registrierung fehlgeschlagen");
         return;
       }
       
@@ -507,6 +519,7 @@ export default function App() {
       setAdminCode("");
       setRegisterAsAdmin(false);
       setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
+      toast.success(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
       setAuthView("login");
     };
     
@@ -518,6 +531,7 @@ export default function App() {
       setUserRole("");
       setEmailVerified(false);
       setFilterOnlyOwn(false);
+      toast.success("Erfolgreich ausgeloggt");
       loadIssues({
         archiv: false,
         page: 1,
@@ -540,29 +554,14 @@ export default function App() {
       
       if (!res.ok) {
         setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
+        toast.error(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
         return;
       }
       
       setEmailVerified(Boolean(data.emailVerified));
       setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
-    };
-    
-    //  => ausgelagert in settingsButton.tsx
-    // const settingsButton = (
-    //   <button className="settings-button" type="button" aria-label="Einstellungen öffnen" title="Einstellungen" onClick={() => setSettingsOpen(true)}>
-    //   <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-    //   <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 3a8 8 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5A9.4 9.4 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2.6 1.5l.4 3h4l.4-3a8 8 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-    //   </svg>
-    //   </button>
-    // );
-    
-    
-    // // Delete issue => in useLoadIssue
-    // const deleteIssue = async (id: number) => {
-    //   await fetch(`/api/mangel/${id}`, { method: 'DELETE' });
-    //   loadIssues();
-    // };
-    
+      toast.success(data.message || "Verifizierungs-E-Mail wurde gesendet");
+    };  
     
     const toggleUpvote = async (id: number) => {
       setVoteError("");
@@ -573,11 +572,13 @@ export default function App() {
       
       if (!res.ok) {
         setVoteError(data.error || "Fehler beim Bewerten");
+        toast.error(data.error || "Fehler beim Bewerten");
         loadIssuePage();
         return;
       }
       
       // reload
+      toast.success(data.message || "Bewertung aktualisiert");
       loadIssuePage();
     };
     
@@ -920,6 +921,7 @@ export default function App() {
                           setIsConfirmOpen(true);
                         } else {
                           deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
+                          toast.success("Mangel gelöscht");
                         }
                       }}
                       onToggleVote={toggleUpvote}
@@ -1020,6 +1022,7 @@ export default function App() {
               onIssueCreated={() => {
                 loadIssuePage(1, false);
                 setShowInputModal(false);
+                toast.success("Mangel erfolgreich gemeldet");
               }}
             />
           </div>
@@ -1107,6 +1110,7 @@ export default function App() {
                   if (issueToDelete !== null) {
                     await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
                     refreshMapData(); 
+                    toast.success("Mangel endgültig gelöscht");
                   }
                   setIsConfirmOpen(false);
                   setIssueToDelete(null);

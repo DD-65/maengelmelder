@@ -6,6 +6,7 @@ import { Kommentar } from './renderComment';
 import { useSortedCommentList } from '../hooks/useSortedCommentList';
 import { usePostComment } from '../hooks/usePostComments';
 import {CommentIcon, TrashIcon, LikeIcon, ModifyIcon, SendIcon} from '../icons/icons';
+import { toast } from 'react-toastify/unstyled';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -79,6 +80,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                                       e.stopPropagation();
                                       if(issue.id){
                                         updateStatus(issue.id, newStatus, newStatusComment);
+                                        toast.success("Status aktualisiert");
                                       }
                                       setNewStatusComment('')}}>
               <select
@@ -154,6 +156,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                                       e.stopPropagation();
                                       if(issue.id){
                                         postComment(issue.id, newComment);
+                                        toast.success("Kommentar gepostet");
                                       }
                                       setNewComment('')}}>
               <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}

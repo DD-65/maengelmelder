@@ -38,6 +38,15 @@
   --middle-max-width: 40.625rem; /* ~650px equivalent, but scales with font-size (good for 4K) */
   --topbar-height: 80px;
   --topbar-bg: var(--surface-strong);
+
+  /* Toastify Overrides */
+  --toastify-toast-background: var(--surface);
+  --toastify-text-color-light: var(--text-h);
+  --toastify-text-color-dark: var(--text-h);
+  --toastify-color-success: #48bb78;
+  --toastify-color-error: var(--danger);
+  --toastify-color-info: var(--accent);
+  --toastify-font-family: var(--sans);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1625,4 +1634,17 @@ button:hover > .modify-icon {
   width: auto !important;
   display: block !important;
   margin: 0 auto !important;
+}
+
+/* Toast Notifications Styling */
+.glass-toast {
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  color: var(--text-h);
+}
+
+.Toastify__progress-bar--info {
+  background: var(--accent-2);
 }

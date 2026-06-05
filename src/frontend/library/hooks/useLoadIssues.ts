@@ -129,7 +129,13 @@ export function useLoadIssues(setIssueList: Dispatch<SetStateAction<Issue[]>>) {
 
   // issues in db löschen, die ersten drei Parameter bleiben wie vorher
   const deleteIssue = async (id: number, archiv: boolean = false, permanent: boolean = false, reloadOptions?: LoadIssuesOptions) => {
-    await fetch(`/api/mangel/${id}${permanent ? '?permanent=true' : ''}`, { method: "DELETE" });
+    const res = await fetch(`/api/mangel/${id}${permanent ? '?permanent=true' : ''}`, { method: "DELETE" });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Fehler beim Löschen des Mangels");
+    }
+
     await loadIssues(reloadOptions ?? archiv);
   };
 

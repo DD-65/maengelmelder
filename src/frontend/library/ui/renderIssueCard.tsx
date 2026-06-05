@@ -13,7 +13,7 @@ interface IssueCardProperties {
   userRole: string;
   userId: number | null;
   userEmail: string;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => void | Promise<void>;
   onToggleVote: (id: number) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
@@ -76,13 +76,18 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
 
           {/* Admin-Steuerung fuer den Status */}
           {userRole === "admin" && (
-            <form onSubmit={(e) => { e.preventDefault();
+            <form onSubmit={async (e) => { e.preventDefault();
                                       e.stopPropagation();
                                       if(issue.id){
-                                        updateStatus(issue.id, newStatus, newStatusComment);
-                                        toast.success("Status aktualisiert");
+                                        try {
+                                          await updateStatus(issue.id, newStatus, newStatusComment);
+                                          toast.success("Status aktualisiert");
+                                          setNewStatusComment('');
+                                        } catch (error) {
+                                          toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Aktualisieren des Status"}`);
+                                        }
                                       }
-                                      setNewStatusComment('')}}>
+                                      }}>
               <select
                 className="status-select"
                 value={newStatus}
@@ -152,13 +157,18 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
           {commentsOpen === true &&(
           userId ? (
             <form className='neuerkommentar'
-                    onSubmit={(e) => { e.preventDefault();
+                    onSubmit={async (e) => { e.preventDefault();
                                       e.stopPropagation();
                                       if(issue.id){
-                                        postComment(issue.id, newComment);
-                                        toast.success("Kommentar gepostet");
+                                        try {
+                                          await postComment(issue.id, newComment);
+                                          toast.success("Kommentar gepostet");
+                                          setNewComment('');
+                                        } catch (error) {
+                                          toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Abschicken des Kommentars"}`);
+                                        }
                                       }
-                                      setNewComment('')}}>
+                                      }}>
               <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
                 onChange={(event) => {event.stopPropagation(); if(issue.id){setNewComment(event.target.value)}}} autoComplete="off"/>
               <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken<SendIcon className="send-icon" aria-hidden="true"/></button>

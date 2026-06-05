@@ -9,14 +9,13 @@ export function usePostComment(setCommentList: React.Dispatch<React.SetStateActi
         body: JSON.stringify({ comment: newComment }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Fehler beim Abschicken des Kommentars");
-        return;
+        throw new Error(data?.error || "Fehler beim Abschicken des Kommentars");
       }
 
-      const updatedComment = await res.json();
-      setCommentList(prev => [...prev, updatedComment]); {/*das war ein Vorschlag von ChatGPT, 
+      setCommentList(prev => [...prev, data]); {/*das war ein Vorschlag von ChatGPT, 
         da ich es nicht geschafft habe die neuen kommentare direkt zu laden,
          ohne eine Endlosschleife zu verursachen und das unten hat gar nichts geladen*/}
       // await loadComments(mangelid); // aktualisieren der Kommentarspalte

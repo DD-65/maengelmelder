@@ -294,6 +294,7 @@ export default function App() {
 
       if (!res.ok) {
         setSettingsError(data.error || "Fehler beim Speichern der Benachrichtigungseinstellungen");
+        toast.error(`🫪 ${data.error || "Fehler beim Speichern der Benachrichtigungseinstellungen"}`);
         return;
       }
 
@@ -303,7 +304,7 @@ export default function App() {
     } catch {
       setSettingsError("Netzwerkfehler beim Speichern der Einstellungen");
       // Toast Notification
-      toast.error("Netzwerkfehler beim Speichern der Einstellungen");
+      toast.error("🫪 Netzwerkfehler beim Speichern der Einstellungen");
     }
   };
 
@@ -430,7 +431,7 @@ export default function App() {
         if (!res.ok) {
           setVerificationMessage(data.error || "E-Mail-Verifizierung fehlgeschlagen");
           setVerificationMessageType("error");
-          toast.error(data.error || "E-Mail-Verifizierung fehlgeschlagen");
+          toast.error(`🫪 ${data.error || "E-Mail-Verifizierung fehlgeschlagen"}`);
           return;
         }
 
@@ -452,7 +453,7 @@ export default function App() {
       .catch(() => {
         setVerificationMessage("E-Mail-Verifizierung fehlgeschlagen");
         setVerificationMessageType("error");
-        toast.error("E-Mail-Verifizierung fehlgeschlagen");
+        toast.error("🫪 E-Mail-Verifizierung fehlgeschlagen");
       });
     }, []);
     
@@ -461,33 +462,38 @@ export default function App() {
       event.preventDefault();
       setAuthError("");
       setAuthMessage("");
-      
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
-        }),
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setAuthError(data.error || "Login fehlgeschlagen");
-        toast.error(data.error || "Login fehlgeschlagen");
-        return;
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: authEmail,
+            password: authPassword,
+          }),
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setAuthError(data.error || "Login fehlgeschlagen");
+          toast.error(`🫪 ${data.error || "Login fehlgeschlagen"}`);
+          return;
+        }
+        
+        setUserId(data.userId);
+        setUserEmail(data.email);
+        setUserRole(data.role || "user");
+        setEmailVerified(Boolean(data.emailVerified));
+        setAuthEmail("");
+        setAuthPassword("");
+        setAuthView(null);
+        toast.success("Login erfolgreich");
+        loadIssuePage(1, false);
+      } catch {
+        setAuthError("Netzwerkfehler beim Login");
+        toast.error("🫪 Netzwerkfehler beim Login");
       }
-      
-      setUserId(data.userId);
-      setUserEmail(data.email);
-      setUserRole(data.role || "user");
-      setEmailVerified(Boolean(data.emailVerified));
-      setAuthEmail("");
-      setAuthPassword("");
-      setAuthView(null);
-      toast.success("Login erfolgreich");
-      loadIssuePage(1, false);
     };
     
     //Registrierungs-handler
@@ -495,91 +501,117 @@ export default function App() {
       event.preventDefault();
       setAuthError("");
       setAuthMessage("");
-      
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
-          adminSecret: registerAsAdmin ? adminCode : undefined,
-        }),
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setAuthError(data.error || "Registrierung fehlgeschlagen");
-        toast.error(data.error || "Registrierung fehlgeschlagen");
-        return;
+
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: authEmail,
+            password: authPassword,
+            adminSecret: registerAsAdmin ? adminCode : undefined,
+          }),
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setAuthError(data.error || "Registrierung fehlgeschlagen");
+          toast.error(`🫪 ${data.error || "Registrierung fehlgeschlagen"}`);
+          return;
+        }
+        
+        setAuthEmail("");
+        setAuthPassword("");
+        setAdminCode("");
+        setRegisterAsAdmin(false);
+        setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
+        toast.success(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
+        setAuthView("login");
+      } catch {
+        setAuthError("Netzwerkfehler bei der Registrierung");
+        toast.error("🫪 Netzwerkfehler bei der Registrierung");
       }
-      
-      setAuthEmail("");
-      setAuthPassword("");
-      setAdminCode("");
-      setRegisterAsAdmin(false);
-      setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
-      toast.success(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
-      setAuthView("login");
     };
     
     // logout handler
     const logout = async () => {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setUserId(null);
-      setUserEmail("");
-      setUserRole("");
-      setEmailVerified(false);
-      setFilterOnlyOwn(false);
-      toast.success("Erfolgreich ausgeloggt");
-      loadIssues({
-        archiv: false,
-        page: 1,
-        pageSize: ISSUE_PAGE_SIZE,
-        search: normalizedSearchQuery || undefined,
-        ...getBackendFilterOptions(false),
-        ...getBackendSortOptions(),
-      });
+      try {
+        const res = await fetch("/api/auth/logout", { method: "POST" });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          toast.error(`🫪 ${data?.error || "Logout fehlgeschlagen"}`);
+          return;
+        }
+
+        setUserId(null);
+        setUserEmail("");
+        setUserRole("");
+        setEmailVerified(false);
+        setFilterOnlyOwn(false);
+        toast.success("Erfolgreich ausgeloggt");
+        loadIssues({
+          archiv: false,
+          page: 1,
+          pageSize: ISSUE_PAGE_SIZE,
+          search: normalizedSearchQuery || undefined,
+          ...getBackendFilterOptions(false),
+          ...getBackendSortOptions(),
+        });
+      } catch {
+        toast.error("🫪 Netzwerkfehler beim Logout");
+      }
     };
     
     const resendVerificationEmail = async () => {
       setSettingsError("");
       setSettingsMessage("");
-      
-      const res = await fetch("/api/auth/resend-verification-email", {
-        method: "POST",
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
-        toast.error(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
-        return;
+
+      try {
+        const res = await fetch("/api/auth/resend-verification-email", {
+          method: "POST",
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setSettingsError(data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden");
+          toast.error(`🫪 ${data.error || "Verifizierungs-E-Mail konnte nicht gesendet werden"}`);
+          return;
+        }
+        
+        setEmailVerified(Boolean(data.emailVerified));
+        setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
+        toast.success(data.message || "Verifizierungs-E-Mail wurde gesendet");
+      } catch {
+        setSettingsError("Netzwerkfehler beim Senden der Verifizierungs-E-Mail");
+        toast.error("🫪 Netzwerkfehler beim Senden der Verifizierungs-E-Mail");
       }
-      
-      setEmailVerified(Boolean(data.emailVerified));
-      setSettingsMessage(data.message || "Verifizierungs-E-Mail wurde gesendet");
-      toast.success(data.message || "Verifizierungs-E-Mail wurde gesendet");
     };  
     
     const toggleUpvote = async (id: number) => {
       setVoteError("");
-      
-      // request
-      const res = await fetch(`/api/mangel/${id}/vote`, { method: 'PATCH' });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setVoteError(data.error || "Fehler beim Bewerten");
-        toast.error(data.error || "Fehler beim Bewerten");
+
+      try {
+        // request
+        const res = await fetch(`/api/mangel/${id}/vote`, { method: 'PATCH' });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setVoteError(data.error || "Fehler beim Bewerten");
+          toast.error(`🫪 ${data.error || "Fehler beim Bewerten"}`);
+          loadIssuePage();
+          return;
+        }
+        
+        // reload
+        toast.success(data.message || "Bewertung aktualisiert");
         loadIssuePage();
-        return;
+      } catch {
+        setVoteError("Netzwerkfehler beim Bewerten");
+        toast.error("🫪 Netzwerkfehler beim Bewerten");
       }
-      
-      // reload
-      toast.success(data.message || "Bewertung aktualisiert");
-      loadIssuePage();
     };
     
 
@@ -915,13 +947,17 @@ export default function App() {
                       userRole={userRole}
                       userId={userId}
                       userEmail={userEmail}
-                      onDelete={(id) => {
+                      onDelete={async (id) => {
                         if (isArchiveMode && issue.status === "Gelöscht") {
                           setIssueToDelete(id);
                           setIsConfirmOpen(true);
                         } else {
-                          deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
-                          toast.success("Mangel gelöscht");
+                          try {
+                            await deleteIssue(id, isArchiveMode, false, getCurrentIssueLoadOptions());
+                            toast.success("Mangel gelöscht");
+                          } catch (error) {
+                            toast.error(`🫪 ${error instanceof Error ? error.message : "Mangel konnte nicht gelöscht werden"}`);
+                          }
                         }
                       }}
                       onToggleVote={toggleUpvote}
@@ -1108,9 +1144,16 @@ export default function App() {
               <button
                 onClick={async () => { 
                   if (issueToDelete !== null) {
-                    await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
-                    refreshMapData(); 
-                    toast.success("Mangel endgültig gelöscht");
+                    try {
+                      await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
+                      await refreshMapData(); 
+                      toast.success("Mangel endgültig gelöscht");
+                      setIsConfirmOpen(false);
+                      setIssueToDelete(null);
+                    } catch (error) {
+                      toast.error(`🫪 ${error instanceof Error ? error.message : "Mangel konnte nicht endgültig gelöscht werden"}`);
+                    }
+                    return;
                   }
                   setIsConfirmOpen(false);
                   setIssueToDelete(null);

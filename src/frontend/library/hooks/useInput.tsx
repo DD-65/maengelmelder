@@ -26,10 +26,16 @@ export function useInput(loadIssues: () => void | Promise<void>) {
     }
 
     // issue in db speichern und dann neu laden
-    await fetch('/api/mangel', {
+    const res = await fetch('/api/mangel', {
       method: 'POST',
       body: formData,
     });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Fehler beim Speichern des Mangels");
+    }
 
     // Reload aus db
     await loadIssues();

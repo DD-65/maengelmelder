@@ -1,5 +1,7 @@
 import { useInput } from "../hooks/useInput"
 import { rooms } from "../constants/rooms";
+import { toast } from "react-toastify";
+import type { FormEvent } from "react";
 // import "../../index.css"
 
 type InputFormProperties = {
@@ -10,9 +12,16 @@ type InputFormProperties = {
 export function InputForm({onIssueCreated}: InputFormProperties){
   const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, addIssue}=useInput(onIssueCreated);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));  // hier hin gebaut, da nur hier genutzt
+  const handleSubmit = async (event: FormEvent) => {
+    try {
+      await addIssue(event);
+    } catch (error) {
+      toast.error(`🫪 ${error instanceof Error ? error.message : "Mangel konnte nicht gespeichert werden"}`);
+    }
+  };
 
     return(
-          <form className="issue-form" onSubmit={addIssue}>
+          <form className="issue-form" onSubmit={handleSubmit}>
             <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
 
             <div className="location-wrapper">

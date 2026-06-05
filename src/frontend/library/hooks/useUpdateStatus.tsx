@@ -4,7 +4,7 @@ import { useLoadComments } from "./useLoadComments";
 import { IssueComment } from "../types/IssueComment";
 
 export function useUpdateStatus(isArchiveMode: boolean, setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>, setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>){
-    const { loadIssues, deleteIssue } = useLoadIssues(setIssueList);
+    const { loadIssues } = useLoadIssues(setIssueList);
     const {loadComments}=useLoadComments(setCommentList); //für direktes aktualisieren der Kommentarspalte, beim abschicken eines Statuskommentars
 
     const updateStatus = async (id: number, newStatus: string, newStatusComment: string) => {
@@ -14,12 +14,14 @@ export function useUpdateStatus(isArchiveMode: boolean, setIssueList: React.Disp
         body: JSON.stringify({ status: newStatus, statusComment: newStatusComment }),
       });
       
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Fehler beim Aktualisieren des Status");
+        throw new Error(data?.error || "Fehler beim Aktualisieren des Status");
       }
-      loadIssues(isArchiveMode);
-      loadComments(id); // aktualisieren der Kommentarspalte
+
+      await loadIssues(isArchiveMode);
+      await loadComments(id); // aktualisieren der Kommentarspalte
     };
   
   return{updateStatus}

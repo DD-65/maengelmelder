@@ -489,7 +489,7 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
     res.status(500).json({ error: "Fehler beim Abschicken der Kommentar" });}
 });
 
-// Kommentar löschen (nur Admin oder Ersteller)
+// Kommentar löschen (nur Admin/Superadmin oder Ersteller)
 app.delete("/api/comment/:id", requireAuth, (req, res) => {
 
     const userId = req.session.userId;
@@ -505,9 +505,9 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
     if (!kommentar) {
       return res.status(404).json({ error: "Kommentar nicht gefunden" });
     }
-    // Prüfen, ob der Nutzer Admin ist oder Kommentator*in
+    // Prüfen, ob der Nutzer Admin/Superadmin ist oder Kommentator*in
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin" && user.role !== "manager" && userId !== kommentar.user_id) {
+    if (user.role !== "admin" && user.role !== "superadmin" && userId !== kommentar.user_id) {
       return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
     }
 
@@ -518,6 +518,24 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
     }
     return res.json({ message: "Kommentar endgültig gelöscht" });
 });
+
+// Management Routes
+
+app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
+  try {
+    const fromID = Number(req.params.fromID);
+    const limit = Number(req.params.limit);
+    const userList = db.prepare("SELECT id, email, role FROM users  WHERE id >= ? ORDER BY id LIMIT ?");
+    const result = userList.all(fromID, limit);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Laden der Nutzerliste" });
+  }
+});
+
+
+
 
 // Vite Integration
 if (!isProd) {

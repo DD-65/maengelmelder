@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Map } from './library/ui/map';
+
 import type { MapSummaryItem } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 // import L from 'leaflet';
@@ -19,8 +19,12 @@ import { useLoadIssues } from './library/hooks/useLoadIssues';
 import type { LoadIssuesOptions } from './library/hooks/useLoadIssues';
 
 // swiping & teile von Map
+import { Map } from './library/ui/map';
 import { useViewMode } from './library/hooks/useViewMode';
 import { useSwiping } from './library/hooks/useSwiping';
+// Management View
+import { Management } from './library/ui/management';
+import { useManagementMode } from './library/hooks/useManagementMode';
 
 // Filter importieren
 import { useFilter } from './library/hooks/useFilter';
@@ -95,6 +99,8 @@ export default function App() {
 
   // Archiv-Modus
   const { isArchiveMode, setIsArchiveMode } = useArchiveMode();
+  // Management-Modus
+  const { isManagementMode, setIsManagementMode } = useManagementMode();
 
   // Ansichten für Registrierung und Login
   const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
@@ -510,7 +516,7 @@ export default function App() {
           body: JSON.stringify({
             email: authEmail,
             password: authPassword,
-            adminSecret: registerAsAdmin ? adminCode : undefined,
+            // adminSecret: registerAsAdmin ? adminCode : undefined, --> wird zukünftig direkt von superadmin gesetzt
           }),
         });
         
@@ -524,8 +530,8 @@ export default function App() {
         
         setAuthEmail("");
         setAuthPassword("");
-        setAdminCode("");
-        setRegisterAsAdmin(false);
+        // setAdminCode("");
+        // setRegisterAsAdmin(false);
         setAuthMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
         toast.success(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
         setAuthView("login");
@@ -760,21 +766,23 @@ export default function App() {
               {/* Wenn man eingeloggt ist: logout und einstellungen*/}
               <p className="auth-status" style={{ marginBottom: '15px', lineHeight: '1.5' }}>
                 <strong>{userEmail}</strong><br />
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                  <span className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <div className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
                     {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
-                  </span>
-                  <span style={{ 
+                  </div>
+                  <div style={{ 
                     fontSize: '11px', 
-                    padding: '4px 10px', 
+                    padding: '4px 10px',
+                    border: '2px solid var(--border)',
                     borderRadius: '999px', 
-                    backgroundColor: 'var(--surface-strong)',
+                    backgroundColor: 'var(--surface)',
                     fontWeight: '800',
                     textTransform: 'uppercase',
-                    color: 'var(--text-muted)'
+                    color: 'var(--text-muted)',
+                    width: 'max-content'
                   }}>
-                    {userRole === "admin" ? "Admin" : "Nutzer"}
-                  </span>
+                    {userRole === "superadmin" ? <p style={{ color: 'orange' }}>Superadmin</p> : (userRole === "admin" ? "Admin" : "User")}
+                  </div>
                 </span>
               </p>
 
@@ -813,7 +821,8 @@ export default function App() {
                     onChange={(event) => setAuthPassword(event.target.value)}
                   />
 
-                  {authView === "register" && (
+                  {/* Removed Feature: Register as Admin via Admin-Code */}
+                  {/* {authView === "register" && (
                     <div className="admin-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
                       <input
                         type="checkbox"
@@ -832,7 +841,7 @@ export default function App() {
                       value={adminCode}
                       onChange={(event) => setAdminCode(event.target.value)}
                     />
-                  )}
+                  )} */}
 
                   {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
                   {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
@@ -905,10 +914,13 @@ export default function App() {
             <div className="header-view-switch">
               <ViewModeButtons
                 userId={userId}
+                userRole={userRole}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 isArchiveMode={isArchiveMode}
                 setIsArchiveMode={setIsArchiveMode}
+                isManagementMode={isManagementMode}
+                setIsManagementMode={setIsManagementMode}
               />
             </div>
             <div className="header-search">
@@ -977,6 +989,11 @@ export default function App() {
                 />
               )}
             </div>
+          ) : ((viewMode === 'management') ? (
+            <Management
+              setViewMode={setViewMode}
+              userRole={userRole}
+            />
           ) : (
             <Map
               mapSummary={mapSummary}
@@ -984,7 +1001,7 @@ export default function App() {
               setCurrentFilter={setCurrentFilter}
               setCurrentFilterValue={setCurrentFilterValue}
             />
-          )}
+          ))}
         </div>
 
         {userId && (
@@ -1036,7 +1053,7 @@ export default function App() {
                 color: 'var(--text-muted)', 
                 marginTop: '1px' 
               }}>
-                {userId ? (userRole === "admin" ? "Administrator" : "Nutzer") : "Nicht angemeldet"}
+                {userId ? (userRole === "superadmin" ? "Superadmin" : (userRole === "admin" ? "Administrator" : "Nutzer")) : "Nicht angemeldet"}
               </span>
             </div>
           </div>

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 
 export function useSwiping(
-    viewMode: 'list' | 'map',
-    setViewMode: (val: 'list' | 'map') => void,
+    viewMode: 'list' | 'map' | 'management',
+    setViewMode: (val: 'list' | 'map' | 'management') => void,
     isArchiveMode: boolean,
     setIsArchiveMode: (val: boolean) => void,
+    isManagementMode: boolean,
+    setIsManagementMode: (val: boolean) => void,
     isLoggedIn: boolean
 ) {
     // Swiping logic
@@ -45,24 +47,33 @@ export function useSwiping(
         const deltaX = touchEndX - touchStart.x;
         const deltaY = touchEndY - touchStart.y;
 
-        // Touch-Start sofort resettem, um potenzielles doppeltes Auslösen zu verhindern
+        // Touch-Start sofort resetten, um potenzielles doppeltes Auslösen zu verhindern
         setTouchStart(null);
 
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) { // Horizontal swipe with some vertical tolerance
-            if (deltaX > 0) { // Swipe right (Rückwärts: Archiv -> Karte -> Liste)
-                if (isArchiveMode) {
+            if (deltaX > 0) { // Swipe right (Rückwärts: Management -> Archiv -> Karte -> Liste)
+                if (isManagementMode && isLoggedIn) {
+                    setIsManagementMode(false);
+                    setIsArchiveMode(true);
+                    setViewMode('list');
+                } else if (isArchiveMode) {
                     setIsArchiveMode(false);
                     setViewMode('map');
                 } else if (viewMode === 'map') {
                     setViewMode('list');
                 }
-            } else { // Swipe left (Vorwärts: Liste -> Karte -> Archiv)
+
+            } else { // Swipe left (Vorwärts: Liste -> Karte -> Archiv -> Management)
                 if (!isArchiveMode) {
                     if (viewMode === 'list') {
                         setViewMode('map');
                     } else if (viewMode === 'map' && isLoggedIn) {
                         setIsArchiveMode(true);
                         setViewMode('list');
+                    } else if (isArchiveMode && isLoggedIn) {
+                        setIsManagementMode(true);
+                        setIsArchiveMode(false);
+                        setViewMode('management');
                     }
                 }
             }

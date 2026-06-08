@@ -6,38 +6,31 @@ import multer from "multer";
 import fs from "fs";
 import sharp from "sharp";
 import db from "../db.js";
-import { sendStatusUpdateEmail } from "../mailer.js";
-import { getIssueFilterOptions } from "./filterOptions.js";
-import { listIssues } from "./listIssues.js";
-import { getIssueMapSummary } from "./mapSummary.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const issueUploadDir = path.join(__dirname, "../../../uploads");
-const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
 
-// Upload-Ordner anlegen, falls er lokal noch nicht existiert
-if (!fs.existsSync(issueUploadDir)) {
-  fs.mkdirSync(issueUploadDir);
-}
+
+
+
 
 // Bilder erst im Speicher annehmen, danach als Original und Thumbnail speichern
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
-type CreateIssueRouterOptions = {
+type CreateUserRouterOptions = {
   requireAuth: RequestHandler;
 };
 
-// bündelt alle Mängel-Endpunkte, damit server.ts nicht weiter wächst
-export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
+// bündelt alle Nutzer-Endpunkte, damit server.ts nicht weiter wächst
+export function createUserRouter({ requireAuth }: CreateUserRouterOptions) {
   const router = express.Router();
 
-  // Filterwerte für die UI laden, unabhängig von der aktuellen Seite
-  router.get("/api/mangel/filter-options", (req, res) => {
+  // Liste aller User laden
+  router.get("/api/users", (req, res) => {
     try {
-      const result = getIssueFilterOptions(req.session.userId ?? null, req.query);
+      const result = listUsers(req.session.userId ?? null, req.query);
       res.json(result);
     } catch (error) {
       console.error(error);

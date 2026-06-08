@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import bcrypt from "bcryptjs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -18,11 +19,24 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'manager')),
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'superadmin')),
     email_verified_at TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// Root-Account anlegen (wird übersprungen wenn er bereits existiert)
+const rootEmail = "root@team.de";
+const rootPassword = "IchBinRoot";
+try {
+  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(rootEmail);
+  if (!existing) {
+    const hash = bcrypt.hashSync(rootPassword, 12);
+    db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'superadmin')").run(rootEmail, hash);
+  }
+} catch (e) {
+  console.error("Root-Account konnte nicht angelegt werden:", e);
+}
 
 // Migration: email_verified_at hinzufügen, falls sie in einer alten Version der DB fehlt
 try {

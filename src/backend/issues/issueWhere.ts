@@ -39,7 +39,7 @@ function buildArchiveScope(userId: number | null, isArchive: boolean): IssueWher
     .prepare("SELECT role FROM users WHERE id = ?")
     .get(userId) as { role: string } | undefined;
 
-  if (user?.role === "admin" || user?.role === "manager") {
+  if (user?.role === "admin" || user?.role === "superadmin") {
     return {
       whereClause: "WHERE (maengel.status = 'Behoben' OR maengel.is_deleted = 1)",
       params: [],

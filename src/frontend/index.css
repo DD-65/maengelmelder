@@ -871,6 +871,7 @@ input:checked {
   font-weight: 800;
   text-transform: uppercase;
   white-space: nowrap;
+  width: max-content;
 }
 
 .verification-badge.is-verified {
@@ -1434,6 +1435,78 @@ button:hover > .modify-icon {
     width: 100%;
     flex-basis: auto;
   }
+}
+
+/* Management View */
+
+.management-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.management-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-h);
+}
+.management-description {
+  color: var(--text);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.management-user-table {
+  width: 60%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+.management-user-table th,
+.management-user-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  width: 25%;
+  vertical-align: middle;
+}
+.management-user-table th {
+  background: var(--surface-strong);
+  color: var(--text-h);
+  font-weight: 700;
+  border-right: 1px solid var(--border);
+}
+.management-user-table tr:last-child td {
+  border-bottom: none;
+}
+.management-user-actions {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.management-user-actions .management-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+  margin-right: 6px;
+}
+.management-user-actions .management-action-btn:last-child {
+  margin-right: 0;
+}
+.management-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 

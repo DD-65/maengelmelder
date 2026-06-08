@@ -7,7 +7,7 @@ export function useRegistrationLogin(){
     const [authView, setAuthView] = useState<"login" | "register" | null>(null);
     const [authEmail, setAuthEmail] = useState("");
     const [authPassword, setAuthPassword] = useState("");
-    // const [registerAsAdmin, setRegisterAsAdmin] = useState(false); wird zukünftig von manager rolle gesetzt
+    // const [registerAsAdmin, setRegisterAsAdmin] = useState(false); wird zukünftig von superadmin rolle gesetzt
     // const [adminCode, setAdminCode] = useState("");
     const [authError, setAuthError] = useState("");
     const [authMessage, setAuthMessage] = useState("");

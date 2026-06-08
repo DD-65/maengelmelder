@@ -134,7 +134,10 @@ function canSendVerificationMail(userId: number) {
 // registrieren
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password, adminSecret } = req.body;
+    const { email, 
+      password, 
+      // adminSecret 
+    } = req.body;
     
     // falls email oder passwort fehlen, fehler zurückgeben
     if (!email || !password) {
@@ -163,9 +166,9 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     // Bestimme die Rolle basierend auf dem adminSecret
-    const ADMIN_REGISTRATION_SECRET = "IchBinAdmin";
-    const role = adminSecret === ADMIN_REGISTRATION_SECRET ? "admin" : "user";
-
+    // const ADMIN_REGISTRATION_SECRET = "IchBinAdmin";
+    // const role = adminSecret === ADMIN_REGISTRATION_SECRET ? "admin" : "user";
+    const role = "user";
     // passwort hashen (bycrypt mit salt länge 12)
     const passwordHash = await bcrypt.hash(password, 12);
     const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)");
@@ -472,8 +475,7 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
       return res.status(404).json({ error: "Kommentar kann keinem existierenden Mangel zugeordnet werden"})}
 
     // Update durchführen
-    let result;
-    result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
+    const result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
 
     const createdComment = db.prepare(`SELECT mk.kommentar,
                                               users.email AS userEmail, 
@@ -505,7 +507,7 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
     }
     // Prüfen, ob der Nutzer Admin ist oder Kommentator*in
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin" && userId !== kommentar.user_id) {
+    if (user.role !== "admin" && user.role !== "manager" && userId !== kommentar.user_id) {
       return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
     }
 

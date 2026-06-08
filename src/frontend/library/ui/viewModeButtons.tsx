@@ -5,10 +5,11 @@ interface ViewModeButtonsProperties{
     setViewMode: (val: 'list' | 'map') => void;
     isArchiveMode: boolean;
     setIsArchiveMode: (val: boolean) => void;
-    userId: number | null
+    userId: number | null;
+    userRole: string | null;
 }
 //}: {userId: number | null}, {
-export function ViewModeButtons({viewMode, userId, setViewMode, isArchiveMode, setIsArchiveMode }: ViewModeButtonsProperties){
+export function ViewModeButtons({viewMode, userId, userRole, setViewMode, isArchiveMode, setIsArchiveMode }: ViewModeButtonsProperties){
     return(
         <div className="view-mode-switch-container">
         <button 
@@ -49,6 +50,20 @@ export function ViewModeButtons({viewMode, userId, setViewMode, isArchiveMode, s
               <line x1="10" y1="12" x2="14" y2="12"></line>
             </svg>
             <span>Archiv</span>
+          </button>
+        )}
+        
+        {userRole === ('manager'||'admin') && (
+          <button 
+            onClick={() => { setViewMode('management'); setIsManagementMode(true); }}
+            className={`view-mode-btn ${isManagementMode ? 'active' : ''}`}
+          >
+            {/* <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg> */}
+            <span>Management</span>
           </button>
         )}
       </div>)

@@ -99,7 +99,8 @@ export default function App() {
   // Ansichten für Registrierung und Login
   const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
     authView, setAuthView, authEmail, setAuthEmail, authPassword, setAuthPassword,
-    registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, authError, setAuthError, authMessage, setAuthMessage,
+    // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
+    authError, setAuthError, authMessage, setAuthMessage,
     voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
   } = useRegistrationLogin();
 

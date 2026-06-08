@@ -71,7 +71,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
-  // Status eines Mangels aktualisieren (nur Admin)
+  // Status eines Mangels aktualisieren (nur Admin und Manager)
   router.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
     try {
       // ID und neuer Status kommen aus URL und Body
@@ -79,10 +79,10 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       const mangelId = Number(req.params.id);
       const { status, statusComment } = req.body;
 
-      // nur Admins dürfen Status und Archiv-Zustand ändern
+      // nur Admins und Manager dürfen Status und Archiv-Zustand ändern
       const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-      if (user.role !== "admin") {
-        return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+      if (user.role !== "admin" && user.role !== "manager") {
+        return res.status(403).json({ error: "Nur Administratoren und Manager dürfen den Status ändern" });
       }
 
       // "Gelöscht" ist kein DB-Status, sondern wird über is_deleted abgebildet
@@ -227,10 +227,10 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       return res.status(404).json({ error: "Mangel nicht gefunden" });
     }
 
-    // Löschaktionen bleiben admins vorbehalten
+    // Löschaktionen bleiben admins und managern vorbehalten
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-    if (user.role !== "admin") {
-      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    if (user.role !== "admin" && user.role !== "manager") {
+      return res.status(403).json({ error: "Nur Administratoren und Manager dürfen den Status ändern" });
     }
 
     // permanent=true löscht wirklich aus der DB, sonst landet der Mangel im Archiv

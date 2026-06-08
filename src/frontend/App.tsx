@@ -886,7 +886,7 @@ export default function App() {
 
         {isMenuOpen && (
           <div className="mobile-menu-overlay" onClick={() => setIsMenuOpen(false)}>
-            <aside className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
+            <aside className="mobile-menu-content swipe-ignore" onClick={(e) => e.stopPropagation()}>
               <div className="mobile-menu-header">
                 <Reportunfall />
                 <button className="mobile-menu-close" onClick={() => setIsMenuOpen(false)}>X</button>

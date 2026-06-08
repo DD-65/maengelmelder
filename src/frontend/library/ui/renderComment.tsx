@@ -25,7 +25,7 @@ interface KommentarProperties{
 //     return `rgb(${r}, ${g}, ${b})`;
 // };
 
-export function Kommentar({setCommentList, issue, commentId, userEmail, commentStatus, commentInhalt, commentKommentator, commentTimestamp}: KommentarProperties){
+export function Kommentar({setCommentList, issue, commentId, userEmail, userRole, commentStatus, commentInhalt, commentKommentator, commentTimestamp}: KommentarProperties){
     const{deleteComment}=useDeleteComment(setCommentList);
     
     return(
@@ -36,7 +36,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, commentS
                     {(commentStatus) && <span className="status">{commentStatus}</span>}
                     <span className="inhalt">{commentInhalt}</span>
 
-                    <span className="kommentator"><div>{commentStatus ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
+                    <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                     <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
                     <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>
                 </li>
@@ -48,6 +48,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, commentS
                 <span className="kommentator"><div style={{fontFamily:'monospace', color:'orange', fontSize:'10px', marginBottom:'-5px', fontWeight:'bold'}}>{commentStatus ? 'Admin-Nachricht' : ''}</div> <div style={{textAlign:'left', color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                 {(commentStatus) && <span className="status">{commentStatus}</span>}
                 <span className="inhalt">{commentInhalt}</span>
+                {(userRole === "superadmin" || userRole === "admin") && !commentStatus && <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>}
                 </li>
             )
         }  

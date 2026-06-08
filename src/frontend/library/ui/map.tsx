@@ -13,7 +13,7 @@ export type MapSummaryItem = {
 // Importing of Filters
 interface MapProperties{
     mapSummary: MapSummaryItem[];
-    setViewMode: React.Dispatch<React.SetStateAction<"list" | "map">>;
+    setViewMode: React.Dispatch<React.SetStateAction<"list" | "map" | "management">>;
     setCurrentFilter: React.Dispatch<React.SetStateAction<string>>;
     setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
 }

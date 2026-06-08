@@ -74,8 +74,8 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
             {issue.status}
           </span>
 
-          {/* Admin-Steuerung fuer den Status */}
-          {userRole === "admin" && (
+          {/* Admin/Superadmin-Steuerung fuer den Status */}
+          {(userRole === "admin"||userRole === "superadmin") && (
             <form onSubmit={async (e) => { e.preventDefault();
                                       e.stopPropagation();
                                       if(issue.id){
@@ -140,8 +140,8 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
             <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}><CommentIcon className="comment-icon" aria-hidden="true"/>{commentButtonText}</button>
 
-          {/* Admin-button um Mangel zu loeschen, nur sichtbar fuer Admins */}
-          {userRole === "admin" && (
+          {/* Admin/Superadmin-button um Mangel zu loeschen, nur sichtbar fuer Admins und Superadmins */}
+          {(userRole === "admin" || userRole === "superadmin") && (
             <button onClick={(e) => {e.stopPropagation(); if(issue.id) onDelete(issue.id);}}><TrashIcon className="trash-icon" aria-hidden="true"/> {issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
             /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
           )}

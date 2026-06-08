@@ -632,7 +632,7 @@ code {
 .modal-overlay, .settings-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 3000;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -1177,6 +1177,7 @@ button.active:hover {
 .kommentareoeffnen{
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -1340,7 +1341,7 @@ button:hover > .modify-icon {
   justify-content: center;
   align-items: center;
 } */
-@media (max-width: 900px) {
+@media (max-width: 900px) { /* Mobile Ansicht */
   .app-layout {
     display: flex;
     flex-direction: column;
@@ -1434,7 +1435,8 @@ button:hover > .modify-icon {
     width: 100%;
     flex-basis: auto;
   }
-}
+
+} /* Ende der mobilen Ansicht */
 
 
 /* Einheitliche Topbar und Logo-Größe */

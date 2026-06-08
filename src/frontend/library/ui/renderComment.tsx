@@ -43,7 +43,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
             ):
             (
                 <li className="singleComment" onClick={(e)=>{e.stopPropagation();}}>
-                {/*problem hier, ist dass man bei sehr langen Kommentaren ohne Leerzeichen nach rechts scrollen muss, das swiped zur Karte*/}
+                {/*problem hier, ist dass man bei sehr langen Kommentaren ohne Leerzeichen nach rechts scrollen muss, das swiped zur Karte // nicht mehr, swipen wurde für die kommentare deaktiviert*/}
                 <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)}/>
                 <span className="kommentator"><div style={{fontFamily:'monospace', color:'orange', fontSize:'10px', marginBottom:'-5px', fontWeight:'bold'}}>{commentStatus ? 'Admin-Nachricht' : ''}</div> <div style={{textAlign:'left', color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                 {(commentStatus) && <span className="status">{commentStatus}</span>}

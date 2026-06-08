@@ -1074,8 +1074,9 @@ export default function App() {
             <h2 style={{ marginBottom: '20px' }}>Mangel melden</h2>
             {/* Input form nur sichtbar wenn man eingeloggt ist*/}
             <InputForm
-              onIssueCreated={() => {
+              onIssueCreated={async () => {
                 loadIssuePage(1, false);
+                await refreshMapData();
                 setShowInputModal(false);
                 toast.success("Mangel erfolgreich gemeldet");
               }}

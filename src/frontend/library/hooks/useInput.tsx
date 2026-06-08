@@ -18,7 +18,7 @@ export function useInput(loadIssues: () => void | Promise<void>) {
     // Combine into new Issue
     const formData = new FormData();
     formData.append("title", title);
-    formData.append("description", description);
+    formData.append("description", description.slice(0, 200)); // Kills everything after 200 chars
     formData.append("location", location);
     formData.append("kategorie", kategorie);
     if (image) {

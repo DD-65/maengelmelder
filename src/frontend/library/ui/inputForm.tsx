@@ -53,7 +53,26 @@ export function InputForm({onIssueCreated}: InputFormProperties){
               <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
             </select>
             <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
-            <textarea className="beschreibung-input" placeholder="Beschreibung des Mangels" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} />
+            <textarea 
+              className="beschreibung-input" 
+              placeholder="Beschreibung des Mangels" 
+              value={description} 
+              // Regex that removes linebreaks, tabs, and other control characters, and limits the length to 200 characters
+              onChange={(event) => {
+                const sanitizedText = event.target.value
+                  .replace(/[\r\n\t]+/g, ' ')
+                  .replace(/[\x00-\x09\x0B-\x1F\x7F]/g, '')
+                  .slice(0, 200);
+                setDescription(sanitizedText);
+              }} 
+              // Disable Enter key to prevent new lines in the textarea
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                }
+              }}
+              maxLength={200} 
+            />
 
             <button type="submit">Posten</button>
           </form>

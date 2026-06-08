@@ -2,13 +2,11 @@ import { useInput } from "../hooks/useInput"
 import { rooms } from "../constants/rooms";
 import { toast } from "react-toastify";
 import type { SubmitEvent } from "react";
-// import "../../index.css"
 
 type InputFormProperties = {
   onIssueCreated: () => void;
 };
 
-//  Ort Eingabe zerschossen, dropdwn geht nicht zu
 export function InputForm({onIssueCreated}: InputFormProperties){
   const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, addIssue}=useInput(onIssueCreated);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));  // hier hin gebaut, da nur hier genutzt

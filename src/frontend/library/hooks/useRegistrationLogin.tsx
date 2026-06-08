@@ -7,8 +7,8 @@ export function useRegistrationLogin(){
     const [authView, setAuthView] = useState<"login" | "register" | null>(null);
     const [authEmail, setAuthEmail] = useState("");
     const [authPassword, setAuthPassword] = useState("");
-    const [registerAsAdmin, setRegisterAsAdmin] = useState(false);
-    const [adminCode, setAdminCode] = useState("");
+    // const [registerAsAdmin, setRegisterAsAdmin] = useState(false); wird zukünftig von manager rolle gesetzt
+    // const [adminCode, setAdminCode] = useState("");
     const [authError, setAuthError] = useState("");
     const [authMessage, setAuthMessage] = useState("");
     const [voteError, setVoteError] = useState("");
@@ -19,7 +19,8 @@ export function useRegistrationLogin(){
     
     return{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
         authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
-        registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, authError, setAuthError, authMessage, setAuthMessage,
+        // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
+        authError, setAuthError, authMessage, setAuthMessage,
         voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
     }
 }

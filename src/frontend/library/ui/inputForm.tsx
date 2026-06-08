@@ -2,6 +2,7 @@ import { useInput } from "../hooks/useInput"
 import { rooms } from "../constants/rooms";
 import { toast } from "react-toastify";
 import type { SubmitEvent } from "react";
+// import "../../index.css"
 
 type InputFormProperties = {
   onIssueCreated: () => void;

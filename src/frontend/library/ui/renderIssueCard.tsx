@@ -154,45 +154,49 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
 
         </div>
 
-          {commentsOpen === true &&(
-          userId ? (
-            <form className='neuerkommentar'
-                    onSubmit={async (e) => { e.preventDefault();
-                                      e.stopPropagation();
-                                      if(issue.id){
-                                        try {
-                                          await postComment(issue.id, newComment);
-                                          toast.success("Kommentar gepostet");
-                                          setNewComment('');
-                                        } catch (error) {
-                                          toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Abschicken des Kommentars"}`);
-                                        }
-                                      }
-                                      }}>
-              <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
-                onChange={(event) => {event.stopPropagation(); if(issue.id){setNewComment(event.target.value)}}} autoComplete="off"/>
-              <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken<SendIcon className="send-icon" aria-hidden="true"/></button>
-            </form>
-          ):(<span>Einloggen um selbst Kommentare zu schreiben</span>))}
-        
-        {/* Kommentare ganz unten im Issue anzeigen */}
-          {commentsOpen === true &&(
-            <ul className='commentList'>
-              {sortedCommentList.map((comment) => ( 
-                      <Kommentar
-                          setCommentList={setCommentList}
-                          issue={issue}
-                          commentId={comment.commentId}
-                          userEmail={userEmail}
-                          userRole={userRole}
-                          key={comment.commentId}
-                          commentStatus={comment.status}
-                          commentInhalt={comment.kommentar}
-                          commentKommentator={comment.userEmail}
-                          commentTimestamp={comment.timestamp}
-                      />
-              ))}
-            </ul>)}
+          {commentsOpen === true && (
+            <div className="comment-section swipe-ignore" onClick={(e) => e.stopPropagation()}>
+              {userId ? (
+                <form className='neuerkommentar'
+                        onSubmit={async (e) => { e.preventDefault();
+                                          e.stopPropagation();
+                                          if(issue.id){
+                                            try {
+                                              await postComment(issue.id, newComment);
+                                              toast.success("Kommentar gepostet");
+                                              setNewComment('');
+                                            } catch (error) {
+                                              toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Abschicken des Kommentars"}`);
+                                            }
+                                          }
+                                          }}>
+                  <input type="text" placeholder="Hier Kommentar schreiben"  value={newComment} onClick={(e)=> {e.stopPropagation();}}
+                    onChange={(event) => {event.stopPropagation(); if(issue.id){setNewComment(event.target.value)}}} autoComplete="off"/>
+                  <button type="submit" onClick={(e)=> {e.stopPropagation();}}>Abschicken<SendIcon className="send-icon" aria-hidden="true"/></button>
+                </form>
+              ) : (
+                <span>Einloggen um selbst Kommentare zu schreiben</span>
+              )}
+            
+              {/* Kommentare ganz unten im Issue anzeigen */}
+              <ul className='commentList'>
+                {sortedCommentList.map((comment) => ( 
+                        <Kommentar
+                            setCommentList={setCommentList}
+                            issue={issue}
+                            commentId={comment.commentId}
+                            userEmail={userEmail}
+                            userRole={userRole}
+                            key={comment.commentId}
+                            commentStatus={comment.status}
+                            commentInhalt={comment.kommentar}
+                            commentKommentator={comment.userEmail}
+                            commentTimestamp={comment.timestamp}
+                        />
+                ))}
+              </ul>
+            </div>
+          )}
       </li>
     );
   }

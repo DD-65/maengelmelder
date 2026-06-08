@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const swipe_ignore_items = '.swipe-ignore, .leaflet-container, .settings-pane, select, input, textarea, button';
+
 export function useSwiping(
     viewMode: 'list' | 'map',
     setViewMode: (val: 'list' | 'map') => void,
@@ -16,7 +18,7 @@ export function useSwiping(
 
         // dauerhafter fix für falsches Swiping: wenn auf unerwünschten Elementen getippt wird, wird das Swiping nicht gestartet
         // müssen evtl laufend ergänzt werden, je nachdem, welche Elemente noch Probleme machen
-        if (target.closest('.leaflet-container, .settings-pane, select, input, textarea, button')) {
+        if (target.closest(swipe_ignore_items)) {
             setTouchStart(null);
             return;
         }

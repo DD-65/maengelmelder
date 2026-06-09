@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-
+//Endlich fertig
 import type { MapSummaryItem } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 // import L from 'leaflet';

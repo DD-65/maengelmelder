@@ -66,7 +66,6 @@ function hardDeleteUser(user: {id: number, email: string, role: string}, refresh
 }
 
 
-
 export function Management({userRole, setViewMode}:ManagementProperties){
     const [userList, setUserList] = useState<{id: number, email: string, role: string}[]>([]);
     const [fromID, setFromID] = useState(0);

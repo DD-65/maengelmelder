@@ -13,7 +13,7 @@ export function ConfirmDialog({ title, message, onConfirm, onCancel }: ConfirmDi
                 <p style={{ marginBottom: '20px' }}>{message}</p>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button
-                        style={{ backgroundColor: 'var(--danger)', backgroundImage: 'none' }}
+                        style={{ backgroundColor: 'var(--danger-2)', backgroundImage: 'none' }}
                         onClick={onConfirm}
                     >
                         Löschen

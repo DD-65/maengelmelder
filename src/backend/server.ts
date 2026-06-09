@@ -606,7 +606,6 @@ app.delete("/api/management/hard_delete/:id", requireAuth, (req, res) => {
     const deleteTransaction = db.transaction(() => {
       db.prepare("DELETE FROM maengel WHERE user_id = ?").run(userId);
       db.prepare("DELETE FROM maengel_kommentare WHERE user_id = ?").run(userId);
-      db.prepare("DELETE FROM status_changes WHERE user_id = ?").run(userId);
       db.prepare("DELETE FROM users WHERE id = ?").run(userId);
     });
     deleteTransaction();

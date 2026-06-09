@@ -91,34 +91,23 @@ export function Management({userRole, setViewMode}:ManagementProperties){
         <h2 className="management-title">Nutzer-Management</h2>
         <p className="management-description">Hier können Sie Nutzer verwalten und Rollen zuweisen.</p>
 
-        <table className="management-user-table">
-            <thead>
-                <tr>
-                    <th><span>Benutzername</span></th>
-                    <th><span>E-Mail</span></th>
-                    <th><span>Rolle</span></th>
-                    <th><span>Aktionen</span></th>
-                </tr>
-            </thead>
-            <tbody>
+        <div className="management-user-list">
             {userList.map((user) => (
-                <tr key={user.id} className="management-user-item">
-                    <td className="management-user-email">{user.email.substring(0, user.email.indexOf('@'))}</td>
-                    <td className="management-user-title">{user.email}</td>
-                    <td className="management-user-role">{user.role}</td>
-                    <td className="management-user-actions">
+                <div key={user.id} className="management-user-card">
+                    <span className="management-user-email">{user.email}</span>
+                    <span className="management-user-role">{user.role}</span>
+                    <div className="management-user-actions">
                         {!(user.role === "admin" || user.role === "superadmin") && userRole === "superadmin" && <button className="management-action-btn" onClick={promoteUser(user, refresh)}>↑ Admin</button>}
-                        {(user.role === "admin") && userRole === "superadmin" && <button className="management-action-btn" onClick={demoteUser(user, refresh)}>↓ User</button>}
+                        {user.role === "admin" && userRole === "superadmin" && <button className="management-action-btn" onClick={demoteUser(user, refresh)}>↓ User</button>}
                         {userRole === "admin" && user.role === "user" && <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>User löschen</button>}
                         {userRole === "superadmin" && user.role !== "superadmin" && <>
                             <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>Löschen</button>
-                            <button className="management-action-btn" style={{ backgroundColor: 'var(--danger-2)' }} onClick={() => confirmDelete(hardDeleteUser(user, refresh), `Nutzer ${user.email} und alle zugehörigen Daten unwiderruflich löschen?`)}>User und Daten löschen</button>
+                            <button className="management-action-btn danger" onClick={() => confirmDelete(hardDeleteUser(user, refresh), `Nutzer ${user.email} und alle zugehörigen Daten unwiderruflich löschen?`)}>User und Daten löschen</button>
                         </>}
-                    </td>
-                </tr>
+                    </div>
+                </div>
             ))}
-            </tbody>
-        </table>
+        </div>
             <div className="management-pagination">
                 {fromID > 0 && (
                     <button className="management-load-less-btn" onClick={() => setFromID(fromID - limit)}>

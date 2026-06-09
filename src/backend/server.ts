@@ -696,6 +696,32 @@ setInterval(async () => {
   }
 }, 1000 * 60 * 60 * 24); // Default: alle 24h
 
+setInterval(() => {
+  console.log("prüfe auf fällige mängel für die automatische archivierung...");
+
+  try {
+    const result = db.prepare(`
+      UPDATE maengel
+      SET is_deleted = 1
+      WHERE is_deleted = 0
+        AND status IN ('Behoben', 'Abgelehnt')
+        AND id IN (
+          SELECT sc.mangel_id 
+          FROM status_changes sc
+          JOIN maengel_kommentare mk ON sc.new_statusComment_id = mk.id
+          WHERE sc.new_status IN ('Behoben', 'Abgelehnt')
+            AND datetime(mk.created_at) <= datetime('now', '-7 days')
+        )
+    `).run();
+
+    if (result.changes > 0) {
+      console.log(`${result.changes} mängel wurden automatisch ins archiv verschoben.`);
+    }
+  } catch (error) {
+    console.error("fehler beim automatischen archivieren:", error);
+  }
+}, 1000 * 60 * 60 * 24); // Läuft einmal täglich (alle 24h)
+
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);
 });

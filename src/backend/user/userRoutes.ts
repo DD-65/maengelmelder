@@ -7,6 +7,7 @@ import fs from "fs";
 import sharp from "sharp";
 import db from "../db.js";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,16 +28,16 @@ type CreateUserRouterOptions = {
 export function createUserRouter({ requireAuth }: CreateUserRouterOptions) {
   const router = express.Router();
 
-  // Liste aller User laden
-  router.get("/api/users", (req, res) => {
-    try {
-      const result = listUsers(req.session.userId ?? null, req.query);
-      res.json(result);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Fehler beim Laden der Filterwerte" });
-    }
-  });
+  // // Liste aller User laden
+  // router.get("/api/users", (req, res) => {
+  //   try {
+  //     const result = listUsers(req.session.userId ?? null, req.query);
+  //     res.json(result);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({ error: "Fehler beim Laden der Filterwerte" });
+  //   }
+  // });
 
   // mapcounter für die Karte laden, unabhängig von der aktuellen Seite
   router.get("/api/mangel/map-summary", (req, res) => {

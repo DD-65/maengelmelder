@@ -112,7 +112,7 @@ export function Management({userRole, setViewMode}:ManagementProperties){
                         {userRole === "admin" && user.role === "user" && <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>User löschen</button>}
                         {userRole === "superadmin" && user.role !== "superadmin" && <>
                             <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>Löschen</button>
-                            <button className="management-action-btn" style={{ backgroundColor: 'red' }} onClick={() => confirmDelete(hardDeleteUser(user, refresh), `Nutzer ${user.email} und alle zugehörigen Daten unwiderruflich löschen?`)}>User und Daten löschen</button>
+                            <button className="management-action-btn" style={{ backgroundColor: 'var(--danger-2)' }} onClick={() => confirmDelete(hardDeleteUser(user, refresh), `Nutzer ${user.email} und alle zugehörigen Daten unwiderruflich löschen?`)}>User und Daten löschen</button>
                         </>}
                     </td>
                 </tr>

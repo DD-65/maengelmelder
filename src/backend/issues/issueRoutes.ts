@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const issueUploadDir = path.join(__dirname, "../../../uploads");
-const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
+export const allowedKategorien = ["Steckdose", "Schlagloch", "WLAN", "Mobiliar", "Andere"];
 
 // Upload-Ordner anlegen, falls er lokal noch nicht existiert
 if (!fs.existsSync(issueUploadDir)) {

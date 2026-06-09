@@ -3,9 +3,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { RequestHandler } from "express";
 import multer from "multer";
-import fs from "fs";
 import sharp from "sharp";
 import db from "../db.js";
+import { sendStatusUpdateEmail } from "../mailer.js";
+import { listIssues } from "../issues/listIssues.js";
+import { getIssueMapSummary } from "../issues/mapSummary.js";
+import { issueUploadDir, allowedKategorien } from "../issues/issueRoutes.js";
 
 
 const __filename = fileURLToPath(import.meta.url);

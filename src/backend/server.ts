@@ -523,10 +523,10 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
 
 app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
   try {
-    const fromID = Number(req.params.fromID);
+    // const fromID = Number(req.params.fromID); --> funktioniert noch nicht so wie ich es mir vorgestellt habe
     const limit = Number(req.params.limit);
-    const userList = db.prepare("SELECT id, email, role FROM users  WHERE id >= ? ORDER BY id LIMIT ?");
-    const result = userList.all(fromID, limit);
+    const userList = db.prepare("SELECT id, email, role FROM users LIMIT ?");
+    const result = userList.all(limit);
     res.json(result);
   } catch (error) {
     console.error(error);

@@ -640,9 +640,9 @@ code {
 }
 
 .modal-content, .settings-pane {
-  width:fit-content;
-  margin: 0;
-  padding: 0;
+  width: 20%;
+  margin: 10px;
+  padding: 20px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -655,9 +655,9 @@ code {
 }
 
 .modal-close-btn, .settings-close-button {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  position:relative;
+  top: -10%;
+  right: -45%;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -666,7 +666,7 @@ code {
   border-radius: 50%;
   background: var(--surface-strong);
   color: var(--text-h);
-  box-shadow: none;
+  box-shadow: 0 0 0 1px var(--border);
   border: none;
   cursor: pointer;
   z-index: 10;

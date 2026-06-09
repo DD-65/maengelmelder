@@ -523,10 +523,22 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
 
 app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
   try {
-    // const fromID = Number(req.params.fromID); --> funktioniert noch nicht so wie ich es mir vorgestellt habe
+    const requestingUser = db.prepare("SELECT role FROM users WHERE id = ?").get(req.session.userId) as { role: string } | undefined;
+    if (!requestingUser || (requestingUser.role !== "admin" && requestingUser.role !== "superadmin")) {
+      return res.status(403).json({ error: "Nur Administratoren dürfen die Nutzerliste abrufen" });
+    }
+
+    const fromID = Number(req.params.fromID);
     const limit = Number(req.params.limit);
-    const userList = db.prepare("SELECT id, email, role FROM users LIMIT ?");
-    const result = userList.all(limit);
+
+    if (!Number.isInteger(fromID) || fromID < 0) {
+      return res.status(400).json({ error: "Ungültige fromID" });
+    }
+    if (!Number.isInteger(limit) || limit <= 0) {
+      return res.status(400).json({ error: "Ungültiges Limit" });
+    }
+
+    const result = db.prepare("SELECT id, email, role FROM users ORDER BY id LIMIT ? OFFSET ?").all(limit, fromID);
     res.json(result);
   } catch (error) {
     console.error(error);

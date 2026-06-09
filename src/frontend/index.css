@@ -633,22 +633,25 @@ code {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  display: grid;
-  place-items: center;
-  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: rgba(0, 0, 0, 0.75);
-  box-sizing: border-box;
 }
 
 .modal-content, .settings-pane {
-  width: min(100%, 520px);
-  padding: 24px;
+  width:fit-content;
+  margin: 0;
+  padding: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: var(--shadow-md);
   box-sizing: border-box;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .modal-close-btn, .settings-close-button {
@@ -1457,6 +1460,29 @@ button:hover > .modify-icon {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .issue-form {
+  width: 80%;
+  margin: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  box-sizing: border-box;
+}
+
+.modal-content, .settings-pane {
+  width: min(80%, 520px);
+  padding: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  box-sizing: border-box;
+  position: relative;
+}
 
   .settings-option,
   .settings-field {

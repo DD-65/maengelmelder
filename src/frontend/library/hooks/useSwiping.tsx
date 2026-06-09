@@ -34,7 +34,8 @@ export function useSwiping(
     const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
         if (!touchStart) return;
 
-        let touchEndX: number = 0, touchEndY: number = 0;
+        let touchEndX: number;
+        let touchEndY: number;
 
         if ('changedTouches' in e) {
             touchEndX = e.changedTouches[0].clientX;
@@ -64,17 +65,15 @@ export function useSwiping(
                 }
 
             } else { // Swipe left (Vorwärts: Liste -> Karte -> Archiv -> Management)
-                if (!isArchiveMode) {
-                    if (viewMode === 'list') {
-                        setViewMode('map');
-                    } else if (viewMode === 'map' && isLoggedIn) {
-                        setIsArchiveMode(true);
-                        setViewMode('list');
-                    } else if (isArchiveMode && isLoggedIn) {
-                        setIsManagementMode(true);
-                        setIsArchiveMode(false);
-                        setViewMode('management');
-                    }
+                if (viewMode === 'list' && !isArchiveMode) {
+                    setViewMode('map');
+                } else if (viewMode === 'map' && isLoggedIn) {
+                    setIsArchiveMode(true);
+                    setViewMode('list');
+                } else if (isArchiveMode && isLoggedIn) {
+                    setIsManagementMode(true);
+                    setIsArchiveMode(false);
+                    setViewMode('management');
                 }
             }
         }

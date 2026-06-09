@@ -534,6 +534,91 @@ app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
   }
 });
 
+app.post("/api/management/promote/:id", requireAuth, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+    if (!user) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+    if (user.role === "superadmin") {
+      return res.status(400).json({ error: "Nutzer ist bereits Superadmin" });
+    }
+    const newRole = user.role === "admin" ? "superadmin" : "admin";
+    db.prepare("UPDATE users SET role = ? WHERE id = ?").run(newRole, userId);
+    res.json({ message: `Nutzer erfolgreich zu ${newRole} befördert` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Befördern des Nutzers" });
+  }
+});
+
+app.post("/api/management/demote/:id", requireAuth, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+    if (!user) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+    if (user.role === "superadmin") {
+      return res.status(400).json({ error: "Nutzer kann nur per terminal herabgestuft werden" });
+    }
+    if (user.role === "user") {
+      return res.status(400).json({ error: "Nutzer ist bereits auf niedrigster Rolle" });
+    }
+    const newRole = user.role === "admin" ? "user" : "admin";
+    db.prepare("UPDATE users SET role = ? WHERE id = ?").run(newRole, userId);
+    res.json({ message: `Nutzer erfolgreich zu ${newRole} herabgestuft` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Herabstufen des Nutzers" });
+  }
+});
+
+app.delete("/api/management/account_delete/:id", requireAuth, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+    if (!user) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+    if (user.role === "superadmin") {
+      return res.status(400).json({ error: "Nutzer kann nur per terminal gelöscht werden" });
+    }
+    db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    res.json({ message: "Nutzer erfolgreich gelöscht" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Löschen des Nutzers" });
+  }
+});
+
+app.delete("/api/management/hard_delete/:id", requireAuth, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+    if (!user) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+    if (user.role === "superadmin") {
+      return res.status(400).json({ error: "Nutzer kann nur per terminal gelöscht werden" });
+    }
+    const deleteTransaction = db.transaction(() => {
+      db.prepare("DELETE FROM maengel WHERE user_id = ?").run(userId);
+      db.prepare("DELETE FROM maengel_kommentare WHERE user_id = ?").run(userId);
+      db.prepare("DELETE FROM status_changes WHERE user_id = ?").run(userId);
+      db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    });
+    deleteTransaction();
+    res.json({ message: "Nutzer und alle zugehörigen Daten erfolgreich gelöscht" });
+  }
+    catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Löschen des Nutzers und aller zugehörigen Daten" });
+  }
+});
+
+
 
 
 

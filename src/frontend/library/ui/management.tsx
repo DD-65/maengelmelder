@@ -86,7 +86,7 @@ export function Management({userRole, setViewMode}:ManagementProperties){
     }
 
     return(
-        <div className="management-container" style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
+        <div className="management-container">
 
         <h2 className="management-title">Nutzer-Management</h2>
         <p className="management-description">Hier können Sie Nutzer verwalten und Rollen zuweisen.</p>

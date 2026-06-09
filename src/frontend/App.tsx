@@ -24,6 +24,7 @@ import { useViewMode } from './library/hooks/useViewMode';
 import { useSwiping } from './library/hooks/useSwiping';
 // Management View
 import { Management } from './library/ui/management';
+import { ConfirmDialog } from './library/ui/confirmDialog';
 import { useManagementMode } from './library/hooks/useManagementMode';
 
 // Filter importieren
@@ -111,7 +112,7 @@ export default function App() {
   } = useRegistrationLogin();
 
   // Swiping zum Wechseln der Ansichten
-  const { handleTouchStart, handleTouchEnd } = useSwiping(viewMode, setViewMode, isArchiveMode, setIsArchiveMode, !!userId);
+  const { handleTouchStart, handleTouchEnd } = useSwiping(viewMode, setViewMode, isArchiveMode, setIsArchiveMode, isManagementMode, setIsManagementMode, !!userId);
 
 
   // Suche über das Backend
@@ -1155,44 +1156,24 @@ export default function App() {
 
       {/* Bestätigungs-Modal für endgültiges Löschen */}
       {isConfirmOpen && (
-        <div className="settings-overlay" role="presentation" onClick={() => setIsConfirmOpen(false)}>
-          <section className="settings-pane" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <h2 id="confirm-title">Meldung endgültig löschen?</h2>
-            <p style={{ marginBottom: '20px' }}>Möchten Sie diese Meldung wirklich endgültig aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button
-                onClick={async () => { 
-                  if (issueToDelete !== null) {
-                    try {
-                      await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions()); 
-                      await refreshMapData(); 
-                      toast.success("Mangel endgültig gelöscht");
-                      setIsConfirmOpen(false);
-                      setIssueToDelete(null);
-                    } catch (error) {
-                      toast.error(`🫪 ${error instanceof Error ? error.message : "Mangel konnte nicht endgültig gelöscht werden"}`);
-                    }
-                    return;
-                  }
-                  setIsConfirmOpen(false);
-                  setIssueToDelete(null);
-                }}
-                style={{ backgroundColor: 'var(--danger)', backgroundImage: 'none' }}
-              >
-                Löschen
-              </button>
-              <button
-                onClick={() => {
-                  setIsConfirmOpen(false);
-                  setIssueToDelete(null);
-                }}
-                style={{ backgroundColor: 'var(--surface-strong)', backgroundImage: 'none', color: 'var(--text)' }}
-              >
-                Abbrechen
-              </button>
-            </div>
-          </section>
-        </div>
+        <ConfirmDialog
+          title="Meldung endgültig löschen?"
+          message="Möchten Sie diese Meldung wirklich endgültig aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+          onConfirm={async () => {
+            if (issueToDelete !== null) {
+              try {
+                await deleteIssue(issueToDelete, isArchiveMode, true, getCurrentIssueLoadOptions());
+                await refreshMapData();
+                toast.success("Mangel endgültig gelöscht");
+              } catch (error) {
+                toast.error(`🫪 ${error instanceof Error ? error.message : "Mangel konnte nicht endgültig gelöscht werden"}`);
+              }
+            }
+            setIsConfirmOpen(false);
+            setIssueToDelete(null);
+          }}
+          onCancel={() => { setIsConfirmOpen(false); setIssueToDelete(null); }}
+        />
       )}
     </div>
   );

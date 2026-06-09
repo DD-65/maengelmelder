@@ -1,4 +1,4 @@
-import { useViewMode } from "../hooks/useViewMode";
+// import { useViewMode } from "../hooks/useViewMode";
 
 interface ViewModeButtonsProperties{
     viewMode : "map" | "list" | "management";

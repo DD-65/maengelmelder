@@ -70,15 +70,16 @@ export function Management({userRole, setViewMode}:ManagementProperties){
     const [userList, setUserList] = useState<{id: number, email: string, role: string}[]>([]);
     const [fromID, setFromID] = useState(0);
     const [pendingDelete, setPendingDelete] = useState<{ action: () => void, label: string } | null>(null);
+    const [refreshTick, setRefreshTick] = useState(0);
     const limit = 10;
 
     function refresh() {
-        fetchUserList(fromID, limit).then(setUserList).catch(() => setUserList([]));
+        setRefreshTick(t => t + 1);
     }
 
     useEffect(() => {
         fetchUserList(fromID, limit).then(setUserList).catch(() => setUserList([]));
-    }, [fromID, limit]);
+    }, [fromID, limit, refreshTick]);
 
     function confirmDelete(action: () => void, label: string) {
         setPendingDelete({ action, label });
@@ -124,7 +125,7 @@ export function Management({userRole, setViewMode}:ManagementProperties){
                         Vorherige Seite
                     </button>
                 )}
-                {userList.length >= limit && (
+                {userList.length === limit && (
                     <button className="management-load-more-btn" onClick={() => setFromID(fromID + limit)}>
                         Nächste Seite
                     </button>

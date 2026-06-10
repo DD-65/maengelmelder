@@ -108,9 +108,10 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
             </form>
              )}
         </div>
+        { issue.statusComment &&(
         <span>
             Begründung für Status: {issue.statusComment}
-        </span>
+        </span>)}
 
         {/* Standort des Mangels */}
         <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>

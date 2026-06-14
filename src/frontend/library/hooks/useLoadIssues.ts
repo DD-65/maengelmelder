@@ -11,6 +11,7 @@ export type LoadIssuesOptions = {
   status?: string;
   location?: string;
   onlyOwn?: boolean;
+  followedOnly?: boolean;
   sort?: "votes" | "createdAt" | "status";
   direction?: "asc" | "desc";
 };
@@ -70,6 +71,10 @@ export function useLoadIssues(setIssueList: Dispatch<SetStateAction<Issue[]>>) {
 
     if (normalizedOptions.onlyOwn) {
       params.set("onlyOwn", "true");
+    }
+
+    if (normalizedOptions.followedOnly) {
+      params.set("followedOnly", "true");
     }
 
     if (normalizedOptions.sort) {

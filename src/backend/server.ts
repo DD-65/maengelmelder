@@ -424,6 +424,81 @@ app.patch("/api/auth/settings/notifications", requireAuth, (req, res) => {
   }
 });
 
+// Alle registrierten Nutzer (außer man selbst) laden mit Follow-Status
+app.get("/api/users", requireAuth, (req, res) => {
+  try {
+    const currentUserId = req.session.userId;
+    const stmt = db.prepare(`
+      SELECT id, email, role,
+        EXISTS (
+          SELECT 1 FROM follows 
+          WHERE follower_id = ? AND followed_id = users.id
+        ) AS isFollowed
+      FROM users
+      WHERE id <> ?
+      ORDER BY email ASC
+    `);
+    const result = stmt.all(currentUserId, currentUserId);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Laden der Nutzerliste" });
+  }
+});
+
+// Nutzer folgen
+app.post("/api/users/:id/follow", requireAuth, (req, res) => {
+  try {
+    const followerId = req.session.userId;
+    const followedId = Number(req.params.id);
+
+    if (isNaN(followedId)) {
+      return res.status(400).json({ error: "Ungültige Nutzer-ID" });
+    }
+
+    if (followerId === followedId) {
+      return res.status(400).json({ error: "Du kannst dir nicht selbst folgen" });
+    }
+
+    const targetUser = db.prepare("SELECT id FROM users WHERE id = ?").get(followedId);
+    if (!targetUser) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+
+    db.prepare(`
+      INSERT OR IGNORE INTO follows (follower_id, followed_id)
+      VALUES (?, ?)
+    `).run(followerId, followedId);
+
+    res.json({ message: "Nutzer erfolgreich gefolgt" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Folgen des Nutzers" });
+  }
+});
+
+// Nutzer entfolgen
+app.delete("/api/users/:id/follow", requireAuth, (req, res) => {
+  try {
+    const followerId = req.session.userId;
+    const followedId = Number(req.params.id);
+
+    if (isNaN(followedId)) {
+      return res.status(400).json({ error: "Ungültige Nutzer-ID" });
+    }
+
+    db.prepare(`
+      DELETE FROM follows
+      WHERE follower_id = ? AND followed_id = ?
+    `).run(followerId, followedId);
+
+    res.json({ message: "Nutzer erfolgreich entfolgt" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Entfolgen des Nutzers" });
+  }
+});
+
 
 
 

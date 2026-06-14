@@ -3,8 +3,8 @@ import React, { useState } from "react";
 const swipe_ignore_items = '.swipe-ignore, .leaflet-container, .settings-pane, select, input, textarea, button';
 
 export function useSwiping(
-    viewMode: 'list' | 'map' | 'management',
-    setViewMode: (val: 'list' | 'map' | 'management') => void,
+    viewMode: 'list' | 'map' | 'management' | 'users',
+    setViewMode: (val: 'list' | 'map' | 'management' | 'users') => void,
     isArchiveMode: boolean,
     setIsArchiveMode: (val: boolean) => void,
     isManagementMode: boolean,

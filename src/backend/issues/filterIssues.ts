@@ -12,6 +12,7 @@ export type IssueFilterOptions = {
   includeStatus?: boolean;
   includeLocation?: boolean;
   includeOnlyOwn?: boolean;
+  includeFollowedOnly?: boolean;
 };
 
 function getSingleQueryValue(value: QueryValue) {
@@ -37,10 +38,12 @@ export function buildIssueFilter(query: Request["query"], userId: number | null,
   const includeStatus = options.includeStatus ?? true;
   const includeLocation = options.includeLocation ?? true;
   const includeOnlyOwn = options.includeOnlyOwn ?? true;
+  const includeFollowedOnly = options.includeFollowedOnly ?? true;
   const kategorie = getCleanQueryString(query, "kategorie");
   const status = getCleanQueryString(query, "status");
   const location = getCleanQueryString(query, "location");
   const onlyOwn = query.onlyOwn === "true";
+  const followedOnly = query.followedOnly === "true";
 
   if (includeKategorie && kategorie) {
     clauses.push("maengel.kategorie = ?");
@@ -63,6 +66,11 @@ export function buildIssueFilter(query: Request["query"], userId: number | null,
 
   if (includeOnlyOwn && onlyOwn) {
     clauses.push("maengel.user_id = ?");
+    params.push(userId ?? -1);
+  }
+
+  if (includeFollowedOnly && followedOnly) {
+    clauses.push("maengel.user_id IN (SELECT followed_id FROM follows WHERE follower_id = ?)");
     params.push(userId ?? -1);
   }
 

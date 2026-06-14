@@ -43,6 +43,7 @@ import { useVerificationMessage } from './library/hooks/useVerificationMessage';
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
+import { UsersList } from './library/ui/usersList';
 //import { registerClient } from 'fuse/next/server'; brauchen wir den import? hat nur nen fehler geschmissen
 import { SettingsButton } from './library/ui/settingsButton';
 import { IssuePagination } from './library/ui/issuePagination';
@@ -133,19 +134,23 @@ export default function App() {
   // Nachrichten für die Benutzer-Verifizierung
   const { verificationMessage, setVerificationMessage, verificationMessageType, setVerificationMessageType } = useVerificationMessage();
 
+  const [filterFollowedOnly, setFilterFollowedOnly] = useState(false);
+
   const resetFilterAndSorting = useCallback(() => {
     chooseFilter("");
     chooseSorting("");
     setFilterOnlyOwn(false);
-  }, [chooseFilter, chooseSorting, setFilterOnlyOwn]);
+    setFilterFollowedOnly(false);
+  }, [chooseFilter, chooseSorting, setFilterOnlyOwn, setFilterFollowedOnly]);
 
   // Filter zurücksetzen beim Wechsel zur Kartenansicht
   useEffect(() => {
     if (viewMode === "map") {
       chooseFilter("");
       setFilterOnlyOwn(false);
+      setFilterFollowedOnly(false);
     }
-  }, [viewMode, chooseFilter, setFilterOnlyOwn]);
+  }, [viewMode, chooseFilter, setFilterOnlyOwn, setFilterFollowedOnly]);
 
   // Statusfilter zurücksetzen, wenn er im aktuellen Archivmodus nicht angeboten wird
   useEffect(() => {
@@ -171,7 +176,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // übersetzt die deutschen UI-Filter in Backend-Query-Parameter
-  const getBackendFilterOptions = useCallback((onlyOwnOverride: boolean = filterOnlyOwn): LoadIssuesOptions => {
+  const getBackendFilterOptions = useCallback((onlyOwnOverride: boolean = filterOnlyOwn, followedOnlyOverride: boolean = filterFollowedOnly): LoadIssuesOptions => {
     const filterOptions: LoadIssuesOptions = {};
 
     if (currentFilterValue) {
@@ -192,8 +197,12 @@ export default function App() {
       filterOptions.onlyOwn = true;
     }
 
+    if (followedOnlyOverride) {
+      filterOptions.followedOnly = true;
+    }
+
     return filterOptions;
-  }, [currentFilter, currentFilterValue, filterOnlyOwn]);
+  }, [currentFilter, currentFilterValue, filterOnlyOwn, filterFollowedOnly]);
 
   // übersetzt die deutschen UI-Sortierungen in Backend-Query-Parameter
   const getBackendSortOptions = useCallback((): LoadIssuesOptions => {
@@ -746,6 +755,14 @@ export default function App() {
             <label htmlFor="onlyOwnIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</label>
           </div>
         )}
+
+        {/* Checkbox für "Nur von gefolgten Accounts" (nur sichtbar für eingeloggte User) */}
+        {userId && (
+          <div className="issue-filter-followed-only" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+            <input type="checkbox" id="followedOnlyIssues" checked={filterFollowedOnly} onChange={(e) => setFilterFollowedOnly(e.target.checked)} />
+            <label htmlFor="followedOnlyIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur von gefolgten Accounts anzeigen</label>
+          </div>
+        )}
       </div>
       );
 
@@ -989,19 +1006,21 @@ export default function App() {
                 />
               )}
             </div>
-          ) : ((viewMode === 'management') ? (
+          ) : viewMode === 'users' ? (
+            <UsersList setViewMode={setViewMode} />
+          ) : viewMode === 'management' ? (
             <Management
-              setViewMode={setViewMode}
+              setViewMode={setViewMode as any}
               userRole={userRole}
             />
           ) : (
             <Map
               mapSummary={mapSummary}
-              setViewMode={setViewMode}
+              setViewMode={setViewMode as any}
               setCurrentFilter={setCurrentFilter}
               setCurrentFilterValue={setCurrentFilterValue}
             />
-          ))}
+          )}
         </div>
 
         {userId && (

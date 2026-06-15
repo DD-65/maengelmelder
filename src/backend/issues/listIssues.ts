@@ -19,8 +19,10 @@ type IssueRow = {
   statusComment: string | null;
   commentCount: number;
   user_email: string | null;
+  user_id: number | null;
   has_voted: number;
   is_private: number; 
+  is_author_followed: number;
 };
 
 export type PaginatedIssues = {
@@ -80,6 +82,7 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
         WHERE alle_kommentare.mangel_id = maengel.id
       ) AS commentCount,
       users.email AS user_email,
+      maengel.user_id,
       CASE
         WHEN ? IS NULL THEN 0
         ELSE EXISTS (
@@ -89,7 +92,16 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
             AND mangel_votes.mangel_id = maengel.id
         )
       END AS has_voted,
-      maengel.is_private 
+      maengel.is_private,
+      CASE
+        WHEN ? IS NULL THEN 0
+        ELSE EXISTS (
+          SELECT 1
+          FROM follows
+          WHERE follows.follower_id = ?
+            AND follows.followed_id = maengel.user_id
+        )
+      END AS is_author_followed
     FROM maengel
     LEFT JOIN users ON maengel.user_id = users.id
     LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
@@ -99,7 +111,7 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
     ${limitClause}
   `);
 
-  return stmt.all(userId, userId, ...whereParams) as IssueRow[];
+  return stmt.all(userId, userId, userId, userId, ...whereParams) as IssueRow[];
 }
 
 // zählt die mängel mit denselben Berechtigungen wie die eigentliche Liste (filterfunktionalität)

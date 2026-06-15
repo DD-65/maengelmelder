@@ -326,8 +326,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash, role, email_verified_at FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; email_verified_at: string | null } | undefined;
+      .prepare("SELECT id, email, password_hash, role, email_verified_at, is_restricted FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; email_verified_at: string | null; is_restricted: number } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -346,6 +346,7 @@ app.post("/api/auth/login", async (req, res) => {
       email: user.email,
       role: user.role,
       emailVerified: Boolean(user.email_verified_at),
+      isRestricted: Boolean(user.is_restricted),
     });
   } catch (error) {
     console.error(error);
@@ -360,8 +361,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, email_verified_at, notification_interval AS notificationInterval FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null; notificationInterval: number } | undefined;
+    .prepare("SELECT id, email, role, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -374,6 +375,7 @@ app.get("/api/auth/me", (req, res) => {
     role: user.role,
     emailVerified: Boolean(user.email_verified_at),
     notificationInterval: user.notificationInterval,
+    isRestricted: Boolean(user.isRestricted),
   });
 });
 
@@ -399,6 +401,22 @@ app.post("/api/auth/logout", (req, res) => {
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Nicht angemeldet" });
+  }
+  next();
+}
+
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const requestingUser = db.prepare("SELECT role FROM users WHERE id = ?").get(req.session.userId) as { role: string } | undefined;
+  if (!requestingUser || (requestingUser.role !== "admin" && requestingUser.role !== "superadmin")) {
+    return res.status(403).json({ error: "Nur Administratoren dürfen diese Aktion ausführen" });
+  }
+  next();
+}
+
+function requireSuperadmin(req: Request, res: Response, next: NextFunction) {
+  const requestingUser = db.prepare("SELECT role FROM users WHERE id = ?").get(req.session.userId) as { role: string } | undefined;
+  if (!requestingUser || requestingUser.role !== "superadmin") {
+    return res.status(403).json({ error: "Nur Superadmins dürfen diese Aktion ausführen" });
   }
   next();
 }
@@ -536,6 +554,15 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const mangelId = Number(req.params.id);
     const { comment } = req.body;
+
+    const user = db.prepare("SELECT is_restricted FROM users WHERE id = ?").get(userId) as { is_restricted: number } | undefined;
+    if (!user) {
+      return res.status(401).json({ error: "Nicht angemeldet" });
+    }
+
+    if (user.is_restricted) {
+      return res.status(403).json({ error: "Dein Konto ist eingeschränkt. Du kannst keine Kommentare schreiben." });
+    }
 
     // Länge des Kommentar checken
     if (comment && comment.trim().length > 255) {
@@ -698,13 +725,8 @@ app.delete("/api/newsfeed/:id", requireAuth, (req, res) => {
 
 // Management Routes
 
-app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
+app.get("/api/management/users/:fromID/:limit", requireAuth, requireAdmin, (req, res) => {
   try {
-    const requestingUser = db.prepare("SELECT role FROM users WHERE id = ?").get(req.session.userId) as { role: string } | undefined;
-    if (!requestingUser || (requestingUser.role !== "admin" && requestingUser.role !== "superadmin")) {
-      return res.status(403).json({ error: "Nur Administratoren dürfen die Nutzerliste abrufen" });
-    }
-
     const fromID = Number(req.params.fromID);
     const limit = Number(req.params.limit);
 
@@ -715,7 +737,7 @@ app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
       return res.status(400).json({ error: "Ungültiges Limit" });
     }
 
-    const result = db.prepare("SELECT id, email, role FROM users ORDER BY id LIMIT ? OFFSET ?").all(limit, fromID);
+    const result = db.prepare("SELECT id, email, role, is_restricted AS isRestricted FROM users ORDER BY id LIMIT ? OFFSET ?").all(limit, fromID);
     res.json(result);
   } catch (error) {
     console.error(error);
@@ -723,7 +745,7 @@ app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {
   }
 });
 
-app.post("/api/management/promote/:id", requireAuth, (req, res) => {
+app.post("/api/management/promote/:id", requireAuth, requireSuperadmin, (req, res) => {
   try {
     const userId = Number(req.params.id);
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
@@ -742,7 +764,7 @@ app.post("/api/management/promote/:id", requireAuth, (req, res) => {
   }
 });
 
-app.post("/api/management/demote/:id", requireAuth, (req, res) => {
+app.post("/api/management/demote/:id", requireAuth, requireSuperadmin, (req, res) => {
   try {
     const userId = Number(req.params.id);
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
@@ -764,15 +786,39 @@ app.post("/api/management/demote/:id", requireAuth, (req, res) => {
   }
 });
 
-app.delete("/api/management/account_delete/:id", requireAuth, (req, res) => {
+app.post("/api/management/restrict/:id", requireAuth, requireAdmin, (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = db.prepare("SELECT role, is_restricted FROM users WHERE id = ?").get(userId) as { role: string; is_restricted: number } | undefined;
+    if (!user) {
+      return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    }
+    if (user.role !== "user") {
+      return res.status(400).json({ error: "Nur normale Nutzer können eingeschränkt werden" });
+    }
+
+    const isRestricted = user.is_restricted ? 0 : 1;
+    db.prepare("UPDATE users SET is_restricted = ? WHERE id = ?").run(isRestricted, userId);
+    res.json({ message: isRestricted ? "Nutzer erfolgreich eingeschränkt" : "Nutzereinschränkung aufgehoben", isRestricted: Boolean(isRestricted) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Einschränken des Nutzers" });
+  }
+});
+
+app.delete("/api/management/account_delete/:id", requireAuth, requireAdmin, (req, res) => {
   try {
     const userId = Number(req.params.id);
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;
+    const requestingUser = db.prepare("SELECT role FROM users WHERE id = ?").get(req.session.userId) as { role: string } | undefined;
     if (!user) {
       return res.status(404).json({ error: "Nutzer nicht gefunden" });
     }
     if (user.role === "superadmin") {
       return res.status(400).json({ error: "Nutzer kann nur per terminal gelöscht werden" });
+    }
+    if (requestingUser?.role !== "superadmin" && user.role !== "user") {
+      return res.status(403).json({ error: "Nur Superadmins dürfen Administratoren löschen" });
     }
     db.prepare("DELETE FROM users WHERE id = ?").run(userId);
     res.json({ message: "Nutzer erfolgreich gelöscht" });
@@ -782,7 +828,7 @@ app.delete("/api/management/account_delete/:id", requireAuth, (req, res) => {
   }
 });
 
-app.delete("/api/management/hard_delete/:id", requireAuth, (req, res) => {
+app.delete("/api/management/hard_delete/:id", requireAuth, requireSuperadmin, (req, res) => {
   try {
     const userId = Number(req.params.id);
     const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string } | undefined;

@@ -17,6 +17,7 @@ interface IssueCardProperties {
   userRole: string;
   userId: number | null;
   userEmail: string;
+  isRestricted: boolean;
   onDelete: (id: number) => void | Promise<void>;
   onReport: (id: number) => void;
   onToggleVote: (id: number) => void;
@@ -26,7 +27,7 @@ interface IssueCardProperties {
   setNewsList: React.Dispatch<React.SetStateAction<News[]>>;
 }
 
-export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onReport, onToggleVote, onTogglePrivacy, isArchiveMode, setIssueList, setNewsList }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, onDelete, onReport, onToggleVote, onTogglePrivacy, isArchiveMode, setIssueList, setNewsList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment] = useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
@@ -298,6 +299,10 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
               onSubmit={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (isRestricted) {
+                  toast.error("🫪 Dein Konto ist eingeschränkt. Du kannst keine Kommentare schreiben.");
+                  return;
+                }
                 if (issue.id) {
                   try {
                     await postComment(issue.id, newComment);
@@ -309,6 +314,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
                 }
               }}>
               <input type="text" placeholder="Hier Kommentar schreiben" value={newComment} onClick={(e) => { e.stopPropagation(); }}
+                disabled={isRestricted}
                 onChange={(event) => { event.stopPropagation(); if (issue.id) { setNewComment(event.target.value) } }} autoComplete="off" />
               <button type="submit" onClick={(e) => { e.stopPropagation(); }}>Abschicken<SendIcon className="send-icon" aria-hidden="true" /></button>
             </form>

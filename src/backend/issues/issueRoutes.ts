@@ -30,6 +30,20 @@ type CreateIssueRouterOptions = {
   requireAuth: RequestHandler;
 };
 
+function requireUnrestrictedUser(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const user = db.prepare("SELECT is_restricted FROM users WHERE id = ?").get(req.session.userId) as { is_restricted: number } | undefined;
+
+  if (!user) {
+    return res.status(401).json({ error: "Nicht angemeldet" });
+  }
+
+  if (user.is_restricted) {
+    return res.status(403).json({ error: "Dein Konto ist eingeschränkt. Du kannst keine neuen Mängel melden." });
+  }
+
+  next();
+}
+
 // bündelt alle Mängel-Endpunkte, damit server.ts nicht weiter wächst
 export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   const router = express.Router();
@@ -167,7 +181,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // neuen Mangel anlegen
-  router.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {
+  router.post("/api/mangel", requireAuth, requireUnrestrictedUser, upload.single("image"), async (req, res) => {
     try {
       // Formulardaten kommen wegen Bild-Upload aus multipart/form-data
       const { title, description, location, kategorie, isPrivate } = req.body;

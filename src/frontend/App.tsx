@@ -109,7 +109,7 @@ export default function App() {
   const { isManagementMode, setIsManagementMode } = useManagementMode();
 
   // Ansichten für Registrierung und Login
-  const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
+  const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, isRestricted, setIsRestricted, emailVerified, setEmailVerified,
     authView, setAuthView, authEmail, setAuthEmail, authPassword, setAuthPassword,
     // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
     authError, setAuthError, authMessage, setAuthMessage,
@@ -410,6 +410,7 @@ export default function App() {
           setUserId(null);
           setUserEmail("");
           setUserRole("");
+          setIsRestricted(false);
           setEmailVerified(false);
           setNotificationInterval(0);
           return null;
@@ -420,6 +421,7 @@ export default function App() {
           setUserId(data.userId);
           setUserEmail(data.email);
           setUserRole(data.role || "user");
+          setIsRestricted(Boolean(data.isRestricted));
           setEmailVerified(Boolean(data.emailVerified));
           setNotificationInterval(data.notificationInterval ?? 0);
           loadIssues({
@@ -437,6 +439,7 @@ export default function App() {
         setUserId(null);
         setUserEmail("");
         setUserRole("");
+        setIsRestricted(false);
         setEmailVerified(false);
         setNotificationInterval(0);
       });
@@ -474,6 +477,7 @@ export default function App() {
             setUserId(meData.userId);
             setUserEmail(meData.email);
             setUserRole(meData.role || "user");
+            setIsRestricted(Boolean(meData.isRestricted));
             setEmailVerified(Boolean(meData.emailVerified));
           });
       })
@@ -511,6 +515,7 @@ export default function App() {
         setUserId(data.userId);
         setUserEmail(data.email);
         setUserRole(data.role || "user");
+        setIsRestricted(Boolean(data.isRestricted));
         setEmailVerified(Boolean(data.emailVerified));
         setAuthEmail("");
         setAuthPassword("");
@@ -575,6 +580,7 @@ export default function App() {
         setUserId(null);
         setUserEmail("");
         setUserRole("");
+        setIsRestricted(false);
         setEmailVerified(false);
         setFilterOnlyOwn(false);
         setIssueList([]);
@@ -1071,6 +1077,7 @@ export default function App() {
                       userRole={userRole}
                       userId={userId}
                       userEmail={userEmail}
+                      isRestricted={isRestricted}
                       onReport={(id) => {
                         setIssueToReport(id);
                         setIsReportModalOpen(true);
@@ -1130,7 +1137,13 @@ export default function App() {
         {userId && (
           <button
             className="floating-add-btn"
-            onClick={() => setShowInputModal(true)}
+            onClick={() => {
+              if (isRestricted) {
+                toast.error("🫪 Dein Konto ist eingeschränkt. Du kannst keine neuen Mängel melden.");
+                return;
+              }
+              setShowInputModal(true);
+            }}
             title="Mangel melden"
           >
             <div>+</div>
@@ -1210,6 +1223,7 @@ export default function App() {
             {/* Input form nur sichtbar wenn man eingeloggt ist*/}
             <Suspense fallback={<p className="meta-line issue-loading">Formular wird geladen...</p>}>
               <InputForm
+                isRestricted={isRestricted}
                 onIssueCreated={async () => {
                   loadIssuePage(1, false);
                   await refreshMapData();

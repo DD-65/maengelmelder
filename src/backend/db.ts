@@ -20,6 +20,7 @@ db.exec(`
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'superadmin')),
+    is_restricted INTEGER NOT NULL DEFAULT 0,
     email_verified_at TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -41,6 +42,13 @@ try {
 // Migration: email_verified_at hinzufügen, falls sie in einer alten Version der DB fehlt
 try {
   db.exec("ALTER TABLE users ADD COLUMN email_verified_at TEXT DEFAULT NULL");
+} catch {
+  // Falls die Spalte schon existiert, ignorieren
+}
+
+// Migration: Einschränkungs-Flag für moderierte Nutzer hinzufügen
+try {
+  db.exec("ALTER TABLE users ADD COLUMN is_restricted INTEGER NOT NULL DEFAULT 0");
 } catch {
   // Falls die Spalte schon existiert, ignorieren
 }

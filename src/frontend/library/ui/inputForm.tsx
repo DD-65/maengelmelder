@@ -8,6 +8,7 @@ import type { FocusEvent, KeyboardEvent, SubmitEvent } from "react";
 
 type InputFormProperties = {
   onIssueCreated: () => void;
+  isRestricted: boolean;
 };
 
 type LocationSuggestion = {
@@ -54,7 +55,7 @@ function formatDistance(distance: number): string {
   return `${(distance / 1_000).toFixed(1)} km`;
 }
 
-export function InputForm({onIssueCreated}: InputFormProperties){
+export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
   const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, isPrivate, setIsPrivate, addIssue}=useInput(onIssueCreated);
   const { permission, location: userLocation, error: locationError, isLocating, requestLocation } = useGeolocation();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
@@ -153,6 +154,12 @@ export function InputForm({onIssueCreated}: InputFormProperties){
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    if (isRestricted) {
+      event.preventDefault();
+      toast.error("🫪 Dein Konto ist eingeschränkt. Du kannst keine neuen Mängel melden.");
+      return;
+    }
+
     try {
       await addIssue(event);
     } catch (error) {
@@ -162,7 +169,7 @@ export function InputForm({onIssueCreated}: InputFormProperties){
   
     return(
           <form className="issue-form" onSubmit={handleSubmit}>
-            <input type="text" placeholder="Titel" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input type="text" placeholder="Titel" value={title} disabled={isRestricted} onChange={(event) => setTitle(event.target.value)} />
 
             <div className="location-wrapper" onBlur={handleLocationBlur}>
               <span className="location-input-icon" aria-hidden="true">
@@ -174,6 +181,7 @@ export function InputForm({onIssueCreated}: InputFormProperties){
                 type="text"
                 placeholder="Gebäude, Raum oder Ort"
                 value={location}
+                disabled={isRestricted}
                 onChange={(event) => {
                   setLocation(event.target.value);
                   setIsLocationOpen(true);
@@ -240,7 +248,7 @@ export function InputForm({onIssueCreated}: InputFormProperties){
               )}
             </div>
 
-            <select value={kategorie} onChange={(event) => setKategorie(event.target.value)}>
+            <select value={kategorie} disabled={isRestricted} onChange={(event) => setKategorie(event.target.value)}>
               <option value="">Kategorie wählen</option>
               <option value="Steckdose">Steckdose</option>
               <option value="Schlagloch">Schlagloch</option>
@@ -248,11 +256,12 @@ export function InputForm({onIssueCreated}: InputFormProperties){
               <option value="Mobiliar">Mobiliar</option>
               <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
             </select>
-            <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
+            <input type="file" accept="image/*" disabled={isRestricted} onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
             <textarea 
               className="beschreibung-input" 
               placeholder="Beschreibung des Mangels" 
               value={description} 
+              disabled={isRestricted}
               // Regex that removes linebreaks, tabs, and other control characters, and limits the length to 200 characters
               onChange={(event) => {
                 const sanitizedText = event.target.value
@@ -278,6 +287,7 @@ export function InputForm({onIssueCreated}: InputFormProperties){
                 type="checkbox" 
                 id="isPrivate" 
                 checked={isPrivate} 
+                disabled={isRestricted}
                 onChange={(e) => setIsPrivate(e.target.checked)} 
               />
               <label htmlFor="isPrivate" style={{ fontSize: '14px', cursor: 'pointer' }}>

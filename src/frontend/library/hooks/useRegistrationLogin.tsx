@@ -3,6 +3,7 @@ export function useRegistrationLogin(){
     const [userId, setUserId] = useState<number | null>(null);
     const [userEmail, setUserEmail] = useState("");
     const [userRole, setUserRole] = useState("");
+    const [isRestricted, setIsRestricted] = useState(false);
     const [emailVerified, setEmailVerified] = useState(false);
     const [authView, setAuthView] = useState<"login" | "register" | null>(null);
     const [authEmail, setAuthEmail] = useState("");
@@ -17,7 +18,7 @@ export function useRegistrationLogin(){
     const [settingsError, setSettingsError] = useState("");
 
     
-    return{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, emailVerified, setEmailVerified,
+    return{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, isRestricted, setIsRestricted, emailVerified, setEmailVerified,
         authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
         // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
         authError, setAuthError, authMessage, setAuthMessage,

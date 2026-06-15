@@ -16,6 +16,14 @@ interface ManagementProperties {
     userRole: string | null;
     setViewMode: React.Dispatch<React.SetStateAction<"list" | "map" | "management">>;
 }
+
+type ManagementUser = {
+    id: number;
+    email: string;
+    role: string;
+    isRestricted: boolean;
+};
+
 function fetchUserList(fromID: number = 0, limit: number = 100) {
     return fetch(`/api/management/users/${fromID}/${limit}`)
         .then(response => {
@@ -26,7 +34,7 @@ function fetchUserList(fromID: number = 0, limit: number = 100) {
         });
 }
 
-function promoteUser(user: { id: number, email: string, role: string }, refresh: () => void) {
+function promoteUser(user: ManagementUser, refresh: () => void) {
     return () => {
         fetch(`/api/management/promote/${user.id}`, { method: 'POST' })
             .then(response => {
@@ -38,7 +46,7 @@ function promoteUser(user: { id: number, email: string, role: string }, refresh:
     };
 }
 
-function demoteUser(user: { id: number, email: string, role: string }, refresh: () => void) {
+function demoteUser(user: ManagementUser, refresh: () => void) {
     return () => {
         fetch(`/api/management/demote/${user.id}`, { method: 'POST' })
             .then(response => {
@@ -50,7 +58,19 @@ function demoteUser(user: { id: number, email: string, role: string }, refresh: 
     };
 }
 
-function deleteUser(user: { id: number, email: string, role: string }, refresh: () => void) {
+function restrictUser(user: ManagementUser, refresh: () => void) {
+    return () => {
+        fetch(`/api/management/restrict/${user.id}`, { method: 'POST' })
+        .then(response => {
+            if (!response.ok) throw new Error();
+            toast.success(user.isRestricted ? `Einschränkung für ${user.email} wurde aufgehoben.` : `Nutzer ${user.email} wurde eingeschränkt.`);
+            refresh();
+        })
+        .catch(() => toast.error(`Fehler beim Einschränken des Nutzers ${user.email}.`));
+    };
+}
+
+function deleteUser(user: ManagementUser, refresh: () => void) {
     return () => {
         fetch(`/api/management/account_delete/${user.id}`, { method: 'DELETE' })
             .then(response => {
@@ -62,7 +82,7 @@ function deleteUser(user: { id: number, email: string, role: string }, refresh: 
     };
 }
 
-function hardDeleteUser(user: { id: number, email: string, role: string }, refresh: () => void) {
+function hardDeleteUser(user: ManagementUser, refresh: () => void) {
     return () => {
         fetch(`/api/management/hard_delete/${user.id}`, { method: 'DELETE' })
             .then(response => {
@@ -82,9 +102,8 @@ function fetchReports() {
         });
 }
 
-
 export function Management({ userRole, setViewMode }: ManagementProperties) {
-    const [userList, setUserList] = useState<{ id: number, email: string, role: string }[]>([]);
+    const [userList, setUserList] = useState<ManagementUser[]>([]);
     const [fromID, setFromID] = useState(0);
     const [pendingDelete, setPendingDelete] = useState<{ action: () => void, label: string } | null>(null);
     const [refreshTick, setRefreshTick] = useState(0);
@@ -154,9 +173,11 @@ export function Management({ userRole, setViewMode }: ManagementProperties) {
                     <div key={user.id} className="management-user-card">
                         <span className="management-user-email">{user.email}</span>
                         <span className="management-user-role">{user.role}</span>
+                        {user.isRestricted && <span className="management-user-role restricted">eingeschränkt</span>}
                         <div className="management-user-actions">
                             {!(user.role === "admin" || user.role === "superadmin") && userRole === "superadmin" && <button className="management-action-btn" onClick={promoteUser(user, refresh)}>↑ Admin</button>}
                             {user.role === "admin" && userRole === "superadmin" && <button className="management-action-btn" onClick={demoteUser(user, refresh)}>↓ User</button>}
+                            {user.role === "user" && (userRole === "admin" || userRole === "superadmin") && <button className="management-action-btn" onClick={restrictUser(user, refresh)}>{user.isRestricted ? "Freigeben" : "Einschränken"}</button>}
                             {userRole === "admin" && user.role === "user" && <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>User löschen</button>}
                             {userRole === "superadmin" && user.role !== "superadmin" && <>
                                 <button className="management-action-btn" onClick={() => confirmDelete(deleteUser(user, refresh), `Nutzer ${user.email} löschen?`)}>Löschen</button>

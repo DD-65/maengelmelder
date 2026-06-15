@@ -34,6 +34,29 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
   }
+  const handleFollowToggle = async () => {
+    if (!issue.user_id) return;
+    const isCurrentlyFollowed = Boolean(issue.is_author_followed);
+    const url = `/api/users/${issue.user_id}/follow`;
+    const method = isCurrentlyFollowed ? "DELETE" : "POST";
+    try {
+      const res = await fetch(url, { method });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Aktualisieren des Follow-Status");
+      }
+      toast.success(isCurrentlyFollowed ? `Entfolgt: ${issue.user_email}` : `Gefolgt: ${issue.user_email}`);
+      
+      setIssueList(prev => prev.map(item => 
+        item.user_id === issue.user_id 
+          ? { ...item, is_author_followed: !isCurrentlyFollowed } 
+          : item
+      ));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Aktion fehlgeschlagen");
+    }
+  };
+
   const hasVoted = Boolean(issue.has_voted);
 
     return (
@@ -60,7 +83,39 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
         )}
 
         {/* Nutzername (email) */}
-        <p className="meta-line issue-author"><svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" /></svg>{issue.user_email || "Unbekannter Nutzer"}</p>
+        <div className="meta-line issue-author" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
+            </svg>
+            {issue.user_email || "Unbekannter Nutzer"}
+          </span>
+          {userId && issue.user_id && issue.user_id !== userId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFollowToggle();
+              }}
+              style={{
+                background: issue.is_author_followed ? 'transparent' : 'var(--accent)',
+                color: issue.is_author_followed ? 'var(--text-muted)' : 'white',
+                borderColor: issue.is_author_followed ? 'var(--border)' : 'var(--accent)',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                lineHeight: '1.2',
+                transition: 'all 0.15s ease',
+                marginLeft: '6px'
+              }}
+            >
+              {issue.is_author_followed ? "Entfolgen" : "Folgen"}
+            </button>
+          )}
+        </div>
 
         {/* ID des Mangels
         <div className="issue-index">{issue.id}</div> */}

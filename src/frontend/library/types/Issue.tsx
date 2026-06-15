@@ -7,7 +7,9 @@ export type Issue = {
   created_at?: string;
   votes?: number;
   user_email?: string | null;
+  user_id?: number | null;
   has_voted?: number | boolean;
+  is_author_followed?: number | boolean;
   kategorie?: string | null;
   image_url?: string | null;
   thumbnail_url?: string | null;

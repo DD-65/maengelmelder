@@ -639,25 +639,43 @@ code {
   background: rgba(0, 0, 0, 0.75);
 }
 
-.modal-content, .settings-pane {
+.settings-pane{
   width: 20%;
-  margin: 10px;
-  padding: 20px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  box-sizing: border-box;
+  background-color: var(--surface);
+  border-radius: 10px;
+  padding: 2%;
+}
+
+.settings-pane-header{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+}
+
+.modal-pane{
+  background-color: var(--surface);
+  border-radius: 10px;
+  padding: 2%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: space-around;  
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.modal-content {
+  background-color: var(--surface);
+  border-radius: 2%;
+  padding: 2%;
+
 }
 
 .modal-close-btn, .settings-close-button {
-  position:relative;
-  top: -10%;
-  right: -45%;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -681,16 +699,17 @@ code {
 .settings-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .settings-option,
 .settings-field {
+  width: 90%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px;
+  gap: 2%;
+  padding: 2%;
+  margin: 2%;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -728,6 +747,10 @@ code {
 .settings-field select {
   flex: 0 0 130px;
   box-shadow: none;
+}
+
+.verify-button{
+  margin-top:4%;
 }
 
 .auth-card,
@@ -1462,7 +1485,6 @@ button:hover > .modify-icon {
   }
 
   .issue-form {
-  width: 80%;
   margin: 0;
   padding: 16px;
   background: var(--surface);
@@ -1472,22 +1494,69 @@ button:hover > .modify-icon {
   backdrop-filter: blur(10px);
   box-sizing: border-box;
 }
+.settings-pane{
+  width: 80%;
+  background-color: var(--surface);
+  border-radius: 10;
+  padding: 5%;
+}
 
-.modal-content, .settings-pane {
-  width: min(80%, 520px);
-  padding: 24px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  box-sizing: border-box;
-  position: relative;
+.settings-pane-header{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+}
+
+.modal-pane{
+  background-color: var(--surface);
+  border-radius: 10px;
+  padding: 2%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;  
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: row;
+}
+.modal-header-title{
+  margin-left:28%;
+}
+
+.modal-content {
+  background-color: var(--surface);
+  border-radius: 2%;
+  padding: 2%;
+
+}
+
+.modal-close-btn, .settings-close-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-strong);
+  color: var(--text-h);
+  box-shadow: 0 0 0 1px var(--border);
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal-close-btn:hover, .settings-close-button:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+  transform: none;
 }
 
   .settings-option,
   .settings-field {
-    align-items: flex-start;
     flex-direction: column;
+    width: 90%;
   }
 
   .settings-field select {

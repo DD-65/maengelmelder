@@ -1068,9 +1068,14 @@ export default function App() {
       {/* Input Pop-up */}
       {showInputModal && (
         <div className="modal-overlay" onClick={() => setShowInputModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+
+        <div className="modal-pane" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginBottom: '20px' }} className='modal-header-title'>Mangel melden</h2>
             <button className="modal-close-btn" onClick={() => setShowInputModal(false)}>X</button>
-            <h2 style={{ marginBottom: '20px' }}>Mangel melden</h2>
+          </div>
+
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             {/* Input form nur sichtbar wenn man eingeloggt ist*/}
             <InputForm
               onIssueCreated={async () => {
@@ -1081,6 +1086,7 @@ export default function App() {
               }}
             />
           </div>
+        </div>
         </div>
       )}
 
@@ -1139,7 +1145,7 @@ export default function App() {
                   </label>
 
                   {!emailVerified && (
-                    <button type="button" onClick={resendVerificationEmail}>
+                    <button className="verify-button" type="button" onClick={resendVerificationEmail}>
                       Verifizierungs-E-Mail erneut senden
                     </button>
                   )}

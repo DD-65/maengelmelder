@@ -35,7 +35,9 @@ export function UsersList({ setViewMode }: UsersListProperties) {
     };
 
     useEffect(() => {
-        fetchUsers();
+        Promise.resolve().then(() => {
+            fetchUsers();
+        });
     }, []);
 
     const handleFollowToggle = async (user: UserListItem) => {
@@ -50,13 +52,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             toast.success(user.isFollowed ? `Entfolgt: ${user.email}` : `Gefolgt: ${user.email}`);
             
             // local update to avoid full reload
-            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isFollowed: user.isFollowed ? 0 : 0, isFollowed_new: user.isFollowed ? 0 : 1 } as unknown as UserListItem : u).map(u => {
-                if ('isFollowed_new' in u) {
-                    const { isFollowed_new, ...rest } = u as any;
-                    return { ...rest, isFollowed: isFollowed_new };
-                }
-                return u;
-            }));
+            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isFollowed: u.isFollowed ? 0 : 1 } : u));
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Aktion fehlgeschlagen");
         }

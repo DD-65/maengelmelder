@@ -411,6 +411,7 @@ export default function App() {
             ...getBackendFilterOptions(),
             ...getBackendSortOptions(),
           });
+          refreshMapData();
         }
       })
       .catch(() => {
@@ -557,6 +558,7 @@ export default function App() {
         setUserRole("");
         setEmailVerified(false);
         setFilterOnlyOwn(false);
+        setIssueList([]);
         toast.success("Erfolgreich ausgeloggt");
         loadIssues({
           archiv: false,
@@ -566,6 +568,8 @@ export default function App() {
           ...getBackendFilterOptions(false),
           ...getBackendSortOptions(),
         });
+
+        refreshMapData();
       } catch {
         toast.error("🫪 Netzwerkfehler beim Logout");
       }
@@ -618,6 +622,28 @@ export default function App() {
       } catch {
         setVoteError("Netzwerkfehler beim Bewerten");
         toast.error("🫪 Netzwerkfehler beim Bewerten");
+      }
+    };
+
+    const togglePrivacy = async (id: number, currentPrivacy: boolean) => {
+      try {
+        const res = await fetch(`/api/mangel/${id}/privacy`, { 
+          method: 'PATCH',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPrivate: !currentPrivacy })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          toast.error(`🫪 ${data.error || "Fehler beim Ändern der Sichtbarkeit"}`);
+          return;
+        }
+        
+        toast.success(data.message);
+        loadIssuePage();
+        refreshMapData(); 
+      } catch {
+        toast.error("🫪 Netzwerkfehler beim Ändern der Sichtbarkeit");
       }
     };
     
@@ -974,6 +1000,7 @@ export default function App() {
                         }
                       }}
                       onToggleVote={toggleUpvote}
+                      onTogglePrivacy={togglePrivacy}
                       isArchiveMode={isArchiveMode}
                       setIssueList={setIssueList}
                     />

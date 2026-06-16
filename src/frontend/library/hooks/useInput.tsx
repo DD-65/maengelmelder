@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import type { SubmitEvent } from 'react';
+
 export function useInput(loadIssues: () => void | Promise<void>) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
     const [kategorie, setKategorie] = useState('');
     const [image, setImage] = useState<File | null>(null);
+    const [isPrivate, setIsPrivate] = useState(false);
 
     //addIssue 
 
@@ -21,6 +24,7 @@ export function useInput(loadIssues: () => void | Promise<void>) {
     formData.append("description", description.slice(0, 200)); // Kills everything after 200 chars
     formData.append("location", location);
     formData.append("kategorie", kategorie);
+    formData.append("isPrivate", isPrivate ? "1" : "0");
     if (image) {
       formData.append("image", image);
     }
@@ -46,8 +50,9 @@ export function useInput(loadIssues: () => void | Promise<void>) {
     setLocation('');
     setKategorie('');
     setImage(null);
+    setIsPrivate(false);
   }
 
 
-    return{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue}
+    return{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, addIssue, isPrivate, setIsPrivate}
 }

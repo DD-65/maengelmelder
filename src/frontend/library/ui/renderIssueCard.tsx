@@ -15,11 +15,12 @@ interface IssueCardProperties {
   userEmail: string;
   onDelete: (id: number) => void | Promise<void>;
   onToggleVote: (id: number) => void;
+  onTogglePrivacy: (id: number, currentPrivacy: boolean) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
 }
 
-export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onToggleVote, isArchiveMode, setIssueList }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onToggleVote, onTogglePrivacy, isArchiveMode, setIssueList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
@@ -35,11 +36,38 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
     setExpandedImageId(prevId => (prevId === id ? null : id));
   }
   const hasVoted = Boolean(issue.has_voted);
+  const isPrivate = Boolean(issue.is_private);
 
     return (
       // makes the whole issue card clickable, but only if there is an image to show
       <li className="card issue-card" key={issue.id} onClick={() => {if (issue.id && issue.image_url) toggleImage(issue.id)}}>
-        
+
+          {/* Privacy Symbol */}
+          {isPrivate && (
+          <div 
+            title="Privater Mangel"
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '6px', 
+              borderRadius: '4px', 
+              background: 'var(--surface-strong)', 
+              color: 'var(--text)',
+              marginBottom: '8px',
+              cursor: 'help',
+              width: 'max-content'
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10H2l2-6h16l2 6z"></path>
+              <circle cx="6" cy="16" r="4"></circle>
+              <circle cx="18" cy="16" r="4"></circle>
+              <path d="M10 16h4"></path>
+            </svg>
+          </div>
+        )}
+
         {/* Timestamp */}
         {issue.created_at && (
           <div 
@@ -140,6 +168,22 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
 
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
             <button className='kommentareoeffnen' onClick={(e)=> {e.stopPropagation(); setCommentsOpen(!commentsOpen)}}><CommentIcon className="comment-icon" aria-hidden="true"/>{commentButtonText}</button>
+
+          {/* Button for toggling privacy */}
+          {userEmail === issue.user_email && (
+            <button 
+              title={isPrivate ? "Öffentlich machen" : "Privat machen"}
+              onClick={(e) => { e.stopPropagation(); if(issue.id) onTogglePrivacy(issue.id, isPrivate); }}
+              style={{ padding: '6px 12px' }}
+            >
+               <svg style={{verticalAlign: 'middle'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                 {isPrivate 
+                   ? <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></> /* Unlocked icon */
+                   : <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></> /* Locked icon */
+                 }
+               </svg>
+            </button>
+          )}
 
           {/* Admin/Superadmin-button um Mangel zu loeschen, nur sichtbar fuer Admins und Superadmins */}
           {(userRole === "admin" || userRole === "superadmin") && (

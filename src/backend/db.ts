@@ -173,6 +173,13 @@ try {
   // Falls die Spalte schon existiert, ignorieren
 }
 
+// Migration: is_private Spalte hinzufügen, falls sie fehlt
+try {
+  db.exec("ALTER TABLE maengel ADD COLUMN is_private INTEGER DEFAULT 0");
+} catch {
+  // Falls die Spalte schon existiert, ignorieren
+}
+
 try {
   db.exec("ALTER TABLE status_changes ADD COLUMN old_statusComment_id INTEGER")
 } catch {/*nix machen, wie sonst auch*/}

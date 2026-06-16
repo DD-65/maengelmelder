@@ -20,6 +20,7 @@ type IssueRow = {
   commentCount: number;
   user_email: string | null;
   has_voted: number;
+  is_private: number; 
 };
 
 export type PaginatedIssues = {
@@ -87,7 +88,8 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
           WHERE mangel_votes.user_id = ?
             AND mangel_votes.mangel_id = maengel.id
         )
-      END AS has_voted
+      END AS has_voted,
+      maengel.is_private 
     FROM maengel
     LEFT JOIN users ON maengel.user_id = users.id
     LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
@@ -96,7 +98,6 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
     ${orderByClause}
     ${limitClause}
   `);
-  //explainQueryPlan(stmt.source, [...whereParams, userId, userId]); kann für query plan verwendet werden
 
   return stmt.all(userId, userId, ...whereParams) as IssueRow[];
 }
@@ -126,6 +127,16 @@ export function listIssues(options: ListIssuesOptions): IssueRow[] | PaginatedIs
     query: options.query,
   });
   const orderByClause = buildIssueSort(options.query);
+
+  // Privacy filter
+  const privacySql = `(maengel.is_private = 0 OR maengel.user_id = ? OR (SELECT role FROM users WHERE id = ?) IN ('admin', 'superadmin'))`;
+  
+  if (issueWhere.whereClause.trim() === "") {
+    issueWhere.whereClause = `WHERE ${privacySql}`;
+  } else {
+    issueWhere.whereClause += ` AND ${privacySql}`;
+  }
+  issueWhere.params.push(options.userId, options.userId);
 
   // ausgeloggte Nutzer bekommen im Archiv keine Mängel zurück
   if (!issueWhere.canAccess) {

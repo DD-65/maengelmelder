@@ -21,6 +21,16 @@ export function getIssueMapSummary(userId: number | null, query: Request["query"
 
   if (!issueWhere.canAccess) return [];
 
+  // Privacy filter
+  const privacySql = `(maengel.is_private = 0 OR maengel.user_id = ? OR (SELECT role FROM users WHERE id = ?) IN ('admin', 'superadmin'))`;
+  
+  if (issueWhere.whereClause.trim() === "") {
+    issueWhere.whereClause = `WHERE ${privacySql}`;
+  } else {
+    issueWhere.whereClause += ` AND ${privacySql}`;
+  }
+  issueWhere.params.push(userId, userId);
+
   const rows = db.prepare(`
     SELECT maengel.location
     FROM maengel

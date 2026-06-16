@@ -140,13 +140,41 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
+  // Privacy filter
+  router.patch("/api/mangel/:id/privacy", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const mangelId = Number(req.params.id);
+      const { isPrivate } = req.body;
+
+      const mangel = db.prepare("SELECT user_id FROM maengel WHERE id = ?").get(mangelId) as { user_id: number } | undefined;
+      
+      if (!mangel) {
+        return res.status(404).json({ error: "Mangel nicht gefunden" });
+      }
+
+      if (mangel.user_id !== userId) {
+        return res.status(403).json({ error: "Nur der Ersteller darf die Sichtbarkeit ändern" });
+      }
+
+      db.prepare("UPDATE maengel SET is_private = ? WHERE id = ?").run(isPrivate ? 1 : 0, mangelId);
+      
+      res.json({ message: isPrivate ? "Mangel ist privat" : "Mangel ist öffentlich" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Aktualisieren der Sichtbarkeit" });
+    }
+  });
+
   // neuen Mangel anlegen
   router.post("/api/mangel", requireAuth, upload.single("image"), async (req, res) => {
     try {
       // Formulardaten kommen wegen Bild-Upload aus multipart/form-data
-      const { title, description, location, kategorie } = req.body;
+      const { title, description, location, kategorie, isPrivate } = req.body;
       let imageUrl = null;
       let thumbnailUrl = null;
+
+      const isPrivateInt = isPrivate === "1" ? 1 : 0;
 
       // hochgeladenes Bild als Original und kleinere Vorschau ablegen
       if (req.file) {
@@ -191,11 +219,20 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       // neuen Mangel mit dem eingeloggten Nutzer verknüpfen
       const userId = req.session.userId;
       const stmt = db.prepare(`
-        INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url, is_private)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      const result = stmt.run(userId, title.trim(), description, location, normalizedKategorie, imageUrl, thumbnailUrl);
+      const result = stmt.run(
+        userId, 
+        title.trim(), 
+        description ?? null, 
+        location ?? null, 
+        normalizedKategorie ?? null, 
+        imageUrl ?? null, 
+        thumbnailUrl ?? null, 
+        isPrivateInt
+      );
 
       res.status(201).json({
         message: "Mangel gespeichert!",
@@ -332,3 +369,4 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
   return router;
 }
+

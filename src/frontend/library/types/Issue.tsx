@@ -13,5 +13,6 @@ export type Issue = {
   thumbnail_url?: string | null;
   statusComment?: string;
   commentCount?: number;
+  is_private?: number | boolean;
 }
 

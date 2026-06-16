@@ -8,7 +8,7 @@ type InputFormProperties = {
 };
 
 export function InputForm({onIssueCreated}: InputFormProperties){
-  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, addIssue}=useInput(onIssueCreated);
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, isPrivate, setIsPrivate, addIssue}=useInput(onIssueCreated);
   const filteredRooms = rooms.filter(room => room.toLowerCase().includes(location.toLowerCase()));  // hier hin gebaut, da nur hier genutzt
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     try {
@@ -73,6 +73,19 @@ export function InputForm({onIssueCreated}: InputFormProperties){
               }}
               maxLength={200} 
             />
+
+            {/* Checkbox to mark issues as private */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <input 
+                type="checkbox" 
+                id="isPrivate" 
+                checked={isPrivate} 
+                onChange={(e) => setIsPrivate(e.target.checked)} 
+              />
+              <label htmlFor="isPrivate" style={{ fontSize: '14px', cursor: 'pointer' }}>
+                Mangel als Privat markieren
+              </label>
+            </div>
 
             <button type="submit">Posten</button>
           </form>

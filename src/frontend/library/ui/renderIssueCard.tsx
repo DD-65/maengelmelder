@@ -9,6 +9,7 @@ import {CommentIcon, TrashIcon, LikeIcon, ModifyIcon, SendIcon} from '../icons/i
 import { toast } from 'react-toastify/unstyled';
 import { usePostNews } from '../hooks/usePostNews';
 import { useNewsList } from '../hooks/useNewsList';
+import { News } from '../types/News';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -20,9 +21,10 @@ interface IssueCardProperties {
   onTogglePrivacy: (id: number, currentPrivacy: boolean) => void;
   isArchiveMode: boolean;
   setIssueList: React.Dispatch<React.SetStateAction<Issue[]>>;
+  setNewsList: React.Dispatch<React.SetStateAction<News[]>>;
 }
 
-export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onToggleVote, onTogglePrivacy, isArchiveMode, setIssueList }: IssueCardProperties) {
+export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onToggleVote, onTogglePrivacy, isArchiveMode, setIssueList, setNewsList }: IssueCardProperties) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null);
   const [newStatusComment, setNewStatusComment]= useState('');
   const [newStatus, setNewStatus] = useState(issue.status ?? '');
@@ -35,7 +37,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
   const commentButtonText = commentCount === 0 ? "Kommentare" : `${commentCount} ${commentCount === 1 ? "Kommentar" : "Kommentare"}`;
 
 
-  const{newsList, setNewsList} = useNewsList();
   const{postNews}=usePostNews(setNewsList);
   const[postAsNews, setPostAsNews]=useState(true);
 

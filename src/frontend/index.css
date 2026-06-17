@@ -1230,9 +1230,35 @@ button.active:hover {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 5px;
+  padding-top: 8px;
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 3%;
+}
+
+button:hover > .news-trash-icon {
+  fill: rgb(240, 76, 76);
+}
+.news-trash-icon{
+  display: inline-block;
+  vertical-align: middle;
+  width: 15px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-right: 2px;
+  padding: 0px;
+}
+.newsfeedposting {
+  padding: 5px;
+  height: 90px;
+  display: flex;
+  flex-shrink: 0;
+  gap: 5px;
+}
+.news-statusContainer > .status-container {
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
 

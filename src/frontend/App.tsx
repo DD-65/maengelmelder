@@ -51,6 +51,8 @@ import { getSecondaryUserColor, getUserColor } from './library/utils/getUserColo
 
 import { toast } from 'react-toastify';
 
+import { useNewsList } from './library/hooks/useNewsList';
+
 type ThemePreference = "system" | "light" | "dark";
 
 const THEME_STORAGE_KEY = "maengelmelder-theme-preference";
@@ -72,6 +74,8 @@ function buildIssueQueryParams(options: LoadIssuesOptions) {
 }
 
 export default function App() {
+  //für die News
+  const{newsList, setNewsList}=useNewsList();
   // Liste der Mängel
   const { issueList, setIssueList } = useIssueList(); 
 
@@ -1020,6 +1024,7 @@ export default function App() {
                       onTogglePrivacy={togglePrivacy}
                       isArchiveMode={isArchiveMode}
                       setIssueList={setIssueList}
+                      setNewsList={setNewsList}
                     />
                   ))}
               </ul>
@@ -1113,6 +1118,8 @@ export default function App() {
         <Newsfeed
           userRole={userRole}
           userId={userId}
+          newsList={newsList}
+          setNewsList={setNewsList}
         />
 
       </aside>

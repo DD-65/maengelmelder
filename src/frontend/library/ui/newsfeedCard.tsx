@@ -27,7 +27,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         {news.status === null ? (
             <p>{news.newskommentar}</p>
         ):(
-            <div>{/* Status Anzeige */}
+            <div className='news-statusContainer'>{/* Status Anzeige */}
                 <div className="status-container">
                 <span className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>
                     {news.status}
@@ -54,11 +54,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
             </div>
         )}
 
-        {/* Admin/Superadmin-button um News zu loeschen, nur sichtbar fuer Admins und Superadmins */}
-        {(userRole === "admin" || userRole === "superadmin") && (
-        <button onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="trash-icon" aria-hidden="true"/> {news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
-        /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
-        )}
+       
 
         {/* Timestamp */}
         {news.created_at && (
@@ -66,8 +62,8 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
             title={formatTimestamp(news.created_at)} 
             style={{
               position: 'absolute',
-              top: '14px',
-              right: '16px',
+              top: '6px',
+              right: '8px',
               fontSize: '12px',
               color: 'var(--muted)',
               fontWeight: '600',
@@ -87,6 +83,13 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
             </svg>
             {news.userEmail || "Unbekannter Nutzer"}
           </span>
+
+          {/* Admin/Superadmin-button um News zu loeschen, nur sichtbar fuer Admins und Superadmins */}
+          {(userRole === "admin" || userRole === "superadmin") && (
+          <button onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="news-trash-icon" aria-hidden="true"/> {news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
+          /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
+          )}
+
         </div>
             
       </li>

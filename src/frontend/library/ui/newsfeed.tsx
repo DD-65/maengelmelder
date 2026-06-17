@@ -11,11 +11,12 @@ import { ModifyIcon } from '../icons/icons';
 interface NewsfeedProperties {
   userRole: string;
   userId: number | null;
+  newsList: News[];
+  setNewsList: React.Dispatch<React.SetStateAction<News[]>>;
 }
 
-export function Newsfeed({  userRole, userId}: NewsfeedProperties){
+export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedProperties){
     const[newNews, setNewNews] = useState('')
-    const{newsList, setNewsList} = useNewsList();
     const{loadNews} = useLoadNews(setNewsList);
     const{postNews} =usePostNews(setNewsList);
 
@@ -33,21 +34,9 @@ export function Newsfeed({  userRole, userId}: NewsfeedProperties){
   }, [loadNews]);
 
     return (
-        <div>
-            <ul className='newsfeed'>
-                {newsList
-                .map((news, index) => (
-                <NewsfeedCard
-                    key={news.newsId || index}
-                    news={news}
-                    userRole={userRole}
-                    userId={userId}
-                    setNewsList={setNewsList}
-                    />
-                ))}
-            </ul>
+        <div className='newsfeedContainer'>
             {userRole === 'admin'&&(
-                <form onSubmit={async (e) => { e.preventDefault();
+                <form className='newsfeedposting' onSubmit={async (e) => { e.preventDefault();
                                                 e.stopPropagation();
                                                 try {
                                                     await postNews( null, newNews)  
@@ -64,6 +53,19 @@ export function Newsfeed({  userRole, userId}: NewsfeedProperties){
                     <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Newsfeed Beitrag posten</button>
                 </form>
             )}
+            <ul className='newsfeed'>
+                {newsList
+                .map((news, index) => (
+                <NewsfeedCard
+                    key={news.newsId || index}
+                    news={news}
+                    userRole={userRole}
+                    userId={userId}
+                    setNewsList={setNewsList}
+                    />
+                ))}
+            </ul>
+            
         </div>
     );
   }

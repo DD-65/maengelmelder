@@ -616,8 +616,8 @@ app.get("/api/newsfeed/", (req, res) => {
       ORDER BY newsfeed.created_at DESC
       LIMIT(10)
     `);
-    const kommentare = stmt.all(userId, userId);
-    res.json(kommentare);
+    const news = stmt.all(userId, userId);
+    res.json(news);
 
   } catch (error) {
     console.error(error);

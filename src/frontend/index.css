@@ -1221,6 +1221,21 @@ button.active:hover {
   margin-top: 12px;
 }
 
+.newsfeed{
+  list-style-type: none;
+  padding: 10px;
+}
+.newscard{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 5px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
 .comment-icon, 
 .trash-icon, 
 .like-icon,

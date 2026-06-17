@@ -7,6 +7,8 @@ import { useSortedCommentList } from '../hooks/useSortedCommentList';
 import { usePostComment } from '../hooks/usePostComments';
 import {CommentIcon, TrashIcon, LikeIcon, ModifyIcon, SendIcon} from '../icons/icons';
 import { toast } from 'react-toastify/unstyled';
+import { usePostNews } from '../hooks/usePostNews';
+import { useNewsList } from '../hooks/useNewsList';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -31,6 +33,11 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
   const{postComment}=usePostComment(setCommentList);
   const commentCount = commentsOpen || sortedCommentList.length > 0 ? sortedCommentList.length : issue.commentCount || 0;
   const commentButtonText = commentCount === 0 ? "Kommentare" : `${commentCount} ${commentCount === 1 ? "Kommentar" : "Kommentare"}`;
+
+
+  const{newsList, setNewsList} = useNewsList();
+  const{postNews}=usePostNews(setNewsList);
+  const[postAsNews, setPostAsNews]=useState(true);
 
   function toggleImage(id: number) {
     setExpandedImageId(prevId => (prevId === id ? null : id));
@@ -166,6 +173,9 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
                                           await updateStatus(issue.id, newStatus, newStatusComment);
                                           toast.success("Status aktualisiert");
                                           setNewStatusComment('');
+                                          if(newStatus === 'Behoben' && postAsNews){
+                                            await postNews(issue.id, null)
+                                          }
                                         } catch (error) {
                                           toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Aktualisieren des Status"}`);
                                         }
@@ -187,6 +197,13 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onTogg
               </select><br/>
               <input type="text" placeholder="Grund für Statusänderung"  value={newStatusComment}  onClick={(e)=> {e.stopPropagation();}}
                 onChange={(event) => {event.stopPropagation(); if(issue.id){setNewStatusComment(event.target.value)}}} autoComplete="off"/>
+              {/* Checkbox für post in newsfeed*/}
+              {newStatus === 'Behoben' &&(
+                <div>
+                  <input type="checkbox" id="postAsNews" checked={postAsNews} onChange={(e) => setPostAsNews(e.target.checked)} />
+                  <label htmlFor="postAsNews" style={{ fontSize: '14px',}}>In News Posten</label>
+                </div>
+              )}
               <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Status ändern</button>
             </form>
              )}

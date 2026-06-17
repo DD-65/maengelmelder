@@ -38,7 +38,7 @@ import { useRegistrationLogin } from './library/hooks/useRegistrationLogin';
 
 import { useVerificationMessage } from './library/hooks/useVerificationMessage'; //kürzt unten um 1 Zeile, also insgesamt sinnlos
 //    Vielleicht ist es aber später nützlich, sobald wir irgendeinen Teil der Verifikation auslagern
-
+import { Newsfeed } from './library/ui/newsfeed';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
 import { InputForm } from './library/ui/inputForm';
@@ -1109,6 +1109,12 @@ export default function App() {
         </div>
         
         {accountContent}
+        
+        <Newsfeed
+          userRole={userRole}
+          userId={userId}
+        />
+
       </aside>
 
       {/* Input Pop-up */}

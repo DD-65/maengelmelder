@@ -594,6 +594,109 @@ app.delete("/api/comment/:id", requireAuth, (req, res) => {
     return res.json({ message: "Kommentar endgültig gelöscht" });
 });
 
+// News laden aktuell einfach kopie von kommentare laden irgndwie mit limit dann die letzten 10
+app.get("/api/newsfeed/", (req, res) => {
+  const userId = req.session.userId;
+  try {
+    const stmt = db.prepare(`
+      SELECT
+        maengel.status AS status,
+        maengel.location AS ort,
+        maengel.title,
+        newsfeed.newskommentar,
+        maengel_kommentare.kommentar AS statusComment,
+        users.email AS userEmail, 
+        newsfeed.created_at,
+        newsfeed.id AS newsId
+      FROM newsfeed 
+      LEFT JOIN users ON newsfeed.user_id=users.id
+      LEFT JOIN maengel ON newsfeed.mangel_id = maengel.id
+      LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
+      WHERE newsfeed.mangel_id IS NULL OR (maengel.is_private = 0 OR maengel.user_id = ? OR (SELECT role FROM users WHERE id = ?) IN ('admin', 'superadmin'))
+      ORDER BY newsfeed.created_at DESC
+      LIMIT(10)
+    `);
+    const kommentare = stmt.all(userId, userId);
+    res.json(kommentare);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim laden der Kommentare" });
+  }
+});
+// News hinzufügen
+app.patch("/api/newsfeed/add/", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { comment, mangelId } = req.body;
+
+    // Länge des Kommentar checken
+    if (comment && comment.trim().length > 255) {
+      return res.status(400).json({ error: "Kommentar darf maximal 255 Zeichen lang sein" });
+    }
+
+    // Prüfen, ob der Nutzer Admin/Superadmin ist
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin" && user.role !== "superadmin") {
+      return res.status(403).json({ error: "Nur Administratoren dürfen News hinzufügen" });
+    }
+
+    // Update durchführen
+    const result = db.prepare("INSERT INTO newsfeed (newskommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
+
+    const createdNews = db.prepare(`SELECT
+        maengel.status AS status,
+        maengel.location AS ort,
+        maengel.title,
+        newsfeed.newskommentar,
+        maengel_kommentare.kommentar AS statusComment,
+        users.email AS userEmail, 
+        newsfeed.created_at,
+        newsfeed.id AS newsId
+      FROM newsfeed 
+      LEFT JOIN users ON newsfeed.user_id=users.id
+      LEFT JOIN maengel ON newsfeed.mangel_id = maengel.id
+      LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
+      WHERE newsfeed.id = ?`).get(result.lastInsertRowid);
+      console.log(createdNews);//debugging
+    res.status(200).json(createdNews);
+
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Hinzufügen der News" });}
+});
+
+// News löschen (nur Admin/Superadmin)
+app.delete("/api/newsfeed/:id", requireAuth, (req, res) => {
+
+    const userId = req.session.userId;
+    const newsId = Number(req.params.id);
+
+    if (!Number.isInteger(newsId)) {
+      return res.status(400).json({ error: "Ungültige News-ID" });
+    }
+    
+    const news = db
+      .prepare("SELECT user_id, mangel_id FROM newsfeed WHERE id = ?")
+      .get(newsId) as { user_id: number; mangel_id: number;} | undefined;
+    if (!news) {
+      return res.status(404).json({ error: "News nicht gefunden" });
+    }
+    // Prüfen, ob der Nutzer Admin/Superadmin ist
+    const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+    if (user.role !== "admin" && user.role !== "superadmin") {
+      return res.status(403).json({ error: "Nur Administratoren dürfen den Status ändern" });
+    }
+
+    const stmt = db.prepare("DELETE FROM newsfeed WHERE id = ?");
+    const result = stmt.run(newsId);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "News nicht gefunden" });
+    }
+    return res.json({ message: "News endgültig gelöscht" });
+});
+
+
 // Management Routes
 
 app.get("/api/management/users/:fromID/:limit", requireAuth, (req, res) => {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const swipe_ignore_items = '.swipe-ignore, .leaflet-container, .settings-pane, select, input, textarea, button';
+const swipe_ignore_items = '.swipe-ignore, .leaflet-container, .settings-pane, select, input, textarea, button, .newsfeedContainer';
 
 export function useSwiping(
     viewMode: 'list' | 'map' | 'management' | 'users',

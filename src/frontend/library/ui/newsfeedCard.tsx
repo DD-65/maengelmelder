@@ -18,7 +18,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
     const{deleteNews}=useDeleteNews(setNewsList);
     return(
 
-      <li className="newscard" >
+      <li className="newscard" onClick={(e)=>{e.stopPropagation();}}>
         
         {/* Titel */}
         <h3 className="issue-title">{news.title}</h3>

@@ -1235,6 +1235,9 @@ button.active:hover {
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   margin-top: 3%;
+} 
+.newscard .issue-title{
+  font-size: 18px;
 }
 
 button:hover > .news-trash-icon {

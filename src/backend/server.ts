@@ -658,7 +658,6 @@ app.patch("/api/newsfeed/add/", requireAuth, (req, res) => {
       LEFT JOIN maengel ON newsfeed.mangel_id = maengel.id
       LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
       WHERE newsfeed.id = ?`).get(result.lastInsertRowid);
-      console.log(createdNews);//debugging
     res.status(200).json(createdNews);
 
   }catch (error) {

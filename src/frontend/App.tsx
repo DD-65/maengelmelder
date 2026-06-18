@@ -1115,12 +1115,12 @@ export default function App() {
         
         {accountContent}
         
-        <Newsfeed
-          userRole={userRole}
-          userId={userId}
-          newsList={newsList}
-          setNewsList={setNewsList}
-        />
+          <Newsfeed
+            userRole={userRole}
+            userId={userId}
+            newsList={newsList}
+            setNewsList={setNewsList}
+          />
 
       </aside>
 

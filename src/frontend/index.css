@@ -1222,8 +1222,14 @@ button.active:hover {
 }
 
 .newsfeed{
+  display: flex;
+  flex-direction: column;
+  justify-content:left;
+  max-height: 600px;
   list-style-type: none;
   padding: 10px;
+  margin-top: 0px;
+  overflow-y: scroll;
 }
 .newscard{
   background: var(--surface);

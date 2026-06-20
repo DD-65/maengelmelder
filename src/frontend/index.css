@@ -557,6 +557,77 @@ code {
   box-shadow: var(--shadow-sm);
 }
 
+.map-location-control {
+  position: absolute;
+  left: 54px;
+  top: 15px;
+  z-index: 1000;
+  display: flex;
+  max-width: min(320px, calc(100% - 250px));
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.map-location-button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  font-weight: 800;
+  backdrop-filter: blur(10px);
+}
+
+.map-location-button:hover:not(:disabled) {
+  background: var(--surface-strong);
+  color: var(--text-h);
+}
+
+.map-location-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.map-location-button[data-loading="true"] {
+  cursor: wait;
+}
+
+.map-location-button-icon {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #1677ff;
+  box-shadow: 0 0 0 2px #1677ff;
+}
+
+.map-location-message {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+  .map-location-control {
+    top: 62px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+}
+
 /* Strict relative max-width and centering for all middle column elements (scalable for 4K) */
 .app-layout .main-content .search-bar, 
 .app-layout .main-content .header-view-switch > div,

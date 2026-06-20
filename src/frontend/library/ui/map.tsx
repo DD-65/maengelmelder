@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L, { LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildingCoordinates } from "../constants/buildingCoordinates";
+import { useGeolocation, type UserLocation } from "../hooks/useGeolocation";
 
 export type MapSummaryItem = {
     building: string;
@@ -82,6 +83,68 @@ function CampusSwitcher({ campus }: { campus: "KL" | "LD" }) {
     }, [campus, map]);
 
     return null;
+}
+
+function getCampusForLocation(location: UserLocation): "KL" | "LD" | null {
+    const point = L.latLng(location.latitude, location.longitude);
+
+    if (L.latLngBounds(campusBounds.KL.bounds as [[number, number], [number, number]]).contains(point)) {
+        return "KL";
+    }
+
+    if (L.latLngBounds(campusBounds.LD.bounds as [[number, number], [number, number]]).contains(point)) {
+        return "LD";
+    }
+
+    return null;
+}
+
+function UserLocationLayer({ location, campus }: { location: UserLocation; campus: "KL" | "LD" }) {
+    const map = useMap();
+    const position: [number, number] = [location.latitude, location.longitude];
+
+    useEffect(() => {
+        const activeBounds = L.latLngBounds(campusBounds[campus].bounds as [[number, number], [number, number]]);
+        const currentPosition = L.latLng(location.latitude, location.longitude);
+        if (!activeBounds.contains(currentPosition)) return;
+
+        map.flyTo(currentPosition, Math.max(map.getZoom(), 18), {
+            animate: true,
+            duration: 1,
+        });
+    }, [campus, location.latitude, location.longitude, location.timestamp, map]);
+
+    return (
+        <>
+            <Circle
+                center={position}
+                radius={location.accuracy}
+                pathOptions={{
+                    color: "#1677ff",
+                    fillColor: "#1677ff",
+                    fillOpacity: 0.12,
+                    opacity: 0.35,
+                    weight: 1,
+                }}
+                interactive={false}
+            />
+            <CircleMarker
+                center={position}
+                radius={8}
+                pathOptions={{
+                    color: "#ffffff",
+                    fillColor: "#1677ff",
+                    fillOpacity: 1,
+                    opacity: 1,
+                    weight: 3,
+                }}
+            >
+                <Tooltip direction="top" offset={[0, -8]}>
+                    Dein Standort (Genauigkeit ca. {Math.round(location.accuracy)} m)
+                </Tooltip>
+            </CircleMarker>
+        </>
+    );
 }
 
 // Indicator component that shows glowing edges when there are pins outside the current map view and in which direction they are located
@@ -198,9 +261,46 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     
     // state of campus selection, default is Kaiserslautern
     const [selectedCampus, setSelectedCampus] = useState<"KL" | "LD">("KL");
+    const { permission, location, error, isLocating, requestLocation } = useGeolocation();
+    const locationCampus = location ? getCampusForLocation(location) : null;
+
+    useEffect(() => {
+        if (locationCampus) {
+            setSelectedCampus(locationCampus);
+        }
+    }, [locationCampus]);
+
+    const locationMessage = error
+        ?? (permission === "unsupported"
+            ? "Standortbestimmung wird von diesem Browser nicht unterstützt."
+            : permission === "denied"
+                ? "Standortzugriff ist blockiert. Erlaube ihn in den Website-Einstellungen deines Browsers."
+                : location && !locationCampus
+                    ? "Dein Standort liegt außerhalb der angezeigten Campusbereiche."
+                    : null);
 
     return(
             <div className="map-container" style={{ width: '100%', height: '600px', position: 'relative', zIndex: 0 }}>
+
+                <div className="map-location-control">
+                    <button
+                        type="button"
+                        className="map-location-button"
+                        onClick={requestLocation}
+                        disabled={isLocating || permission === "unsupported"}
+                        aria-describedby={locationMessage ? "map-location-message" : undefined}
+                        aria-busy={isLocating}
+                        data-loading={isLocating ? "true" : undefined}
+                    >
+                        <span className="map-location-button-icon" aria-hidden="true" />
+                        {isLocating ? "Standort wird gesucht …" : location ? "Standort aktualisieren" : "Mein Standort"}
+                    </button>
+                    {locationMessage && (
+                        <div id="map-location-message" className="map-location-message" role="status" aria-live="polite">
+                            {locationMessage}
+                        </div>
+                    )}
+                </div>
 
                 <div style={{
                     position: 'absolute',
@@ -277,6 +377,10 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
                 contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
                 <EdgeGlowIndicator mapSummary={mapSummary} selectedCampus={selectedCampus} />
+
+                {location && locationCampus && (
+                    <UserLocationLayer location={location} campus={selectedCampus} />
+                )}
 
                 {/* Cluster Pin Rendering */}
                 <MarkerClusterGroup

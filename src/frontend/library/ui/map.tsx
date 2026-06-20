@@ -261,8 +261,18 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     
     // state of campus selection, default is Kaiserslautern
     const [selectedCampus, setSelectedCampus] = useState<"KL" | "LD">("KL");
-    const { permission, location, error, isLocating, requestLocation } = useGeolocation();
+    const { permission, location, error, isLocating, requestLocation, refreshLocation } = useGeolocation();
     const locationCampus = location ? getCampusForLocation(location) : null;
+
+    useEffect(() => {
+        refreshLocation();
+
+        const locationRefreshInterval = window.setInterval(refreshLocation, 1_000);
+
+        return () => {
+            window.clearInterval(locationRefreshInterval);
+        };
+    }, [refreshLocation]);
 
     useEffect(() => {
         if (locationCampus) {

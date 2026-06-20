@@ -28,6 +28,8 @@ export function useGeolocation() {
   const [error, setError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const requestIdRef = useRef(0);
+  const latestSettledRequestIdRef = useRef(0);
+  const pendingManualRequestCountRef = useRef(0);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function useGeolocation() {
     };
   }, []);
 
-  const requestLocation = useCallback(() => {
+  const performLocationRequest = useCallback((showLoading: boolean) => {
     if (!("geolocation" in navigator)) {
       setPermission("unsupported");
       setError("Standortbestimmung wird von diesem Browser nicht unterstützt.");
@@ -91,12 +93,28 @@ export function useGeolocation() {
 
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
-    setIsLocating(true);
-    setError(null);
+    if (showLoading) {
+      pendingManualRequestCountRef.current += 1;
+      setIsLocating(true);
+      setError(null);
+    }
+
+    const finishRequest = () => {
+      if (!showLoading) return;
+
+      pendingManualRequestCountRef.current = Math.max(0, pendingManualRequestCountRef.current - 1);
+
+      if (mountedRef.current) {
+        setIsLocating(pendingManualRequestCountRef.current > 0);
+      }
+    };
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        if (!mountedRef.current || requestIdRef.current !== requestId) return;
+        finishRequest();
+        if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) return;
+
+        latestSettledRequestIdRef.current = requestId;
 
         setLocation({
           latitude: position.coords.latitude,
@@ -105,25 +123,35 @@ export function useGeolocation() {
           timestamp: position.timestamp,
         });
         setPermission("granted");
-        setIsLocating(false);
+        setError(null);
       },
       (positionError) => {
-        if (!mountedRef.current || requestIdRef.current !== requestId) return;
+        finishRequest();
+        if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) return;
+
+        latestSettledRequestIdRef.current = requestId;
 
         if (positionError.code === positionError.PERMISSION_DENIED) {
           setPermission("denied");
+          setLocation(null);
         }
-        setLocation(null);
         setError(getGeolocationErrorMessage(positionError));
-        setIsLocating(false);
       },
       {
         enableHighAccuracy: true,
         timeout: 12_000,
-        maximumAge: 30_000,
+        maximumAge: 0,
       },
     );
   }, []);
+
+  const requestLocation = useCallback(() => {
+    performLocationRequest(true);
+  }, [performLocationRequest]);
+
+  const refreshLocation = useCallback(() => {
+    performLocationRequest(false);
+  }, [performLocationRequest]);
 
   return {
     permission,
@@ -131,5 +159,6 @@ export function useGeolocation() {
     error,
     isLocating,
     requestLocation,
+    refreshLocation,
   };
 }

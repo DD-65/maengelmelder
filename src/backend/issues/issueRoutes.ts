@@ -367,6 +367,110 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
+  // wenn angemeldet, kann mangel melden
+  router.post("/api/mangel/:id/report", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const mangelId = Number(req.params.id);
+      const { reportReason } = req.body;
+
+      if (!reportReason || reportReason.trim().length === 0) {
+        return res.status(400).json({ error: "Bitte gib eine Begründung an." });
+      }
+
+      const mangel = db.prepare("SELECT id FROM maengel WHERE id = ?").get(mangelId);
+      if (!mangel) {
+        return res.status(404).json({ error: "Zu meldender Mangel nicht gefunden" });
+      }
+
+      db.prepare(`
+        INSERT INTO content_reports (mangel_id, reporter_id, report_reason)
+        VALUES (?, ?, ?)
+      `).run(mangelId, userId, reportReason.trim());
+
+      res.status(201).json({ message: "Meldung erfolgreich eingereicht. Ein Admin wird sich darum kümmern." });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Einreichen der Meldung" });
+    }
+  });
+
+  // wenn admin/superadmin, meldungen laden
+  router.get("/api/management/reports", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+      
+      if (user.role !== "admin" && user.role !== "superadmin") {
+        return res.status(403).json({ error: "Zugriff verweigert" });
+      }
+
+      const reports = db.prepare(`
+        SELECT cr.id, cr.mangel_id, cr.report_reason, cr.created_at, m.title, m.description
+        FROM content_reports cr
+        JOIN maengel m ON cr.mangel_id = m.id
+        WHERE cr.status = 'offen'
+        ORDER BY cr.created_at ASC
+      `).all();
+
+      res.json(reports);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Laden der Meldungen" });
+    }
+  });
+
+  // wenn admin/superadmin, meldung akzeptieren oder ablehnen
+  router.patch("/api/management/reports/:id/decide", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const reportId = Number(req.params.id);
+      const { decision, adminReason } = req.body;
+
+      const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
+      if (user.role !== "admin" && user.role !== "superadmin") {
+        return res.status(403).json({ error: "Zugriff verweigert" });
+      }
+
+      if (!adminReason || adminReason.trim().length === 0) {
+        return res.status(400).json({ error: "Eine Begründung ist zwingend erforderlich." });
+      }
+
+      if (decision !== 'angenommen' && decision !== 'abgelehnt') {
+        return res.status(400).json({ error: "Ungültige Entscheidung." });
+      }
+
+      const report = db.prepare("SELECT mangel_id FROM content_reports WHERE id = ? AND status = 'offen'").get(reportId) as { mangel_id: number } | undefined;
+      
+      if (!report) {
+        return res.status(404).json({ error: "Meldung nicht gefunden oder bereits bearbeitet." });
+      }
+
+      const decideTransaction = db.transaction(() => {
+        db.prepare(`
+          UPDATE content_reports 
+          SET status = ?, admin_reason = ? 
+          WHERE id = ?
+        `).run(decision, adminReason.trim(), reportId);
+
+        if (decision === 'angenommen') {
+          db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(report.mangel_id);
+        }
+      });
+
+      decideTransaction();
+
+      res.json({ message: `Meldung erfolgreich ${decision}.` });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Bearbeiten der Meldung" });
+    }
+  });
+
+
+
+
+
   return router;
 }
 

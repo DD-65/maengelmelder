@@ -259,7 +259,22 @@ db.exec(`
   )
 `);
 
-
+// Tabelle für Moderation
+db.exec(`
+  CREATE TABLE IF NOT EXISTS content_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mangel_id INTEGER,
+    comment_id INTEGER,
+    reporter_id INTEGER NOT NULL,
+    report_reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'offen' CHECK (status IN ('offen', 'angenommen', 'abgelehnt')),
+    admin_reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE,
+    FOREIGN KEY (comment_id) REFERENCES maengel_kommentare(id) ON DELETE CASCADE
+  )
+`);
 
 
 export default db;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 //Endlich fertig
 import type { MapSummaryItem } from './library/ui/map';
 // import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -18,11 +18,9 @@ import { useLoadIssues } from './library/hooks/useLoadIssues';
 import type { LoadIssuesOptions } from './library/hooks/useLoadIssues';
 
 // swiping & teile von Map
-import { Map } from './library/ui/map';
 import { useViewMode } from './library/hooks/useViewMode';
 import { useSwiping } from './library/hooks/useSwiping';
 // Management View
-import { Management } from './library/ui/management';
 import { ConfirmDialog } from './library/ui/confirmDialog';
 import { useManagementMode } from './library/hooks/useManagementMode';
 
@@ -41,7 +39,6 @@ import { useVerificationMessage } from './library/hooks/useVerificationMessage';
 import { Newsfeed } from './library/ui/newsfeed';
 
 import { Reportunfall } from './library/ui/reportunfall'; // for Fun eine Zeile durch zwei ersetzt, aber macht den html teil übersichtlicher
-import { InputForm } from './library/ui/inputForm';
 import { ViewModeButtons } from './library/ui/viewModeButtons';
 import { UsersList } from './library/ui/usersList';
 //import { registerClient } from 'fuse/next/server'; brauchen wir den import? hat nur nen fehler geschmissen
@@ -52,6 +49,10 @@ import { getSecondaryUserColor, getUserColor } from './library/utils/getUserColo
 import { toast } from 'react-toastify';
 
 import { useNewsList } from './library/hooks/useNewsList';
+
+const Map = lazy(() => import('./library/ui/map').then((module) => ({ default: module.Map })));
+const Management = lazy(() => import('./library/ui/management').then((module) => ({ default: module.Management })));
+const InputForm = lazy(() => import('./library/ui/inputForm').then((module) => ({ default: module.InputForm })));
 
 type ThemePreference = "system" | "light" | "dark";
 
@@ -1041,17 +1042,21 @@ export default function App() {
           ) : viewMode === 'users' ? (
             <UsersList setViewMode={setViewMode} />
           ) : viewMode === 'management' ? (
-            <Management
-              setViewMode={setViewMode as any}
-              userRole={userRole}
-            />
+            <Suspense fallback={<p className="meta-line issue-loading">Ansicht wird geladen...</p>}>
+              <Management
+                setViewMode={setViewMode as any}
+                userRole={userRole}
+              />
+            </Suspense>
           ) : (
-            <Map
-              mapSummary={mapSummary}
-              setViewMode={setViewMode as any}
-              setCurrentFilter={setCurrentFilter}
-              setCurrentFilterValue={setCurrentFilterValue}
-            />
+            <Suspense fallback={<p className="meta-line issue-loading">Karte wird geladen...</p>}>
+              <Map
+                mapSummary={mapSummary}
+                setViewMode={setViewMode as any}
+                setCurrentFilter={setCurrentFilter}
+                setCurrentFilterValue={setCurrentFilterValue}
+              />
+            </Suspense>
           )}
         </div>
 
@@ -1136,14 +1141,16 @@ export default function App() {
 
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             {/* Input form nur sichtbar wenn man eingeloggt ist*/}
-            <InputForm
-              onIssueCreated={async () => {
-                loadIssuePage(1, false);
-                await refreshMapData();
-                setShowInputModal(false);
-                toast.success("Mangel erfolgreich gemeldet");
-              }}
-            />
+            <Suspense fallback={<p className="meta-line issue-loading">Formular wird geladen...</p>}>
+              <InputForm
+                onIssueCreated={async () => {
+                  loadIssuePage(1, false);
+                  await refreshMapData();
+                  setShowInputModal(false);
+                  toast.success("Mangel erfolgreich gemeldet");
+                }}
+              />
+            </Suspense>
           </div>
         </div>
         </div>

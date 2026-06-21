@@ -170,6 +170,11 @@ export default function App() {
 
   // State für das Input-Modal
   const [showInputModal, setShowInputModal] = useState(false);
+  
+  // State für die Moderation
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [issueToReport, setIssueToReport] = useState<number | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   // State für das gespeicherte Benachrichtigungs-Intervall
   const [notificationInterval, setNotificationInterval] = useState<number>(0);
@@ -660,6 +665,34 @@ export default function App() {
         toast.error("🫪 Netzwerkfehler beim Ändern der Sichtbarkeit");
       }
     };
+
+    const submitReport = async () => {
+    if (!issueToReport || !reportReason.trim()) {
+      toast.error("🫪 Bitte gib eine Begründung ein.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/mangel/${issueToReport}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportReason })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(`🫪 ${data.error || "Fehler beim Senden der Meldung"}`);
+        return;
+      }
+
+      toast.success(data.message || "Mangel erfolgreich gemeldet");
+      setIsReportModalOpen(false);
+      setIssueToReport(null);
+      setReportReason("");
+    } catch {
+      toast.error("🫪 Netzwerkfehler beim Senden der Meldung");
+    }
+  };
     
 
       // Gemeinsame Styles für die Container-Cards in der Sidebar
@@ -1008,6 +1041,10 @@ export default function App() {
                       userRole={userRole}
                       userId={userId}
                       userEmail={userEmail}
+                      onReport={(id) => {
+                        setIssueToReport(id);
+                        setIsReportModalOpen(true);
+                      }}
                       onDelete={async (id) => {
                         if (isArchiveMode && issue.status === "Gelöscht") {
                           setIssueToDelete(id);
@@ -1245,6 +1282,30 @@ export default function App() {
           }}
           onCancel={() => { setIsConfirmOpen(false); setIssueToDelete(null); }}
         />
+      )}
+      {/* Report-Modal für Inhalts-Moderation */}
+      {isReportModalOpen && (
+        <div className="modal-overlay" onClick={() => { setIsReportModalOpen(false); setReportReason(""); setIssueToReport(null); }}>
+          <div className="modal-pane" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h2 className="modal-header-title" style={{ margin: 0 }}>Inhalt melden</h2>
+              <button className="modal-close-btn" onClick={() => { setIsReportModalOpen(false); setReportReason(""); setIssueToReport(null); }}>X</button>
+            </div>
+            <div className="modal-content" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+              <p style={{ fontSize: '14px', margin: 0 }}>Warum möchtest du diesen Mangel melden? Bitte gib eine kurze Begründung an.</p>
+              <textarea 
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Begründung (z.B. unangemessene Sprache, Spam...)"
+                rows={4}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+              />
+              <button onClick={submitReport} style={{ width: '100%', marginTop: '10px' }}>
+                Meldung abschicken
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -54,9 +54,9 @@ export async function sendVerificationEmail({ to, verifyUrl }: VerificationMailI
     `,
   });
 }
-/**
- * Benachrichtigung bei Statusänderungen eines Mangels.
- */
+
+// Benachrichtigung bei Statusänderungen eines Mangels.
+
 export async function sendStatusUpdateEmail(to: string, title: string, status: string, statusComment?: string) {
   const transporter = createTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
@@ -69,6 +69,42 @@ export async function sendStatusUpdateEmail(to: string, title: string, status: s
     html: `
       <p>Hallo,</p>
       <p>der Status deines Mangels <strong>"${title}"</strong> wurde auf <strong>"${status}"</strong> geändert. Begründung: <strong>"${statusComment}"</strong></p>
+    `,
+  });
+}
+
+
+// Benachrichtigung für die Inhalts-Moderation
+
+export async function sendModerationEmail(to: string, title: string, type: 'reporter_accepted' | 'reporter_rejected' | 'creator_deleted', adminReason: string) {
+  const transporter = createTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  let subject = "";
+  let messageHtml = "";
+
+  if (type === 'reporter_accepted') {
+    subject = `Rückmeldung zu deiner Meldung: ${title}`;
+    messageHtml = `deine Meldung bezüglich des Mangels <strong>"${title}"</strong> wurde von einem Administrator <strong>akzeptiert</strong> und der betroffene Inhalt entfernt.`;
+  } else if (type === 'reporter_rejected') {
+    subject = `Rückmeldung zu deiner Meldung: ${title}`;
+    messageHtml = `deine Meldung bezüglich des Mangels <strong>"${title}"</strong> wurde von einem Administrator <strong>abgewiesen</strong>. Der Inhalt bleibt bestehen.`;
+  } else if (type === 'creator_deleted') {
+    subject = `Moderations-Eingriff: ${title}`;
+    messageHtml = `dein gemeldeter Mangel <strong>"${title}"</strong> wurde nach einer Überprüfung durch einen Administrator <strong>entfernt</strong>.`;
+  }
+
+  const messageText = messageHtml.replace(/<strong>/g, '').replace(/<\/strong>/g, '');
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject,
+    text: `Hallo,\n\n${messageText}\n\nBegründung der Moderation: "${adminReason}"`,
+    html: `
+      <p>Hallo,</p>
+      <p>${messageHtml}</p>
+      <p>Begründung der Moderation: <br/><strong>"${adminReason}"</strong></p>
     `,
   });
 }

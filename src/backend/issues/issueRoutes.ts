@@ -6,7 +6,7 @@ import multer from "multer";
 import fs from "fs";
 import sharp from "sharp";
 import db from "../db.js";
-import { sendStatusUpdateEmail } from "../mailer.js";
+import { sendStatusUpdateEmail, sendModerationEmail } from "../mailer.js";
 import { getIssueFilterOptions } from "./filterOptions.js";
 import { listIssues } from "./listIssues.js";
 import { getIssueMapSummary } from "./mapSummary.js";
@@ -148,7 +148,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       const { isPrivate } = req.body;
 
       const mangel = db.prepare("SELECT user_id FROM maengel WHERE id = ?").get(mangelId) as { user_id: number } | undefined;
-      
+
       if (!mangel) {
         return res.status(404).json({ error: "Mangel nicht gefunden" });
       }
@@ -158,7 +158,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       }
 
       db.prepare("UPDATE maengel SET is_private = ? WHERE id = ?").run(isPrivate ? 1 : 0, mangelId);
-      
+
       res.json({ message: isPrivate ? "Mangel ist privat" : "Mangel ist öffentlich" });
     } catch (error) {
       console.error(error);
@@ -224,13 +224,13 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       `);
 
       const result = stmt.run(
-        userId, 
-        title.trim(), 
-        description ?? null, 
-        location ?? null, 
-        normalizedKategorie ?? null, 
-        imageUrl ?? null, 
-        thumbnailUrl ?? null, 
+        userId,
+        title.trim(),
+        description ?? null,
+        location ?? null,
+        normalizedKategorie ?? null,
+        imageUrl ?? null,
+        thumbnailUrl ?? null,
         isPrivateInt
       );
 
@@ -288,31 +288,31 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
   // voten (braucht login)
   router.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
-      // gevotet wird immer für nur einen Mangel aus der URL
-      const userId = req.session.userId;
-      const mangelId = Number(req.params.id);
+    // gevotet wird immer für nur einen Mangel aus der URL
+    const userId = req.session.userId;
+    const mangelId = Number(req.params.id);
 
-      if (!userId) {
-        return res.status(401).json({ error: "Nicht angemeldet" });
-      }
+    if (!userId) {
+      return res.status(401).json({ error: "Nicht angemeldet" });
+    }
 
-      if (!Number.isInteger(mangelId)) {
-        return res.status(400).json({ error: "Ungültige Mangel-ID" });
-      }
+    if (!Number.isInteger(mangelId)) {
+      return res.status(400).json({ error: "Ungültige Mangel-ID" });
+    }
 
-      // nicht für gelöschte IDs voten
-      const mangel = db
-        .prepare("SELECT id FROM maengel WHERE id = ?")
-        .get(mangelId) as { id: number } | undefined;
+    // nicht für gelöschte IDs voten
+    const mangel = db
+      .prepare("SELECT id FROM maengel WHERE id = ?")
+      .get(mangelId) as { id: number } | undefined;
 
-      if (!mangel) {
-        return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
-      }
+    if (!mangel) {
+      return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
+    }
 
-      const existingVote = db.prepare("SELECT user_id, mangel_id FROM mangel_votes WHERE user_id = ? AND mangel_id = ?").get(userId, mangelId);
+    const existingVote = db.prepare("SELECT user_id, mangel_id FROM mangel_votes WHERE user_id = ? AND mangel_id = ?").get(userId, mangelId);
 
-      if (existingVote) {
-        try {
+    if (existingVote) {
+      try {
         // wenn schon ein Vote existiert, wird er zurückgenommen (also gelöscht) und der Zähler entsprechend dekrementiert
         const deleteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
           db.prepare(`
@@ -329,41 +329,41 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         );
         deleteTransaction(userId, mangelId);
         return res.json({ message: "Bewertung zurückgenommen" });
-      }catch (error) {
+      } catch (error) {
         console.error(error);
         return res.status(500).json({ error: "Fehler beim Zurücknehmen der Bewertung" });
       }
-      }else {
-        try {
+    } else {
+      try {
 
-      // wenn kein Vote existiert, wird er neu angelegt und der Zähler inkrementiert
+        // wenn kein Vote existiert, wird er neu angelegt und der Zähler inkrementiert
 
-      // Insert und Zähler-Update müssen zusammen passieren
-      const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
-        db.prepare(`
+        // Insert und Zähler-Update müssen zusammen passieren
+        const voteTransaction = db.transaction((transactionUserId: number, transactionMangelId: number) => {
+          db.prepare(`
           INSERT INTO mangel_votes (user_id, mangel_id)
           VALUES (?, ?)
         `).run(transactionUserId, transactionMangelId);
 
-        db.prepare(`
+          db.prepare(`
           UPDATE maengel
           SET votes = votes + 1
           WHERE id = ?
         `).run(transactionMangelId);
-      });
+        });
 
-      voteTransaction(userId, mangelId);
+        voteTransaction(userId, mangelId);
 
-      res.json({ message: "Bewertung erfolgreich" });
-    } catch (error) {
-      // Unique Constraint verhindert Mehrfachvotes desselben Nutzers (auch wenn es aus der ui eh unmöglich ist)
-      if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE_CONSTRAINT")) {
-        return res.status(409).json({ error: "Du hast diesen Mangel bereits bewertet" });
+        res.json({ message: "Bewertung erfolgreich" });
+      } catch (error) {
+        // Unique Constraint verhindert Mehrfachvotes desselben Nutzers (auch wenn es aus der ui eh unmöglich ist)
+        if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE_CONSTRAINT")) {
+          return res.status(409).json({ error: "Du hast diesen Mangel bereits bewertet" });
+        }
+
+        console.error(error);
+        res.status(500).json({ error: "Fehler beim Bewerten" });
       }
-
-      console.error(error);
-      res.status(500).json({ error: "Fehler beim Bewerten" });
-    }
     }
   });
 
@@ -394,13 +394,11 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       res.status(500).json({ error: "Fehler beim Einreichen der Meldung" });
     }
   });
-
-  // wenn admin/superadmin, meldungen laden
   router.get("/api/management/reports", requireAuth, (req, res) => {
     try {
       const userId = req.session.userId;
       const user = db.prepare("SELECT role FROM users WHERE id = ?").get(userId) as { role: string };
-      
+
       if (user.role !== "admin" && user.role !== "superadmin") {
         return res.status(403).json({ error: "Zugriff verweigert" });
       }
@@ -419,8 +417,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       res.status(500).json({ error: "Fehler beim Laden der Meldungen" });
     }
   });
-
-  // wenn admin/superadmin, meldung akzeptieren oder ablehnen
+  // wenn admin/superadmin, meldungen laden
   router.patch("/api/management/reports/:id/decide", requireAuth, (req, res) => {
     try {
       const userId = req.session.userId;
@@ -440,25 +437,57 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         return res.status(400).json({ error: "Ungültige Entscheidung." });
       }
 
-      const report = db.prepare("SELECT mangel_id FROM content_reports WHERE id = ? AND status = 'offen'").get(reportId) as { mangel_id: number } | undefined;
-      
-      if (!report) {
+      const reportData = db.prepare(`
+        SELECT 
+          cr.mangel_id, 
+          ru.email AS reporter_email,
+          ru.email_verified_at AS reporter_verified,
+          m.title,
+          cu.email AS creator_email,
+          cu.email_verified_at AS creator_verified
+        FROM content_reports cr
+        JOIN users ru ON cr.reporter_id = ru.id
+        JOIN maengel m ON cr.mangel_id = m.id
+        LEFT JOIN users cu ON m.user_id = cu.id
+        WHERE cr.id = ? AND cr.status = 'offen'
+      `).get(reportId) as any;
+
+      if (!reportData) {
         return res.status(404).json({ error: "Meldung nicht gefunden oder bereits bearbeitet." });
       }
 
       const decideTransaction = db.transaction(() => {
-        db.prepare(`
-          UPDATE content_reports 
-          SET status = ?, admin_reason = ? 
-          WHERE id = ?
-        `).run(decision, adminReason.trim(), reportId);
-
         if (decision === 'angenommen') {
-          db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(report.mangel_id);
+          db.prepare(`
+            UPDATE content_reports 
+            SET status = 'angenommen', admin_reason = ? 
+            WHERE mangel_id = ? AND status = 'offen'
+          `).run(adminReason.trim(), reportData.mangel_id);
+
+          db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(reportData.mangel_id);
+        } else {
+          db.prepare(`
+            UPDATE content_reports 
+            SET status = 'abgelehnt', admin_reason = ? 
+            WHERE id = ?
+          `).run(adminReason.trim(), reportId);
         }
       });
 
       decideTransaction();
+
+      if (reportData.reporter_email && reportData.reporter_verified) {
+        const mailType = decision === 'angenommen' ? 'reporter_accepted' : 'reporter_rejected';
+        sendModerationEmail(reportData.reporter_email, reportData.title, mailType, adminReason.trim()).catch(err => {
+          console.error("Mail-Fehler (Melder):", err);
+        });
+      }
+
+      if (decision === 'angenommen' && reportData.creator_email && reportData.creator_verified) {
+        sendModerationEmail(reportData.creator_email, reportData.title, 'creator_deleted', adminReason.trim()).catch(err => {
+          console.error("Mail-Fehler (Ersteller):", err);
+        });
+      }
 
       res.json({ message: `Meldung erfolgreich ${decision}.` });
     } catch (error) {
@@ -466,10 +495,6 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       res.status(500).json({ error: "Fehler beim Bearbeiten der Meldung" });
     }
   });
-
-
-
-
 
   return router;
 }

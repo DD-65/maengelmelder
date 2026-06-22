@@ -175,6 +175,7 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [issueToReport, setIssueToReport] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const [restrictedReportLimitReached, setRestrictedReportLimitReached] = useState(false);
 
   // State für das gespeicherte Benachrichtigungs-Intervall
   const [notificationInterval, setNotificationInterval] = useState<number>(0);
@@ -516,6 +517,7 @@ export default function App() {
         setUserEmail(data.email);
         setUserRole(data.role || "user");
         setIsRestricted(Boolean(data.isRestricted));
+        setRestrictedReportLimitReached(false);
         setEmailVerified(Boolean(data.emailVerified));
         setAuthEmail("");
         setAuthPassword("");
@@ -581,6 +583,7 @@ export default function App() {
         setUserEmail("");
         setUserRole("");
         setIsRestricted(false);
+        setRestrictedReportLimitReached(false);
         setEmailVerified(false);
         setFilterOnlyOwn(false);
         setIssueList([]);
@@ -687,10 +690,19 @@ export default function App() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 429) {
+          setRestrictedReportLimitReached(true);
+          setIsReportModalOpen(false);
+          setIssueToReport(null);
+          setReportReason("");
+        }
         toast.error(`🫪 ${data.error || "Fehler beim Senden der Meldung"}`);
         return;
       }
 
+      if (isRestricted) {
+        setRestrictedReportLimitReached(true);
+      }
       toast.success(data.message || "Mangel erfolgreich gemeldet");
       setIsReportModalOpen(false);
       setIssueToReport(null);
@@ -1079,6 +1091,10 @@ export default function App() {
                       userEmail={userEmail}
                       isRestricted={isRestricted}
                       onReport={(id) => {
+                        if (isRestricted && restrictedReportLimitReached) {
+                          toast.error("🫪 Dein Konto ist eingeschränkt. Du kannst nur einmal am Tag einen Inhalt melden.");
+                          return;
+                        }
                         setIssueToReport(id);
                         setIsReportModalOpen(true);
                       }}

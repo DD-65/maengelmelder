@@ -397,6 +397,25 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         return res.status(404).json({ error: "Zu meldender Mangel nicht gefunden" });
       }
 
+      const user = db.prepare("SELECT is_restricted FROM users WHERE id = ?").get(userId) as { is_restricted: number } | undefined;
+      if (!user) {
+        return res.status(401).json({ error: "Nicht angemeldet" });
+      }
+
+      if (user.is_restricted) {
+        const reportFromToday = db.prepare(`
+          SELECT id
+          FROM content_reports
+          WHERE reporter_id = ?
+            AND date(created_at, 'localtime') = date('now', 'localtime')
+          LIMIT 1
+        `).get(userId);
+
+        if (reportFromToday) {
+          return res.status(429).json({ error: "Dein Konto ist eingeschränkt. Du kannst nur einmal am Tag einen Inhalt melden." });
+        }
+      }
+
       db.prepare(`
         INSERT INTO content_reports (mangel_id, reporter_id, report_reason)
         VALUES (?, ?, ?)
@@ -541,4 +560,3 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
   return router;
 }
-

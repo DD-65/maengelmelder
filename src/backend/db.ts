@@ -285,6 +285,11 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_content_reports_reporter_created_at
+  ON content_reports(reporter_id, created_at)
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS mangel_reactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

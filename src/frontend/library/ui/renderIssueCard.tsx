@@ -223,9 +223,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
       {/* Beschreibung */}
       <p className="issue-description">{issue.description}</p>
 
-      {/* Reaktionen */}
-      <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
-
       {/* Image */}
       {(issue.thumbnail_url || issue.image_url) && (
         <div style={{ marginTop: '10px' }}>
@@ -242,7 +239,10 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
 
       {/* Container fuer Voting-zeug */}
       <div className="issue-actions">
-        <p>Likes: {issue.votes || 0}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <p style={{ margin: 0 }}>Likes: {issue.votes || 0}</p>
+            <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
+        </div>
         <p>Kategorie: {issue.kategorie || '-'}</p>
 
         {/* Knopf für Öffnen und Schließen der Kommentarspalte */}

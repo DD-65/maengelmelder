@@ -200,7 +200,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
               <option value="Behoben">Behoben</option>
               <option value="Gelöscht">Gelöscht</option>
             </select><br />
-            <input type="text" placeholder="Grund für Statusänderung" value={newStatusComment} onClick={(e) => { e.stopPropagation(); }}
+            <input type="text" placeholder="Grund für Statusänderung" value={newStatusComment} required onClick={(e) => { e.stopPropagation(); }}
               onChange={(event) => { event.stopPropagation(); if (issue.id) { setNewStatusComment(event.target.value) } }} autoComplete="off" />
             {/* Checkbox für post in newsfeed*/}
             {newStatus === 'Behoben' && (
@@ -247,7 +247,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         <p>Kategorie: {issue.kategorie || '-'}</p>
 
         {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-        <button className='kommentareoeffnen' onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}><CommentIcon className="comment-icon" aria-hidden="true" />{commentButtonText}</button>
+        <button className='kommentareoeffnen' onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}><CommentIcon className="comment-icon" aria-hidden="true" /><span>{commentButtonText}</span></button>
 
         {/* Button for toggling privacy */}
         {userEmail === issue.user_email && (
@@ -285,9 +285,9 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         )}
         {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
         {userId ? (
-          <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" /></button>
+          <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" />{issue.votes || 0}</button>
         ) : (
-          <button disabled onClick={(e) => e.stopPropagation()}><LikeIcon className="like-icon" aria-hidden="true" />Like</button>
+          <button disabled onClick={(e) => e.stopPropagation()}><LikeIcon className="like-icon" aria-hidden="true" />{issue.votes || 0}</button>
         )}
 
       </div>
@@ -313,7 +313,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                   }
                 }
               }}>
-              <input type="text" placeholder="Hier Kommentar schreiben" value={newComment} onClick={(e) => { e.stopPropagation(); }}
+              <input type="text" placeholder="Hier Kommentar schreiben" required value={newComment} onClick={(e) => { e.stopPropagation(); }}
                 disabled={isRestricted}
                 onChange={(event) => { event.stopPropagation(); if (issue.id) { setNewComment(event.target.value) } }} autoComplete="off" />
               <button type="submit" onClick={(e) => { e.stopPropagation(); }}>Abschicken<SendIcon className="send-icon" aria-hidden="true" /></button>

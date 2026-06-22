@@ -35,7 +35,7 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
 
     return (
         <div className='newsfeedContainer' onClick={(e)=>{e.stopPropagation();}}>
-            {userRole === 'admin'&&(
+            {(userRole === 'admin' || userRole === 'superadmin') &&(
                 <form className='newsfeedposting' onSubmit={async (e) => { e.preventDefault();
                                                 e.stopPropagation();
                                                 try {

@@ -103,6 +103,13 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
             AND follows.followed_id = maengel.user_id
         )
       END AS is_author_followed,
+      CASE
+        WHEN ? IS NULL THEN NULL
+        ELSE (
+          SELECT emoji FROM mangel_reactions 
+          WHERE mangel_id = maengel.id AND user_id = ?
+        )
+      END AS user_reaction,
       (
         SELECT json_group_array(json_object('emoji', emoji, 'count', c))
         FROM (
@@ -123,7 +130,7 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
   `);
 
   // WRITTEN WITH THE HELP OF GEMINI 3.1 PRO EXTENDED
-const rows = stmt.all(userId, userId, userId, userId, ...whereParams) as (IssueRow & { reactions_json: string })[];
+const rows = stmt.all(userId, userId, userId, userId, userId, userId, ...whereParams) as (IssueRow & { reactions_json: string, user_reaction: string | null })[];
   
   return rows.map(row => {
     const parsedReactions = JSON.parse(row.reactions_json || '[]');

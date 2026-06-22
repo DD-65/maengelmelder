@@ -12,12 +12,13 @@ interface IssueReactionsProps {
 export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [allReactionsOpen, setAllReactionsOpen] = useState(false);
-  const { addReaction } = useReactions(issue, setIssueList); 
+  const { toggleReaction } = useReactions(issue, setIssueList);
+  
   const reactions = issue.reactions || [];
   const topReactions = reactions.slice(0, 3);
 
   return (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
       
       {/* Display Container for the Reactions, only shows the Top 3 */}
       {reactions.length > 0 && (
@@ -26,20 +27,19 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
           onClick={(e) => { e.stopPropagation(); setAllReactionsOpen(true); }}
           style={{
             display: 'flex',
-            gap: '8px',
-            padding: '4px 10px',
+            gap: '4px',
+            padding: '4px 8px',
             borderRadius: '20px',
             background: 'var(--surface-strong)',
             border: '1px solid var(--border)',
             alignItems: 'center',
             cursor: 'pointer',
-            color: 'var(--text)'
+            lineHeight: '1'
           }}
         >
           {topReactions.map(r => (
-            <span key={r.emoji} style={{ fontSize: '14px', display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span>{r.emoji}</span>
-              <span style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>{r.count}</span>
+            <span key={r.emoji} style={{ fontSize: '14px' }}>
+              {r.emoji}
             </span>
           ))}
         </button>
@@ -52,12 +52,12 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
             title="Reaktion hinzufügen"
             onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
             style={{
-              padding: '4px 12px',
+              padding: '4px 10px',
               borderRadius: '20px',
               background: '#e0e0e0',
               border: 'none',
               color: '#333',
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: 'bold',
               cursor: 'pointer',
               display: 'flex',
@@ -77,7 +77,12 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
                   <button className="modal-close-btn" onClick={() => setPickerOpen(false)}>X</button>
                 </div>
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  <EmojiPicker lazyLoadEmojis={true} onEmojiClick={(e) => {addReaction(e.emoji); setPickerOpen(false); }} 
+                  <EmojiPicker 
+                    lazyLoadEmojis={true}
+                    onEmojiClick={(e) => { 
+                      toggleReaction(e.emoji); 
+                      setPickerOpen(false); 
+                    }} 
                   />
                 </div>
               </div>
@@ -95,22 +100,31 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
               <button className="modal-close-btn" onClick={() => setAllReactionsOpen(false)}>X</button>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
-              {reactions.map(r => (
-                <span key={r.emoji} style={{ 
-                  fontSize: '16px', 
-                  padding: '6px 12px', 
-                  background: 'var(--surface-strong)', 
-                  borderRadius: '20px', 
-                  border: '1px solid var(--border)',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  gap: '6px',
-                  alignItems: 'center'
-                }}>
-                  <span>{r.emoji}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{r.count}</span>
-                </span>
-              ))}
+              {reactions.map(r => {
+                const isActive = issue.user_reaction === r.emoji;
+                return (
+                  <button 
+                    key={r.emoji} 
+                    disabled={!userId}
+                    onClick={(e) => { e.stopPropagation(); toggleReaction(r.emoji); }}
+                    title={isActive ? "Reaktion entfernen" : "Mitreagieren"}
+                    style={{ 
+                      fontSize: '16px', 
+                      padding: '6px 12px', 
+                      background: isActive ? 'var(--accent-transparent)' : 'var(--surface-strong)', 
+                      borderRadius: '20px', 
+                      border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      gap: '6px',
+                      alignItems: 'center',
+                      cursor: userId ? 'pointer' : 'default'
+                    }}>
+                    <span>{r.emoji}</span>
+                    <span style={{ color: isActive ? 'var(--text)' : 'var(--text-muted)' }}>{r.count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

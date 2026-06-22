@@ -26,7 +26,13 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
           <svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
           </svg>
-          {news.userEmail || "Unbekannter Nutzer"}
+          {userRole === 'admin' || userRole ==='superadmin' ? (
+            <div style={{display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'flex-start'}}>
+            <span style={{color:'orange', fontWeight:'600', fontSize:'10px', marginBottom:'-5px'}}>{userRole.toUpperCase()}</span>
+            <span>news.userEmail</span>
+            </div>
+
+          ):(news.userEmail || "Unbekannter Nutzer")}
         </span>
       </div>
     
@@ -35,7 +41,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         <div 
           title={formatTimestamp(news.created_at)} 
           style={{
-            fontSize: '10px',
+            fontSize: '9px',
             color: 'var(--muted)',
             fontWeight: '400',
             cursor: 'help',

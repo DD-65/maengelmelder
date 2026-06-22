@@ -814,18 +814,39 @@ export default function App() {
 
         {/* Checkbox für "Nur eigene Mängel" (nur sichtbar für eingeloggte User) */}
         {userId && (
-          <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+          <div>
+          {/* <div className="issue-filter-only-own" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
             <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)} />
             <label htmlFor="onlyOwnIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur eigene Mängel anzeigen</label>
+          </div> */}
+          <span style={{fontSize: '14px', fontStyle: 'italic'}}>          
+            <label className="issue-filter-switch" style={{ fontSize: '10px', marginRight:'5px', top: '-3px' }} >
+            <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)}/>
+            <span className="issue-filter-slider"></span>
+            </label>
+          nur eigene Mängel
+          </span>
           </div>
         )}
 
         {/* Checkbox für "Nur von gefolgten Accounts" (nur sichtbar für eingeloggte User) */}
         {userId && (
-          <div className="issue-filter-followed-only" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+          <div>
+          {/* <div className="issue-filter-followed-only" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
             <input type="checkbox" id="followedOnlyIssues" checked={filterFollowedOnly} onChange={(e) => setFilterFollowedOnly(e.target.checked)} />
-            <label htmlFor="followedOnlyIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>Nur von gefolgten Accounts anzeigen</label>
+            <label htmlFor="followedOnlyIssues" style={{ fontSize: '14px', fontStyle: 'italic' }}>nur von gefolgten Accounts</label>
+          </div> */}
+
+
+          <span style={{fontSize: '14px', fontStyle: 'italic'}}>          
+            <label className="issue-filter-switch" style={{ fontSize: '10px', marginRight:'5px', top: '-3px' }} >
+            <input type="checkbox" id="followedOnlyIssues" checked={filterFollowedOnly} onChange={(e) => setFilterFollowedOnly(e.target.checked)}/>
+            <span className="issue-filter-slider"></span>
+            </label>
+          nur von gefolgten Accounts
+          </span>
           </div>
+
         )}
       </div>
       );

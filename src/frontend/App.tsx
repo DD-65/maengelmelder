@@ -997,8 +997,17 @@ export default function App() {
                    <SettingsButton setSettingsOpen={setSettingsOpen} />
                    <span>Einstellungen</span>
                 </div>
+                <div className="menu-divider" />
                 {filterContent}
+                <div className="menu-divider" />
                 {accountContent}
+                <div className="menu-divider" />
+                <Newsfeed
+                  userRole={userRole}
+                  userId={userId}
+                  newsList={newsList}
+                  setNewsList={setNewsList}
+                />
               </div>
             </aside>
           </div>

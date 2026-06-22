@@ -25,7 +25,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         
         {/* Entweder Status mit Kommentar oder nur Kommentar */}
         {news.status === null ? (
-            <p>{news.newskommentar}</p>
+            <p style={{fontSize: '12px'}}>{news.newskommentar}</p>
         ):(
             <div className='news-statusContainer'>{/* Status Anzeige */}
                 <div className="status-container">

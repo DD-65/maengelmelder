@@ -1315,7 +1315,7 @@ input:checked {
 }
 
 .issue-author {
-  padding-right: 48px;
+  padding-right: 4px;
   font-size: 14px;
 }
 
@@ -1422,7 +1422,7 @@ button.active:hover {
 
 .meta-line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1477,23 +1477,31 @@ button.active:hover {
   justify-content:left;
   max-height: 600px;
   list-style-type: none;
-  padding: 10px;
-  margin-top: 0px;
+  padding-left: 0%;
+  margin-left: 2%;
+  margin-right: 0%;
+  padding-right: 2%;
+  width: 100%;
+  margin-top: 30px;
   overflow-y: scroll;
 }
 .newscard{
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 5px;
   padding-top: 8px;
+
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   margin-top: 3%;
+  padding-right: 3px;
+  padding-left: 5px;
+
 } 
 .newscard .issue-title{
   font-size: 18px;
+
 }
 
 button:hover > .news-trash-icon {
@@ -1700,6 +1708,12 @@ button:hover > .modify-icon {
     align-items: center;
     justify-content: center;
   }
+
+  .menu-divider { 
+    border-top: 1px solid var(--border-color); 
+    margin: 8px 0; 
+  }
+
 
   .main-content {
     flex: 1;

@@ -1,7 +1,6 @@
 
 import { NewsfeedCard } from './newsfeedCard';
 import { useLoadNews } from '../hooks/useLoadNews';
-import { useNewsList } from '../hooks/useNewsList';
 import { News } from '../types/News';
 import { useState, useEffect } from 'react';
 import { usePostNews } from '../hooks/usePostNews';
@@ -16,7 +15,8 @@ interface NewsfeedProperties {
 }
 
 export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedProperties){
-    const[newNews, setNewNews] = useState('')
+    const[newNews, setNewNews] = useState('');
+    const[newsTitle, setNewsTitle] = useState('');
     const{loadNews} = useLoadNews(setNewsList);
     const{postNews} =usePostNews(setNewsList);
 
@@ -33,13 +33,37 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
     //   return () => window.clearInterval(intervalId);
   }, [loadNews]);
 
+    const sidebarHeaderStyle: React.CSSProperties = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '16px',
+        color: 'var(--text-h)',
+        paddingLeft: '10px',
+        
+    };
+    const sidebarCardStyle: React.CSSProperties = {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '14px',
+        paddingLeft: '4px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        margin: '0%',
+      };
     return (
-        <div className='newsfeedContainer' onClick={(e)=>{e.stopPropagation();}}>
+        <div className='sidebar-content'>
+                    
+        <div style={sidebarCardStyle}>
+        <h3 style={sidebarHeaderStyle}>Neuigkeiten</h3>
+        {/* <div className='newsfeedContainer' onClick={(e)=>{e.stopPropagation();}}> */}
+
             {(userRole === 'admin' || userRole === 'superadmin') &&(
                 <form className='newsfeedposting' onSubmit={async (e) => { e.preventDefault();
                                                 e.stopPropagation();
                                                 try {
-                                                    await postNews( null, newNews)  
+                                                    await postNews( null, newNews)
                                                     setNewNews('');
                                                     
                                                     
@@ -47,10 +71,11 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
                                                     toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Posten des Newsbeitrags"}`);
                                                 }
                                                 }
-                                                }>
+                                                }>                            
                     <input type="text" placeholder="neuer Newsfeed Beitrag"  value={newNews}  onClick={(e)=> {e.stopPropagation();}}
                     onChange={(event) => {event.stopPropagation(); setNewNews(event.target.value)}} autoComplete="off" required />
-                    <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Newsfeed Beitrag posten</button>
+                    
+                    <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>News posten</button>
                 </form>
             )}
             <ul className='newsfeed'>
@@ -65,7 +90,7 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
                     />
                 ))}
             </ul>
-            
+        </div>
         </div>
     );
   }

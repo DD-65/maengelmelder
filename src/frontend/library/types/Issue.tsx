@@ -16,5 +16,6 @@ export type Issue = {
   statusComment?: string;
   commentCount?: number;
   is_private?: number | boolean;
+  reactions?: { emoji: string; count: number }[];
 }
 

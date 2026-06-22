@@ -496,6 +496,32 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
+  router.post("/api/mangel/:id/react", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const mangelId = Number(req.params.id);
+      const { emoji } = req.body;
+
+      if (!Number.isInteger(mangelId)) {
+        return res.status(400).json({ error: "Ungültige Mangel-ID" });
+      }
+
+      if (!emoji) {
+        return res.status(400).json({ error: "Kein Emoji angegeben" });
+      }
+
+      db.prepare(`
+        INSERT OR IGNORE INTO mangel_reactions (user_id, mangel_id, emoji)
+        VALUES (?, ?, ?)
+      `).run(userId, mangelId, emoji);
+
+      res.json({ message: "Reaktion gespeichert" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Speichern der Reaktion" });
+    }
+  });
+
   return router;
 }
 

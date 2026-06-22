@@ -10,6 +10,7 @@ import { toast } from 'react-toastify/unstyled';
 import { usePostNews } from '../hooks/usePostNews';
 import { useNewsList } from '../hooks/useNewsList';
 import { News } from '../types/News';
+import { IssueReactions } from './IssueReactions';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -221,6 +222,9 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
 
       {/* Beschreibung */}
       <p className="issue-description">{issue.description}</p>
+
+      {/* Reaktionen */}
+      <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
 
       {/* Image */}
       {(issue.thumbnail_url || issue.image_url) && (

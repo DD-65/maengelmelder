@@ -233,7 +233,10 @@ button {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   border: none;
   color: white;
-  padding: 10px 14px;
+  padding-top: 10px;
+  padding-bottom:10px;
+  padding-left:10px;
+  padding-right:10px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 800;
@@ -1590,7 +1593,21 @@ button.active:hover {
 } 
 .newscard .issue-title{
   font-size: 18px;
-
+  color: var(--accent-2);
+}
+.newscard p{
+  padding-left: 10px;
+  font-weight: 600;
+  overflow-wrap:break-word;
+}
+.newscard-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-left:2px;
+  padding-right:2px;
+  padding-bottom: 0px;
 }
 
 button:hover > .news-trash-icon {
@@ -1598,7 +1615,7 @@ button:hover > .news-trash-icon {
 }
 .news-trash-icon{
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: baseline;
   width: 15px;
   height: 12px;
   flex-shrink: 0;

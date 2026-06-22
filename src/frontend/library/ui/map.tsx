@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import L, { LatLngBoundsExpression } from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildingCoordinates } from "../constants/buildingCoordinates";
 import { useGeolocation, type UserLocation } from "../hooks/useGeolocation";
+import { campusBounds, getCampusForCoordinates } from "../utils/campusLocation";
 
 export type MapSummaryItem = {
     building: string;
@@ -18,25 +19,6 @@ interface MapProperties{
     setCurrentFilter: React.Dispatch<React.SetStateAction<string>>;
     setCurrentFilterValue: React.Dispatch<React.SetStateAction<string>>;
 }
-
-// Bounding boxes of Kaiserslautern and Landau campuses
-const campusBounds = {
-    KL: {
-        center: [49.424341, 7.754280] as [number, number], // Campus Kaiserslautern
-        // Format: [[SouthWest Lat, SouthWest Lng], [NorthEast Lat, NorthEast Lng]]
-        bounds: [
-            [49.4180, 7.7450], // South-West Boundary
-            [49.4300, 7.7650]  // North-East Boundary
-        ] as LatLngBoundsExpression
-    },
-    LD: {
-        center: [49.204066, 8.107626] as [number, number], // Main Campus Landau
-        bounds: [
-            [49.17853, 8.09364], // South-West Boundary
-            [49.21614, 8.13774]  // North-East Boundary
-        ] as LatLngBoundsExpression
-    }
-};
 
 const formatCompactNumber = (num: number): string => {
     return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
@@ -81,20 +63,6 @@ function CampusSwitcher({ campus }: { campus: "KL" | "LD" }) {
         };
 
     }, [campus, map]);
-
-    return null;
-}
-
-function getCampusForLocation(location: UserLocation): "KL" | "LD" | null {
-    const point = L.latLng(location.latitude, location.longitude);
-
-    if (L.latLngBounds(campusBounds.KL.bounds as [[number, number], [number, number]]).contains(point)) {
-        return "KL";
-    }
-
-    if (L.latLngBounds(campusBounds.LD.bounds as [[number, number], [number, number]]).contains(point)) {
-        return "LD";
-    }
 
     return null;
 }
@@ -262,7 +230,7 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     // state of campus selection, default is Kaiserslautern
     const [selectedCampus, setSelectedCampus] = useState<"KL" | "LD">("KL");
     const { permission, location, error, isLocating, requestLocation, refreshLocation } = useGeolocation();
-    const locationCampus = location ? getCampusForLocation(location) : null;
+    const locationCampus = location ? getCampusForCoordinates(location.latitude, location.longitude) : null;
 
     useEffect(() => {
         refreshLocation();

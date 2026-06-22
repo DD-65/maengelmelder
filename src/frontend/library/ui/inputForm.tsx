@@ -1,10 +1,17 @@
 import { useMemo, useRef, useState } from "react";
+import exifr from "exifr";
 import { useInput } from "../hooks/useInput"
 import { useGeolocation } from "../hooks/useGeolocation";
 import { rooms } from "../constants/rooms";
 import { buildingCoordinates } from "../constants/buildingCoordinates";
+import {
+  getCampusForCoordinates,
+  getDistanceInMetres,
+  getNearestBuildingForCoordinates,
+  type Coordinates,
+} from "../utils/campusLocation";
 import { toast } from "react-toastify";
-import type { FocusEvent, KeyboardEvent, SubmitEvent } from "react";
+import type { ChangeEvent, FocusEvent, KeyboardEvent, SubmitEvent } from "react";
 
 type InputFormProperties = {
   onIssueCreated: () => void;
@@ -18,6 +25,8 @@ type LocationSuggestion = {
   distance: number | null;
 };
 
+type ImageLocationState = "idle" | "reading" | "available" | "missing" | "outside" | "error";
+
 const buildingNames = Object.keys(buildingCoordinates);
 const availableLocations = Array.from(new Set([...buildingNames, ...rooms]));
 
@@ -26,24 +35,6 @@ function getBuildingForLocation(value: string): string | null {
 
   const building = value.split("-")[0];
   return Object.hasOwn(buildingCoordinates, building) ? building : null;
-}
-
-function getDistanceInMetres(
-  latitude: number,
-  longitude: number,
-  [buildingLatitude, buildingLongitude]: [number, number],
-): number {
-  const earthRadius = 6_371_000;
-  const toRadians = (degrees: number) => degrees * Math.PI / 180;
-  const latitudeDelta = toRadians(buildingLatitude - latitude);
-  const longitudeDelta = toRadians(buildingLongitude - longitude);
-  const startLatitude = toRadians(latitude);
-  const endLatitude = toRadians(buildingLatitude);
-
-  const haversine = Math.sin(latitudeDelta / 2) ** 2
-    + Math.cos(startLatitude) * Math.cos(endLatitude) * Math.sin(longitudeDelta / 2) ** 2;
-
-  return earthRadius * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 }
 
 function formatDistance(distance: number): string {
@@ -56,11 +47,14 @@ function formatDistance(distance: number): string {
 }
 
 export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
-  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, setImage, isPrivate, setIsPrivate, addIssue}=useInput(onIssueCreated);
+  const{title, setTitle,description, setDescription, location, setLocation, kategorie, setKategorie, image, setImage, isPrivate, setIsPrivate, addIssue}=useInput(onIssueCreated);
   const { permission, location: userLocation, error: locationError, isLocating, requestLocation } = useGeolocation();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [imageCoordinates, setImageCoordinates] = useState<Coordinates | null>(null);
+  const [imageLocationState, setImageLocationState] = useState<ImageLocationState>("idle");
   const hasRequestedLocation = useRef(false);
+  const imageMetadataRequestId = useRef(0);
   const isLocationUnavailable = permission === "denied" || permission === "unsupported" || Boolean(locationError);
 
   const allSuggestions = useMemo<LocationSuggestion[]>(() => {
@@ -125,6 +119,91 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
     setActiveSuggestionIndex(-1);
   };
 
+  const applyCoordinatesAsLocation = (coordinates: Coordinates, sourceLabel: string) => {
+    if (!getCampusForCoordinates(coordinates.latitude, coordinates.longitude)) {
+      toast.error(`${sourceLabel} liegt außerhalb der Campusbereiche.`);
+      return;
+    }
+
+    const building = getNearestBuildingForCoordinates(coordinates.latitude, coordinates.longitude);
+    if (!building) {
+      toast.error(`Für ${sourceLabel.toLocaleLowerCase("de")} konnte kein Gebäude ermittelt werden.`);
+      return;
+    }
+
+    setLocation(building);
+    setIsLocationOpen(true);
+    setActiveSuggestionIndex(-1);
+  };
+
+  const useDeviceLocation = async () => {
+    const nextLocation = await requestLocation();
+    if (!nextLocation) {
+      toast.error(locationError ?? "Dein Standort konnte nicht verwendet werden.");
+      return;
+    }
+
+    applyCoordinatesAsLocation(nextLocation, "Dein Standort");
+  };
+
+  const useImageLocation = () => {
+    if (!imageCoordinates || imageLocationState !== "available") return;
+    applyCoordinatesAsLocation(imageCoordinates, "Der Bildstandort");
+  };
+
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    const requestId = imageMetadataRequestId.current + 1;
+    imageMetadataRequestId.current = requestId;
+    setImage(file);
+    setImageCoordinates(null);
+
+    if (!file) {
+      setImageLocationState("idle");
+      return;
+    }
+
+    setImageLocationState("reading");
+
+    try {
+      const metadataLocation = await exifr.gps(file);
+      if (requestId !== imageMetadataRequestId.current) return;
+
+      if (
+        !metadataLocation
+        || !Number.isFinite(metadataLocation.latitude)
+        || !Number.isFinite(metadataLocation.longitude)
+      ) {
+        setImageLocationState("missing");
+        return;
+      }
+
+      const coordinates = {
+        latitude: metadataLocation.latitude,
+        longitude: metadataLocation.longitude,
+      };
+
+      setImageCoordinates(coordinates);
+      setImageLocationState(
+        getCampusForCoordinates(coordinates.latitude, coordinates.longitude) ? "available" : "outside",
+      );
+    } catch {
+      if (requestId === imageMetadataRequestId.current) {
+        setImageLocationState("error");
+      }
+    }
+  };
+
+  const imageLocationTitle = imageLocationState === "reading"
+    ? "Bildstandort wird gelesen …"
+    : imageLocationState === "available"
+      ? "Standort aus Bild verwenden"
+      : imageLocationState === "outside"
+        ? "Bildstandort liegt außerhalb der Campusbereiche"
+        : imageLocationState === "missing"
+          ? "Bild enthält keine GPS-Standortdaten"
+          : "Bildstandort konnte nicht gelesen werden";
+
   const handleLocationBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
       setIsLocationOpen(false);
@@ -171,7 +250,7 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
           <form className="issue-form" onSubmit={handleSubmit}>
             <input type="text" placeholder="Titel" value={title} disabled={isRestricted} onChange={(event) => setTitle(event.target.value)} />
 
-            <div className="location-wrapper" onBlur={handleLocationBlur}>
+            <div className={`location-wrapper${image ? " has-image-location-action" : ""}`} onBlur={handleLocationBlur}>
               <span className="location-input-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" />
@@ -197,6 +276,44 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
                 aria-controls="location-suggestions"
                 aria-activedescendant={activeSuggestionIndex >= 0 ? `location-suggestion-${activeSuggestionIndex}` : undefined}
               />
+
+              <div className="location-input-actions">
+                <button
+                  type="button"
+                  className="location-source-button"
+                  aria-label="Aktuellen Standort verwenden"
+                  title={isLocating ? "Standort wird ermittelt …" : "Aktuellen Standort verwenden"}
+                  disabled={isLocating}
+                  aria-busy={isLocating}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={useDeviceLocation}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" />
+                  </svg>
+                </button>
+
+                {image && (
+                  <button
+                    type="button"
+                    className="location-source-button"
+                    aria-label="Standort aus Bild verwenden"
+                    title={imageLocationTitle}
+                    disabled={imageLocationState !== "available"}
+                    aria-busy={imageLocationState === "reading"}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={useImageLocation}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                      <path d="M14.5 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2" strokeLinecap="round" />
+                      <circle cx="8" cy="9" r="2" />
+                      <path d="m4 17 4-4 3.5 3 2-2 1.5 1.5M18.5 6.5a3 3 0 0 0-3 3c0 2.3 3 5.5 3 5.5s3-3.2 3-5.5a3 3 0 0 0-3-3Z" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="18.5" cy="9.5" r="0.7" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
+                )}
+              </div>
 
               {isLocationOpen && (visibleSuggestions.length > 0 || isLocating || locationError) && (
                 <div className="room-suggestions" id="location-suggestions" role="listbox">
@@ -256,7 +373,7 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
               <option value="Mobiliar">Mobiliar</option>
               <option value="Andere">Andere</option>  {/* Als Option, wie gewollt */}
             </select>
-            <input type="file" accept="image/*" disabled={isRestricted} onChange={(event) => setImage(event.target.files ? event.target.files[0] : null)} />
+            <input type="file" accept="image/*" disabled={isRestricted} onChange={handleImageChange} />
             <textarea 
               className="beschreibung-input" 
               placeholder="Beschreibung des Mangels" 

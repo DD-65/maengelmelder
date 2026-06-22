@@ -963,7 +963,12 @@ input:checked {
 .location-wrapper input {
   width: 100%;
   padding-left: 38px;
+  padding-right: 42px;
   box-sizing: border-box;
+}
+
+.location-wrapper.has-image-location-action input {
+  padding-right: 74px;
 }
 
 .location-input-icon {
@@ -982,6 +987,57 @@ input:checked {
 .location-input-icon svg {
   width: 16px;
   height: 16px;
+}
+
+.location-input-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.location-source-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  min-width: 0;
+  padding: 0;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.location-source-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.location-source-button:hover:not(:disabled) {
+  background: var(--surface-strong);
+  border-color: var(--border);
+  box-shadow: none;
+  color: var(--text-h);
+  transform: none;
+}
+
+.location-source-button:disabled {
+  opacity: 0.35;
+}
+
+.location-source-button[aria-busy="true"] svg {
+  animation: location-source-spin 0.9s linear infinite;
+}
+
+@keyframes location-source-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .room-suggestions {

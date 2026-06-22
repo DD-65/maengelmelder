@@ -79,16 +79,16 @@ export function useGeolocation() {
     };
   }, []);
 
-  const performLocationRequest = useCallback((showLoading: boolean) => {
+  const performLocationRequest = useCallback((showLoading: boolean): Promise<UserLocation | null> => {
     if (!("geolocation" in navigator)) {
       setPermission("unsupported");
       setError("Standortbestimmung wird von diesem Browser nicht unterstützt.");
-      return;
+      return Promise.resolve(null);
     }
 
     if (!window.isSecureContext) {
       setError("Standortbestimmung ist nur über eine sichere HTTPS-Verbindung verfügbar.");
-      return;
+      return Promise.resolve(null);
     }
 
     const requestId = requestIdRef.current + 1;
@@ -109,48 +109,60 @@ export function useGeolocation() {
       }
     };
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        finishRequest();
-        if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) return;
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          finishRequest();
+          if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) {
+            resolve(null);
+            return;
+          }
 
-        latestSettledRequestIdRef.current = requestId;
+          latestSettledRequestIdRef.current = requestId;
 
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp,
-        });
-        setPermission("granted");
-        setError(null);
-      },
-      (positionError) => {
-        finishRequest();
-        if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) return;
+          const nextLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+          };
 
-        latestSettledRequestIdRef.current = requestId;
+          setLocation(nextLocation);
+          setPermission("granted");
+          setError(null);
+          resolve(nextLocation);
+        },
+        (positionError) => {
+          finishRequest();
+          if (!mountedRef.current || requestId < latestSettledRequestIdRef.current) {
+            resolve(null);
+            return;
+          }
 
-        if (positionError.code === positionError.PERMISSION_DENIED) {
-          setPermission("denied");
-          setLocation(null);
-        }
-        setError(getGeolocationErrorMessage(positionError));
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 12_000,
-        maximumAge: 0,
-      },
-    );
+          latestSettledRequestIdRef.current = requestId;
+
+          if (positionError.code === positionError.PERMISSION_DENIED) {
+            setPermission("denied");
+            setLocation(null);
+          }
+          setError(getGeolocationErrorMessage(positionError));
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12_000,
+          maximumAge: 0,
+        },
+      );
+    });
   }, []);
 
   const requestLocation = useCallback(() => {
-    performLocationRequest(true);
+    return performLocationRequest(true);
   }, [performLocationRequest]);
 
   const refreshLocation = useCallback(() => {
-    performLocationRequest(false);
+    return performLocationRequest(false);
   }, [performLocationRequest]);
 
   return {

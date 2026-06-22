@@ -116,6 +116,7 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
 
   const selectLocation = (value: string) => {
     setLocation(value);
+    setIsLocationOpen(false);
     setActiveSuggestionIndex(-1);
   };
 

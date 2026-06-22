@@ -1035,7 +1035,9 @@ export default function App() {
           <div className="sidebar-header">
             <Reportunfall /> {/* Seitenüberschrift mit random RPTU U */}
           </div>
-          {filterContent}
+          <div className="sidebar-scroll-container">
+            {filterContent}
+          </div>
         </aside>
 
         <main id="main-content" className="main-content" tabIndex={-1}>
@@ -1214,15 +1216,16 @@ export default function App() {
           </div>
         </div>
         
-        {accountContent}
-        
+        <div className="sidebar-scroll-container">
+          {accountContent}
+          
           <Newsfeed
             userRole={userRole}
             userId={userId}
             newsList={newsList}
             setNewsList={setNewsList}
           />
-
+        </div>
       </aside>
 
       {/* Input Pop-up */}

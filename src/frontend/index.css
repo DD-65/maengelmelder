@@ -2222,3 +2222,9 @@ button:hover > .modify-icon {
 .sidebar-right .sidebar-header {
   justify-content: space-between !important;
 }
+
+.sidebar-header {
+  flex: 0 0 80px !important;
+  height: 80px !important;
+  box-sizing: border-box !important;
+}

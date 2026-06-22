@@ -10,7 +10,7 @@ export function useReactions(issue: Issue, setIssueList: React.Dispatch<React.Se
     // Instant UI Update instead of pulling from the server
     setIssueList(prevList => prevList.map(item => {
       if (item.id === issue.id) {
-        let newReactions = [...(item.reactions || [])];
+        let newReactions = (item.reactions || []).map(r => ({ ...r }));
 
         // Decrement old reaction if they had one
         if (item.user_reaction) {

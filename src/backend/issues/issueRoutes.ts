@@ -496,6 +496,35 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
+  router.post("/api/mangel/:id/react", requireAuth, (req, res) => {
+    try {
+      const userId = req.session.userId as number;
+      const mangelId = Number(req.params.id);
+      const { emoji } = req.body;
+
+      if (!Number.isInteger(mangelId)) {
+        return res.status(400).json({ error: "Ungültige Mangel-ID" });
+      }
+
+      const updateReaction = db.transaction((txUserId: number, txMangelId: number, txEmoji: string | null) => {
+        db.prepare("DELETE FROM mangel_reactions WHERE user_id = ? AND mangel_id = ?")
+          .run(txUserId, txMangelId);
+        
+        if (txEmoji) {
+          db.prepare("INSERT INTO mangel_reactions (user_id, mangel_id, emoji) VALUES (?, ?, ?)")
+            .run(txUserId, txMangelId, txEmoji);
+        }
+      });
+
+      updateReaction(userId, mangelId, emoji || null);
+
+      res.json({ message: "Reaktion aktualisiert" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Fehler beim Aktualisieren der Reaktion" });
+    }
+  });
+
   return router;
 }
 

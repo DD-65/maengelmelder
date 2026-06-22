@@ -10,6 +10,7 @@ import { toast } from 'react-toastify/unstyled';
 import { usePostNews } from '../hooks/usePostNews';
 import { useNewsList } from '../hooks/useNewsList';
 import { News } from '../types/News';
+import { IssueReactions } from './IssueReactions';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -238,7 +239,10 @@ export function IssueCard({ issue, userRole, userId, userEmail, onDelete, onRepo
 
       {/* Container fuer Voting-zeug */}
       <div className="issue-actions">
-        <p>Likes: {issue.votes || 0}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <p style={{ margin: 0 }}>Likes: {issue.votes || 0}</p>
+            <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
+        </div>
         <p>Kategorie: {issue.kategorie || '-'}</p>
 
         {/* Knopf für Öffnen und Schließen der Kommentarspalte */}

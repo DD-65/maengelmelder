@@ -23,6 +23,7 @@ type IssueRow = {
   has_voted: number;
   is_private: number; 
   is_author_followed: number;
+  reactions?: { emoji: string; count: number }[];
 };
 
 export type PaginatedIssues = {
@@ -101,7 +102,24 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
           WHERE follows.follower_id = ?
             AND follows.followed_id = maengel.user_id
         )
-      END AS is_author_followed
+      END AS is_author_followed,
+      CASE
+        WHEN ? IS NULL THEN NULL
+        ELSE (
+          SELECT emoji FROM mangel_reactions 
+          WHERE mangel_id = maengel.id AND user_id = ?
+        )
+      END AS user_reaction,
+      (
+        SELECT json_group_array(json_object('emoji', emoji, 'count', c))
+        FROM (
+          SELECT emoji, COUNT(*) as c
+          FROM mangel_reactions
+          WHERE mangel_id = maengel.id
+          GROUP BY emoji
+          ORDER BY c DESC
+        )
+      ) AS reactions_json
     FROM maengel
     LEFT JOIN users ON maengel.user_id = users.id
     LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
@@ -111,8 +129,18 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
     ${limitClause}
   `);
 
-  return stmt.all(userId, userId, userId, userId, ...whereParams) as IssueRow[];
+  // WRITTEN WITH THE HELP OF GEMINI 3.1 PRO EXTENDED
+const rows = stmt.all(userId, userId, userId, userId, userId, userId, ...whereParams) as (IssueRow & { reactions_json: string, user_reaction: string | null })[];
+  
+  return rows.map(row => {
+    const parsedReactions = JSON.parse(row.reactions_json || '[]');
+    return {
+      ...row,
+      reactions: parsedReactions.filter((r: { emoji: string | null }) => r.emoji !== null)
+    };
+  }) as IssueRow[];
 }
+// END OF AI CODE
 
 // zählt die mängel mit denselben Berechtigungen wie die eigentliche Liste (filterfunktionalität)
 // damit die richtige Anzahl in der UI stehen kann

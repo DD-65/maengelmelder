@@ -49,7 +49,7 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
                                                 }
                                                 }>
                     <input type="text" placeholder="neuer Newsfeed Beitrag"  value={newNews}  onClick={(e)=> {e.stopPropagation();}}
-                    onChange={(event) => {event.stopPropagation(); setNewNews(event.target.value)}} autoComplete="off"/>
+                    onChange={(event) => {event.stopPropagation(); setNewNews(event.target.value)}} autoComplete="off" required />
                     <button type="submit" onClick={(e)=> {e.stopPropagation();}}><ModifyIcon className="modify-icon" aria-hidden="true"/>Newsfeed Beitrag posten</button>
                 </form>
             )}

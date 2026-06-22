@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import EmojiPicker from 'emoji-picker-react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { Issue } from '../types/Issue';
 import { useReactions } from '../hooks/useReactions';
 
@@ -12,10 +13,34 @@ interface IssueReactionsProps {
 export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [allReactionsOpen, setAllReactionsOpen] = useState(false);
+  const [pickerTheme, setPickerTheme] = useState<Theme>(Theme.AUTO);
   const { toggleReaction } = useReactions(issue, setIssueList);
-  
   const reactions = issue.reactions || [];
   const topReactions = reactions.slice(0, 3);
+
+  // Sync theme with global
+  useEffect(() => {
+    const syncTheme = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        setPickerTheme(Theme.DARK);
+      } else if (currentTheme === 'light') {
+        setPickerTheme(Theme.LIGHT);
+      } else {
+        setPickerTheme(Theme.AUTO); 
+      }
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['data-theme'] 
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
@@ -69,15 +94,16 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
           > + </button>
 
           {/* Emoji Picker */}
-          {pickerOpen && (
+          {pickerOpen && createPortal(
             <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setPickerOpen(false); }}>
-              <div className="modal-pane swipe-ignore" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', maxWidth: '350px' }}>
-                <div className="modal-header">
-                  <h3 style={{ margin: 0 }}>Reaktion wählen</h3>
+              <div className="modal-pane swipe-ignore" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', maxWidth: '350px', width: '90%' }}>
+                <div className="modal-header" style={{ marginBottom: '16px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h)' }}>Reaktion wählen</h3>
                   <button className="modal-close-btn" onClick={() => setPickerOpen(false)}>X</button>
                 </div>
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                   <EmojiPicker 
+                    theme={pickerTheme}
                     lazyLoadEmojis={true}
                     onEmojiClick={(e) => { 
                       toggleReaction(e.emoji); 
@@ -86,17 +112,18 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
                   />
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
 
       {/* Shows all Reactions */}
-      {allReactionsOpen && (
+      {allReactionsOpen && createPortal(
         <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setAllReactionsOpen(false); }}>
-          <div className="modal-pane swipe-ignore" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', maxWidth: '350px' }}>
+          <div className="modal-pane swipe-ignore" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', maxWidth: '350px', width: '90%' }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Alle Reaktionen</h3>
+              <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h)' }}>Alle Reaktionen</h3>
               <button className="modal-close-btn" onClick={() => setAllReactionsOpen(false)}>X</button>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
@@ -127,7 +154,8 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

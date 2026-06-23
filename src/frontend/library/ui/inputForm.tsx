@@ -53,7 +53,6 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [imageCoordinates, setImageCoordinates] = useState<Coordinates | null>(null);
   const [imageLocationState, setImageLocationState] = useState<ImageLocationState>("idle");
-  const hasRequestedLocation = useRef(false);
   const imageMetadataRequestId = useRef(0);
   const isLocationUnavailable = permission === "denied" || permission === "unsupported" || Boolean(locationError);
 
@@ -102,16 +101,6 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
   const openLocationSuggestions = () => {
     setIsLocationOpen(true);
     setActiveSuggestionIndex(-1);
-
-    if (
-      !hasRequestedLocation.current
-      && !userLocation
-      && permission !== "denied"
-      && permission !== "unsupported"
-    ) {
-      hasRequestedLocation.current = true;
-      requestLocation();
-    }
   };
 
   const selectLocation = (value: string) => {

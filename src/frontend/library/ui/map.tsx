@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -230,16 +230,14 @@ export function Map({mapSummary,  setViewMode, setCurrentFilter, setCurrentFilte
     // state of campus selection, default is Kaiserslautern
     const [selectedCampus, setSelectedCampus] = useState<"KL" | "LD">("KL");
     const { permission, location, error, isLocating, requestLocation, refreshLocation } = useGeolocation();
+    const hasRequestedInitialLocation = useRef(false);
     const locationCampus = location ? getCampusForCoordinates(location.latitude, location.longitude) : null;
 
     useEffect(() => {
-        refreshLocation();
+        if (hasRequestedInitialLocation.current) return;
 
-        const locationRefreshInterval = window.setInterval(refreshLocation, 1_000);
-
-        return () => {
-            window.clearInterval(locationRefreshInterval);
-        };
+        hasRequestedInitialLocation.current = true;
+        void refreshLocation();
     }, [refreshLocation]);
 
     useEffect(() => {

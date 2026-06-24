@@ -632,11 +632,9 @@ app.get("/api/newsfeed/", (req, res) => {
         maengel.title,
         newsfeed.newskommentar,
         maengel_kommentare.kommentar AS statusComment,
-        users.email AS userEmail, 
         newsfeed.created_at,
         newsfeed.id AS newsId
       FROM newsfeed 
-      LEFT JOIN users ON newsfeed.user_id=users.id
       LEFT JOIN maengel ON newsfeed.mangel_id = maengel.id
       LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
       WHERE newsfeed.mangel_id IS NULL OR (maengel.is_private = 0 OR maengel.user_id = ? OR (SELECT role FROM users WHERE id = ?) IN ('admin', 'superadmin'))
@@ -677,11 +675,9 @@ app.patch("/api/newsfeed/add/", requireAuth, (req, res) => {
         maengel.title,
         newsfeed.newskommentar,
         maengel_kommentare.kommentar AS statusComment,
-        users.email AS userEmail, 
         newsfeed.created_at,
         newsfeed.id AS newsId
       FROM newsfeed 
-      LEFT JOIN users ON newsfeed.user_id=users.id
       LEFT JOIN maengel ON newsfeed.mangel_id = maengel.id
       LEFT JOIN maengel_kommentare ON maengel_kommentare.id = maengel.statusComment_id
       WHERE newsfeed.id = ?`).get(result.lastInsertRowid);

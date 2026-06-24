@@ -4,7 +4,6 @@ export type News = {
     title?: string;
     newskommentar?: string;
     statusComment?:string;
-    userEmail:string;
     created_at: string;
     newsId: number | null;
     is_private: number | boolean;

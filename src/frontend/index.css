@@ -1585,6 +1585,7 @@ button.active:hover {
   padding-left: 10px;
   font-weight: 600;
   overflow-wrap:break-word;
+  margin-bottom: 5px;
 }
 .newscard-header {
   display: flex;

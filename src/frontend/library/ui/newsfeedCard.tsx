@@ -21,20 +21,6 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
     <li className="newscard" onClick={(e)=>{e.stopPropagation();}}>
     
     <div className='newscard-header'>
-      <div className='issue-author'>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          <svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
-          </svg>
-          {userRole === 'admin' || userRole ==='superadmin' ? (
-            <div style={{display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'flex-start'}}>
-            <span style={{color:'orange', fontWeight:'600', fontSize:'10px', marginBottom:'-5px'}}>{userRole.toUpperCase()}</span>
-            <span>news.userEmail</span>
-            </div>
-
-          ):(news.userEmail || "Unbekannter Nutzer")}
-        </span>
-      </div>
     
       {/* Timestamp */}
       {news.created_at && (
@@ -52,9 +38,17 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
           {getRelativeTime(news.created_at)}
         </div>
       )}
+
+      {/* Admin/Superadmin-button um News zu loeschen, nur sichtbar fuer Admins und Superadmins jetzt oben*/}
+      {(userRole === "admin" || userRole === "superadmin") && (
+        //<div className="meta-line " style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap', paddingBottom: '10px' }}>
+          //<hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)'}} />
+          <button style={{height:'25px', width:'50%', padding:'0px', marginRight:'6px'}} onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="news-trash-icon" aria-hidden="true"/> {news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
+        //</div>/* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
+      )}
     </div>
 
-    <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)'}} />
+    <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)', marginTop:'5px', marginBottom:'5px'}} />
     
     {/* Entweder Status mit Kommentar oder nur Kommentar */}
     {news.status === null ? (
@@ -76,7 +70,7 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         <span>
         Begründung für Status: <p style={{fontStyle:'italic', border:'none', background:'none'}} className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>{news.statusComment}</p>
         </span>)}
-        <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)'}} />
+        <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)', marginTop:'5px', marginBottom:'5px'}} />
         </div>
         
       )}
@@ -93,22 +87,8 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         {/* <p className="issue-description">{issue.description}</p> */}
         </div>
       )}
-      
-      
-      
-      
-      
-    <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)'}} />
 
-      <div className="meta-line " style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap', paddingBottom: '10px' }}>
-      {/* Admin/Superadmin-button um News zu loeschen, nur sichtbar fuer Admins und Superadmins */}
-      {(userRole === "admin" || userRole === "superadmin") && (
-        <button style={{height:'25px', width:'50%', padding:'0px', marginRight:'6px'}} onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="news-trash-icon" aria-hidden="true"/> {news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
-        /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
-      )}
-      
-      </div>
-      
+
       </li>
     );
   }

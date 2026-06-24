@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { Issue } from '../types/Issue';
 import { useReactions } from '../hooks/useReactions';
+
+const EmojiPickerPanel = lazy(() =>
+  import('./EmojiPickerPanel').then((module) => ({ default: module.EmojiPickerPanel }))
+);
 
 interface IssueReactionsProps {
   issue: Issue;
@@ -13,7 +16,7 @@ interface IssueReactionsProps {
 export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [allReactionsOpen, setAllReactionsOpen] = useState(false);
-  const [pickerTheme, setPickerTheme] = useState<Theme>(Theme.AUTO);
+  const [pickerTheme, setPickerTheme] = useState<'auto' | 'light' | 'dark'>('auto');
   const { toggleReaction } = useReactions(issue, setIssueList);
   const reactions = issue.reactions || [];
   const topReactions = reactions.slice(0, 3);
@@ -23,11 +26,11 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
     const syncTheme = () => {
       const currentTheme = document.documentElement.getAttribute('data-theme');
       if (currentTheme === 'dark') {
-        setPickerTheme(Theme.DARK);
+        setPickerTheme('dark');
       } else if (currentTheme === 'light') {
-        setPickerTheme(Theme.LIGHT);
+        setPickerTheme('light');
       } else {
-        setPickerTheme(Theme.AUTO); 
+        setPickerTheme('auto');
       }
     };
 
@@ -102,14 +105,15 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
                   <button className="modal-close-btn" onClick={() => setPickerOpen(false)}>X</button>
                 </div>
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  <EmojiPicker 
-                    theme={pickerTheme}
-                    lazyLoadEmojis={true}
-                    onEmojiClick={(e) => { 
-                      toggleReaction(e.emoji); 
-                      setPickerOpen(false); 
-                    }} 
-                  />
+                  <Suspense fallback={<div>Emoji-Auswahl wird geladen…</div>}>
+                    <EmojiPickerPanel
+                      theme={pickerTheme}
+                      onEmojiClick={(emoji) => {
+                        toggleReaction(emoji);
+                        setPickerOpen(false);
+                      }}
+                    />
+                  </Suspense>
                 </div>
               </div>
             </div>,

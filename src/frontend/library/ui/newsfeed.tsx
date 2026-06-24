@@ -55,7 +55,7 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
     return (
         <div className='sidebar-content'>
                     
-        <div style={sidebarCardStyle}>
+        <div style={sidebarCardStyle} >
         <h3 style={sidebarHeaderStyle}>Neuigkeiten</h3>
         {/* <div className='newsfeedContainer' onClick={(e)=>{e.stopPropagation();}}> */}
 

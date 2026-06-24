@@ -1548,6 +1548,7 @@ button.active:hover {
   margin-top: 12px;
 }
 
+
 .newsfeed{
   display: flex;
   flex-direction: column;
@@ -1561,6 +1562,12 @@ button.active:hover {
   width:auto;
   margin-top: 30px;
   overflow-y: scroll;
+  /* native scrollbar ausblenden */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE und Edge */
+}
+.newsfeed::-webkit-scrollbar {
+  display: none; /* Chrome, Safari und Opera */
 }
 .newscard{
   background: var(--surface);

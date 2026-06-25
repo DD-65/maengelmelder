@@ -67,8 +67,11 @@ export const buildingCoordinates: Record<string, [number, number]> = {
   "I" : [49.203900, 8.108422],
   "K" : [49.203935, 8.108755],
   "L" : [49.204194, 8.109329],
-  "August-Croissant-Straße" : [49.206679, 8.118703],
+  "August-Croissant-Straße" : [49.206655, 8.119116],
   "Rote Kaserne" : [49.199187, 8.111158],
   "Bürgerstraße" : [49.188635, 8.115745],
   "Ostbahnstraße" : [49.197617, 8.118846],
+  "Thomas-Nast-Straße" : [49.206569, 8.118188],
+  "Xylanderstraße" : [49.194769, 8.113350],
+  "Georg-Friedrich-Dentzel-Straße" : [49.187270, 8.118601],
 };

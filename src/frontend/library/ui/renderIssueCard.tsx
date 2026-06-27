@@ -240,19 +240,23 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
 
       {/* Container fuer Voting-zeug */}
       <div className="issue-actions">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <p style={{ margin: 0 }}>Likes: {issue.votes || 0}</p>
-            <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
-        </div>
         <p>Kategorie: {issue.kategorie || '-'}</p>
 
         {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-        <button className='kommentareoeffnen' onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}><CommentIcon className="comment-icon" aria-hidden="true" /><span>{commentButtonText}</span></button>
+        <button
+          className='kommentareoeffnen'
+          title={commentButtonText}
+          aria-label={commentButtonText}
+          onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}
+        >
+          <CommentIcon className="comment-icon" aria-hidden="true" />{commentCount}
+        </button>
 
         {/* Button for toggling privacy */}
         {userEmail === issue.user_email && (
           <button
             title={isPrivate ? "Öffentlich machen" : "Privat machen"}
+            aria-label={isPrivate ? "Öffentlich machen" : "Privat machen"}
             onClick={(e) => { e.stopPropagation(); if (issue.id) onTogglePrivacy(issue.id, isPrivate); }}
             style={{ padding: '6px 12px' }}
           >
@@ -268,6 +272,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         {userId && (
           <button
             title="Mangel melden"
+            aria-label="Mangel melden"
             onClick={(e) => { e.stopPropagation(); if (issue.id) onReport(issue.id); }}
             style={{ color: 'var(--error)' }} 
           >
@@ -280,15 +285,39 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
 
         {/* Admin/Superadmin-button um Mangel zu loeschen, nur sichtbar fuer Admins und Superadmins */}
         {(userRole === "admin" || userRole === "superadmin") && (
-          <button onClick={(e) => { e.stopPropagation(); if (issue.id) onDelete(issue.id); }}><TrashIcon className="trash-icon" aria-hidden="true" /> {issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
-          /* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
+          <button
+            title={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
+            aria-label={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
+            onClick={(e) => { e.stopPropagation(); if (issue.id) onDelete(issue.id); }}
+          >
+            <TrashIcon className="trash-icon" aria-hidden="true" />
+          </button>
         )}
-        {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
-        {userId ? (
-          <button className={hasVoted ? "voted-button" : undefined} /*disabled={hasVoted}*/ onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}><LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" />{issue.votes || 0}</button>
-        ) : (
-          <button disabled onClick={(e) => e.stopPropagation()}><LikeIcon className="like-icon" aria-hidden="true" />{issue.votes || 0}</button>
-        )}
+
+        {/* Voting & Reactions Group */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
+          {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
+          {userId ? (
+            <button
+              className={hasVoted ? "voted-button" : undefined}
+              title={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
+              aria-label={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
+              onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}
+            >
+              <LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" />{issue.votes || 0}
+            </button>
+          ) : (
+            <button
+              disabled
+              title="Einloggen um abzustimmen"
+              aria-label="Einloggen um abzustimmen"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LikeIcon className="like-icon" aria-hidden="true" />{issue.votes || 0}
+            </button>
+          )}
+        </div>
 
       </div>
 

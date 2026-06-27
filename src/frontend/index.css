@@ -2341,3 +2341,148 @@ button:hover > .modify-icon {
   height: 80px !important;
   box-sizing: border-box !important;
 }
+
+/* Status Popup */
+.status-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: statusFadeIn 0.15s ease-out;
+}
+
+.status-popup-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  position: relative;
+  text-align: left;
+  animation: statusScaleUp 0.15s ease-out;
+}
+
+.status-popup-pane h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text-h);
+  font-size: 18px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.status-popup-pane label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+}
+
+.status-popup-pane select.status-select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  margin-bottom: 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.status-popup-pane input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  margin-bottom: 14px;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.status-popup-pane .checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.status-popup-pane .checkbox-container input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.status-popup-pane .checkbox-container label {
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.status-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.status-popup-actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.status-popup-actions button[type="submit"] {
+  background: var(--accent);
+  color: white;
+}
+
+.status-popup-actions button[type="submit"]:hover {
+  background: var(--accent-hover, var(--accent-2));
+}
+
+.status-popup-actions button.cancel-btn {
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.status-popup-actions button.cancel-btn:hover {
+  background: var(--border);
+}
+
+.status-reason-text {
+  font-size: 15px;
+  line-height: 1.5;
+  background: var(--surface-strong);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 16px;
+  overflow-wrap: break-word;
+}
+
+@keyframes statusFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes statusScaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

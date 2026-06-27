@@ -42,6 +42,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
   const { postNews } = usePostNews(setNewsList);
   const [postAsNews, setPostAsNews] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isAdminFormOpen, setIsAdminFormOpen] = useState(false);
 
   const handleFollowToggle = async () => {
     if (!issue.user_id) return;
@@ -71,7 +72,199 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
   const hasExpandableContent = (issue.description && issue.description.length > 30) || Boolean(issue.thumbnail_url || issue.image_url);
 
   return (
-    <li className="card issue-card" key={issue.id}>
+    <li className="card issue-card" key={issue.id} style={{ overflow: isAdminFormOpen ? 'visible' : 'hidden' }}>
+
+      {/* Clickable Status Badge in der Ecke links oben */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '14px',
+          left: '16px',
+          zIndex: 30,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '4px',
+          maxWidth: '220px',
+          textAlign: 'left'
+        }}
+      >
+        <span
+          className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}
+          style={{
+            cursor: (userRole === "admin" || userRole === "superadmin") ? 'pointer' : 'default',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+          title={issue.statusComment ? `Grund: ${issue.statusComment}` : "Kein Grund angegeben"}
+          onClick={(e) => {
+            if (userRole === "admin" || userRole === "superadmin") {
+              e.stopPropagation();
+              setNewStatus(issue.status ?? '');
+              setNewStatusComment('');
+              setIsAdminFormOpen(!isAdminFormOpen);
+            }
+          }}
+        >
+          {issue.status}
+          {(userRole === "admin" || userRole === "superadmin") && (
+            <ModifyIcon style={{ width: '12px', height: '12px', verticalAlign: 'middle', opacity: 0.8 }} />
+          )}
+        </span>
+        {isExpanded && issue.statusComment && (
+          <span style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-muted)', overflowWrap: 'anywhere', lineHeight: '1.2' }}>
+            Grund: {issue.statusComment}
+          </span>
+        )}
+
+        {/* Admin-Formular direkt unter dem Badge */}
+        {isAdminFormOpen && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (issue.id) {
+                try {
+                  await updateStatus(issue.id, newStatus, newStatusComment);
+                  toast.success("Status aktualisiert");
+                  setNewStatusComment('');
+                  setIsAdminFormOpen(false);
+                  if (newStatus === 'Behoben' && postAsNews) {
+                    await postNews(issue.id, null);
+                  }
+                } catch (error) {
+                  toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Aktualisieren des Status"}`);
+                }
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '10px',
+              boxShadow: 'var(--shadow-lg)',
+              marginTop: '4px',
+              width: '170px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              zIndex: 35
+            }}
+          >
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-h)' }}>
+              Status ändern
+            </div>
+            
+            {/* Dropdown */}
+            <select
+              id="inline-status-select"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                fontSize: '12px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface-strong)',
+                color: 'var(--text)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="Gemeldet">Gemeldet</option>
+              <option value="Akzeptiert">Akzeptiert</option>
+              <option value="Abgelehnt">Abgelehnt</option>
+              <option value="In Bearbeitung">In Bearbeitung</option>
+              <option value="Behoben">Behoben</option>
+              <option value="Gelöscht">Gelöscht</option>
+            </select>
+            
+            <input
+              id="inline-status-comment"
+              type="text"
+              placeholder="Grund für Statusänderung"
+              value={newStatusComment}
+              required
+              onChange={(e) => setNewStatusComment(e.target.value)}
+              autoComplete="off"
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                fontSize: '12px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: 'var(--surface-strong)',
+                color: 'var(--text)',
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
+            />
+
+            {newStatus === 'Behoben' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="checkbox"
+                  id="postAsNewsInline"
+                  checked={postAsNews}
+                  onChange={(e) => setPostAsNews(e.target.checked)}
+                  style={{ cursor: 'pointer', margin: 0 }}
+                />
+                <label htmlFor="postAsNewsInline" style={{ fontSize: '11px', color: 'var(--text)', cursor: 'pointer', userSelect: 'none' }}>In News posten</label>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setIsAdminFormOpen(false)}
+                style={{
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  borderRadius: '4px',
+                  background: 'var(--surface-strong)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  cursor: 'pointer'
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  borderRadius: '4px',
+                  background: 'var(--accent)',
+                  border: 'none',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Speichern
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Transparenter Hintergrund zum Schließen */}
+      {isAdminFormOpen && (
+        <div
+          onClick={() => setIsAdminFormOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 25,
+            background: 'transparent',
+            cursor: 'default'
+          }}
+        />
+      )}
 
       {/* Privacy Symbol */}
       {isPrivate && (
@@ -158,62 +351,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
 
       {/* Titel */}
       <h3 className="issue-title">{issue.title}</h3>
-
-      {/* Status Anzeige */}
-      <div className="status-container">
-        <span className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}>
-          {issue.status}
-        </span>
-
-        {/* Admin/Superadmin-Steuerung fuer den Status */}
-        {(userRole === "admin" || userRole === "superadmin") && (
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (issue.id) {
-              try {
-                await updateStatus(issue.id, newStatus, newStatusComment);
-                toast.success("Status aktualisiert");
-                setNewStatusComment('');
-                if (newStatus === 'Behoben' && postAsNews) {
-                  await postNews(issue.id, null)
-                }
-              } catch (error) {
-                toast.error(`🫪 ${error instanceof Error ? error.message : "Fehler beim Aktualisieren des Status"}`);
-              }
-            }
-          }}>
-            <select
-              className="status-select"
-              value={newStatus}
-              /* Stops card from expanding when dropdown menu is clicked */
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => issue.id && setNewStatus(e.target.value)}//nUpdateStatus(issue.id, e.target.value)
-            >
-              <option value="Gemeldet">Gemeldet</option>
-              <option value="Akzeptiert">Akzeptiert</option>
-              <option value="Abgelehnt">Abgelehnt</option>
-              <option value="In Bearbeitung">In Bearbeitung</option>
-              <option value="Behoben">Behoben</option>
-              <option value="Gelöscht">Gelöscht</option>
-            </select><br />
-            <input type="text" placeholder="Grund für Statusänderung" value={newStatusComment} required onClick={(e) => { e.stopPropagation(); }}
-              onChange={(event) => { event.stopPropagation(); if (issue.id) { setNewStatusComment(event.target.value) } }} autoComplete="off" />
-            {/* Checkbox für post in newsfeed*/}
-            {newStatus === 'Behoben' && (
-              <div>
-                <input type="checkbox" id="postAsNews" checked={postAsNews} onChange={(e) => setPostAsNews(e.target.checked)} />
-                <label htmlFor="postAsNews" style={{ fontSize: '14px', }}>In News Posten</label>
-              </div>
-            )}
-            <button type="submit" onClick={(e) => { e.stopPropagation(); }}><ModifyIcon className="modify-icon" aria-hidden="true" />Status ändern</button>
-          </form>
-        )}
-      </div>
-      {issue.statusComment && (
-        <span>
-          Begründung für Status: {issue.statusComment}
-        </span>)}
 
       {/* Standort des Mangels */}
       <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>

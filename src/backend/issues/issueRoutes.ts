@@ -10,6 +10,7 @@ import { sendStatusUpdateEmail, sendModerationEmail } from "../mailer.js";
 import { getIssueFilterOptions } from "./filterOptions.js";
 import { listIssues } from "./listIssues.js";
 import { getIssueMapSummary } from "./mapSummary.js";
+import { filterMiddleware } from '../middleware/textFilter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,7 +87,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // Status eines Mangels aktualisieren (nur Admin und Superadmin)
-  router.patch("/api/mangel/:id/status", requireAuth, (req, res) => {
+  router.patch("/api/mangel/:id/status", requireAuth, filterMiddleware, (req, res) => {
     try {
       // ID und neuer Status kommen aus URL und Body
       const userId = req.session.userId;
@@ -155,7 +156,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // Privacy filter
-  router.patch("/api/mangel/:id/privacy", requireAuth, (req, res) => {
+  router.patch("/api/mangel/:id/privacy", requireAuth, filterMiddleware, (req, res) => {
     try {
       const userId = req.session.userId;
       const mangelId = Number(req.params.id);
@@ -181,7 +182,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // neuen Mangel anlegen
-  router.post("/api/mangel", requireAuth, requireUnrestrictedUser, upload.single("image"), async (req, res) => {
+  router.post("/api/mangel", requireAuth, requireUnrestrictedUser, upload.single("image"), filterMiddleware, async (req, res) => {
     try {
       // Formulardaten kommen wegen Bild-Upload aus multipart/form-data
       const { title, description, location, kategorie, isPrivate } = req.body;
@@ -382,7 +383,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // wenn angemeldet, kann mangel melden
-  router.post("/api/mangel/:id/report", requireAuth, (req, res) => {
+  router.post("/api/mangel/:id/report", requireAuth, filterMiddleware,(req, res) => {
     try {
       const userId = req.session.userId;
       const mangelId = Number(req.params.id);
@@ -451,7 +452,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
   // wenn admin/superadmin, meldungen laden
-  router.patch("/api/management/reports/:id/decide", requireAuth, (req, res) => {
+  router.patch("/api/management/reports/:id/decide", requireAuth, filterMiddleware, (req, res) => {
     try {
       const userId = req.session.userId;
       const reportId = Number(req.params.id);
@@ -529,7 +530,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
     }
   });
 
-  router.post("/api/mangel/:id/react", requireAuth, (req, res) => {
+  router.post("/api/mangel/:id/react", requireAuth, filterMiddleware,(req, res) => {
     try {
       const userId = req.session.userId as number;
       const mangelId = Number(req.params.id);

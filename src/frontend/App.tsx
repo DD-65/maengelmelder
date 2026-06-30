@@ -50,6 +50,8 @@ import { toast } from 'react-toastify';
 
 import { useNewsList } from './library/hooks/useNewsList';
 
+import { UserProfile } from './library/ui/userProfile';
+
 const Map = lazy(() => import('./library/ui/map').then((module) => ({ default: module.Map })));
 const Management = lazy(() => import('./library/ui/management').then((module) => ({ default: module.Management })));
 const InputForm = lazy(() => import('./library/ui/inputForm').then((module) => ({ default: module.InputForm })));
@@ -118,6 +120,9 @@ export default function App() {
 
   // Swiping zum Wechseln der Ansichten
   const { handleTouchStart, handleTouchEnd } = useSwiping(viewMode, setViewMode, isArchiveMode, setIsArchiveMode, isManagementMode, setIsManagementMode, !!userId);
+
+  // User Profile
+  const [profileOpen, setProfileOpen] = useState<string | null>(null);
 
 
   // Suche über das Backend
@@ -1192,14 +1197,27 @@ export default function App() {
             </div>
             {/* Name und Rolle */}
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <span style={{ 
-                fontWeight: '600', 
-                fontSize: '14px', 
-                color: 'var(--text-h)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
+              <span 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (userId && userEmail) setProfileOpen(userEmail); 
+                }}
+                title={userId ? "Eigenes Profil anzeigen" : ""}
+                style={{ 
+                  fontWeight: '600', 
+                  fontSize: '14px', 
+                  color: 'var(--text-h)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  cursor: userId ? 'pointer' : 'default',
+                  textDecoration: 'underline',
+                  textDecorationColor: 'transparent',
+                  transition: 'text-decoration-color 0.2s'
+                }}
+                onMouseEnter={(e) => { if (userId) e.currentTarget.style.textDecorationColor = 'var(--text-muted)' }}
+                onMouseLeave={(e) => { if (userId) e.currentTarget.style.textDecorationColor = 'transparent' }}
+              >
                 {userId ? userEmail.split('@')[0] : 'Gast'}
               </span>
               <span style={{ 
@@ -1370,6 +1388,7 @@ export default function App() {
           </div>
         </div>
       )}
+      <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
     </div>
   );
 }

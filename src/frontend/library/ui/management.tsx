@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from 'react-toastify';
 import { ConfirmDialog } from './confirmDialog';
+import { UserProfile } from './userProfile';
 
 interface ContentReport {
     id: number;
@@ -111,6 +112,7 @@ export function Management({ userRole, setViewMode }: ManagementProperties) {
     const [reportList, setReportList] = useState<ContentReport[]>([]);
     const [reportActionPopup, setReportActionPopup] = useState<{ reportId: number, decision: 'angenommen' | 'abgelehnt' } | null>(null);
     const [adminReason, setAdminReason] = useState("");
+    const [profileOpen, setProfileOpen] = useState<string | null>(null);
 
     function refresh() {
         setRefreshTick(t => t + 1);
@@ -171,7 +173,20 @@ export function Management({ userRole, setViewMode }: ManagementProperties) {
             <div className="management-user-list">
                 {userList.map((user) => (
                     <div key={user.id} className="management-user-card">
-                        <span className="management-user-email">{user.email}</span>
+                        <span 
+                            className="management-user-email"
+                            onClick={(e) => { e.stopPropagation(); setProfileOpen(user.email); }}
+                            style={{ 
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                textDecorationColor: 'transparent',
+                                transition: 'text-decoration-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = 'var(--text-muted)'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
+                        >
+                            {user.email}
+                        </span>
                         <span className="management-user-role">{user.role}</span>
                         {user.isRestricted && <span className="management-user-role restricted">eingeschränkt</span>}
                         <div className="management-user-actions">
@@ -269,6 +284,7 @@ export function Management({ userRole, setViewMode }: ManagementProperties) {
                     </div>
                 </div>
             )}
+            <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
         </div>
     );
 }

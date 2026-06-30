@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from 'react-toastify';
+import { UserProfile } from './userProfile';
 
 interface UsersListProperties {
     setViewMode: (val: 'list' | 'map' | 'management' | 'users') => void;
@@ -17,6 +18,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
     const [users, setUsers] = useState<UserListItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [profileOpen, setProfileOpen] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -81,7 +83,22 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                 }}>
                     {user.email.charAt(0).toUpperCase()}
                 </div>
-                <span className="management-user-email" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span 
+                    className="management-user-email" 
+                    onClick={(e) => { e.stopPropagation(); setProfileOpen(user.email); }}
+                    style={{ 
+                        flex: 1, 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        textDecorationColor: 'transparent',
+                        transition: 'text-decoration-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = 'var(--text-muted)'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
+                >
                     {user.email}
                 </span>
                 {user.followsMe === 1 && (
@@ -186,6 +203,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             <button onClick={() => setViewMode('list')} className="back-button" style={{ marginTop: '20px' }}>
                 Zurück zur Übersicht
             </button>
+            <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
         </div>
     );
 }

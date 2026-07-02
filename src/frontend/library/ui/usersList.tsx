@@ -112,17 +112,20 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     borderColor: user.isFollowed ? 'var(--border)' : 'transparent',
                     transition: 'all 0.2s ease',
                     cursor: 'pointer',
-                    padding: '6px',
+                    padding: 0,
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '6px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    lineHeight: 0,
                     marginLeft: '12px',
                     borderWidth: '1px',
-                    borderStyle: 'solid'
+                    borderStyle: 'solid',
+                    flexShrink: 0
                 }}
-            >
-                {user.isFollowed ? (
+            >{user.isFollowed ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -130,7 +133,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -146,7 +149,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -155,8 +158,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     <line x1="19" x2="19" y1="8" y2="14" />
                     <line x1="16" x2="22" y1="11" y2="11" />
                   </svg>
-                )}
-            </button>
+                )}</button>
         </div>
     );
 

@@ -351,17 +351,20 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
               borderColor: issue.is_author_followed ? 'var(--border)' : 'transparent',
               borderWidth: '1px',
               borderStyle: 'solid',
-              padding: '4px',
+              padding: 0,
+              width: '24px',
+              height: '24px',
               borderRadius: '6px',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
+              lineHeight: 0,
               transition: 'all 0.15s ease',
-              marginLeft: '6px'
+              marginLeft: '6px',
+              flexShrink: 0
             }}
-          >
-            {issue.is_author_followed ? (
+          >{issue.is_author_followed ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
@@ -369,7 +372,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -385,7 +388,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -394,8 +397,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 <line x1="19" x2="19" y1="8" y2="14" />
                 <line x1="16" x2="22" y1="11" y2="11" />
               </svg>
-            )}
-          </button>
+            )}</button>
         )}
       </div>
 
@@ -496,8 +498,10 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           title={commentButtonText}
           aria-label={commentButtonText}
           onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}
+          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
-          <CommentIcon className="comment-icon" aria-hidden="true" />{commentCount}
+          <CommentIcon className="comment-icon" aria-hidden="true" />
+          <span>{commentCount}</span>
         </button>
 
         {/* Button for toggling privacy */}
@@ -506,7 +510,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             title={isPrivate ? "Öffentlich machen" : "Privat machen"}
             aria-label={isPrivate ? "Öffentlich machen" : "Privat machen"}
             onClick={(e) => { e.stopPropagation(); if (issue.id) onTogglePrivacy(issue.id, isPrivate); }}
-            style={{ padding: '6px 12px' }}
           >
             <svg style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               {isPrivate
@@ -522,7 +525,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             title="Mangel melden"
             aria-label="Mangel melden"
             onClick={(e) => { e.stopPropagation(); if (issue.id) onReport(issue.id); }}
-            style={{ color: 'var(--error)' }} 
           >
             <svg style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
@@ -548,21 +550,26 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
           {userId ? (
             <button
-              className={hasVoted ? "voted-button" : undefined}
+              className={`kommentareoeffnen ${hasVoted ? "voted-button" : ""}`}
               title={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
               aria-label={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
               onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              <LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" />{issue.votes || 0}
+              <LikeIcon className={hasVoted ? 'liked-icon-active' : 'like-icon'} aria-hidden="true" />
+              <span>{issue.votes || 0}</span>
             </button>
           ) : (
             <button
               disabled
+              className="kommentareoeffnen"
               title="Einloggen um abzustimmen"
               aria-label="Einloggen um abzustimmen"
               onClick={(e) => e.stopPropagation()}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              <LikeIcon className="like-icon" aria-hidden="true" />{issue.votes || 0}
+              <LikeIcon className="like-icon" aria-hidden="true" />
+              <span>{issue.votes || 0}</span>
             </button>
           )}
         </div>

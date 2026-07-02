@@ -45,6 +45,10 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
     return () => observer.disconnect();
   }, []);
 
+  if (reactions.length === 0 && !userId) {
+    return null;
+  }
+
   return (
     <div 
       style={{ 
@@ -125,7 +129,7 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
                   viewBox="0 0 24 24" 
                   fill="none" 
                   stroke="currentColor" 
-                  strokeWidth="2.5" 
+                  strokeWidth="2" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   style={{ display: 'block', opacity: 0.8 }}

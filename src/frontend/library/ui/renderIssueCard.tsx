@@ -43,6 +43,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
   const [postAsNews, setPostAsNews] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAdminFormOpen, setIsAdminFormOpen] = useState(false);
+  const [isStatusReasonOpen, setIsStatusReasonOpen] = useState(false);
 
   const handleFollowToggle = async () => {
     if (!issue.user_id) return;
@@ -101,32 +102,74 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             textAlign: 'left'
           }}
         >
-          <span
-            className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}
-            style={{
-              cursor: (userRole === "admin" || userRole === "superadmin") ? 'pointer' : 'default',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title={issue.statusComment ? `Grund: ${issue.statusComment}` : "Kein Grund angegeben"}
-            onClick={(e) => {
-              if (userRole === "admin" || userRole === "superadmin") {
-                e.stopPropagation();
-                setNewStatus(issue.status ?? '');
-                setNewStatusComment('');
-                setIsAdminFormOpen(!isAdminFormOpen);
-              }
-            }}
-          >
-            {issue.status}
-            {(userRole === "admin" || userRole === "superadmin") && (
-              <ModifyIcon style={{ width: '12px', height: '12px', verticalAlign: 'middle', opacity: 0.8 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span
+              className={`status-badge status-${issue.status?.toLowerCase().replace(/\s/g, "-")}`}
+              style={{
+                cursor: (userRole === "admin" || userRole === "superadmin") ? 'pointer' : 'default',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title={issue.statusComment ? `Grund: ${issue.statusComment}` : "Kein Grund angegeben"}
+              onClick={(e) => {
+                if (userRole === "admin" || userRole === "superadmin") {
+                  e.stopPropagation();
+                  setNewStatus(issue.status ?? '');
+                  setNewStatusComment('');
+                  setIsAdminFormOpen(!isAdminFormOpen);
+                }
+              }}
+            >
+              {issue.status}
+              {(userRole === "admin" || userRole === "superadmin") && (
+                <ModifyIcon style={{ width: '12px', height: '12px', verticalAlign: 'middle', opacity: 0.8 }} />
+              )}
+            </span>
+
+            {/* Info Button für Begründung */}
+            {issue.statusComment && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsStatusReasonOpen(!isStatusReasonOpen);
+                }}
+                title={isStatusReasonOpen ? "Begründung ausblenden" : "Begründung anzeigen"}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 0,
+                  boxShadow: 'none',
+                  flexShrink: 0
+                }}
+              ><svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  style={{ display: 'block' }}
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" x2="12" y1="16" y2="12" />
+                  <line x1="12" x2="12" y1="8" y2="8" />
+                </svg></button>
             )}
-          </span>
-          {isExpanded && issue.statusComment && (
-            <span style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-muted)', overflowWrap: 'anywhere', lineHeight: '1.2' }}>
-              Grund: {issue.statusComment}
+          </div>
+          {isStatusReasonOpen && issue.statusComment && (
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', overflowWrap: 'anywhere', lineHeight: '1.2', marginTop: '2px' }}>
+              {issue.statusComment}
             </span>
           )}
 

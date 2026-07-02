@@ -40,7 +40,8 @@ export function Newsfeed({  userRole, userId, newsList, setNewsList}: NewsfeedPr
         fontSize: '16px',
         color: 'var(--text-h)',
         paddingLeft: '10px',
-        
+        marginTop: '8px',
+        marginBottom: '0px',
     };
     const sidebarCardStyle: React.CSSProperties = {
         background: 'var(--surface)',

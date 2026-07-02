@@ -444,6 +444,14 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         )}
       </div>
 
+      {/* Kategorie des Mangels */}
+      <p className="meta-line" style={{ marginBottom: '4px' }}>
+        <svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20 5h-7.586l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z" />
+        </svg>
+        {issue.kategorie || "Keine Kategorie angegeben"}
+      </p>
+
       {/* Standort des Mangels */}
       <p className="meta-line"><svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" /></svg>{issue.location || "Kein Ort angegeben"}</p>
 
@@ -533,7 +541,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
 
       {/* Container fuer Voting-zeug */}
       <div className="issue-actions">
-        <p>Kategorie: {issue.kategorie || '-'}</p>
 
         {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
         <button

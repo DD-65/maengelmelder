@@ -238,7 +238,7 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
   
     return(
           <form className="issue-form" onSubmit={handleSubmit}>
-            <input type="text" placeholder="Titel" value={title} disabled={isRestricted} onChange={(event) => setTitle(event.target.value)} />
+            <input type="text" placeholder="Titel" value={title} disabled={isRestricted} onChange={(event) => setTitle(event.target.value)} maxLength={200} />
 
             <div className={`location-wrapper${image ? " has-image-location-action" : ""}`} onBlur={handleLocationBlur}>
               <span className="location-input-icon" aria-hidden="true">
@@ -265,6 +265,7 @@ export function InputForm({onIssueCreated, isRestricted}: InputFormProperties){
                 aria-expanded={isLocationOpen}
                 aria-controls="location-suggestions"
                 aria-activedescendant={activeSuggestionIndex >= 0 ? `location-suggestion-${activeSuggestionIndex}` : undefined}
+                maxLength={200}
               />
 
               <div className="location-input-actions">

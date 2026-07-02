@@ -1433,6 +1433,7 @@ input:checked {
   font-weight: 800;
   line-height: 1.25;
   margin: 12px 0 8px;
+  overflow-wrap: anywhere;
 }
 
 .status-container {
@@ -1575,7 +1576,7 @@ button.active:hover {
   margin-right: 0%;
   padding-right: 2%;
   width:auto;
-  margin-top: 30px;
+  margin-top: auto;  /*warum war das auf 30? hatte das nen Grund?, wenn ja einfach wieder auf 30 machen*/
   overflow-y: scroll;
   /* native scrollbar ausblenden */
   scrollbar-width: none; /* Firefox */
@@ -1584,6 +1585,7 @@ button.active:hover {
 .newsfeed::-webkit-scrollbar {
   display: none; /* Chrome, Safari und Opera */
 }
+
 .newscard{
   background: var(--surface);
   border: 1px solid var(--border);

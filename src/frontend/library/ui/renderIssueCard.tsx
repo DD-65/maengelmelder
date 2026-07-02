@@ -346,13 +346,13 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             }}
             title={issue.is_author_followed ? "Entfolgen" : "Folgen"}
             style={{
-              background: issue.is_author_followed ? 'transparent' : 'var(--accent)',
+              background: issue.is_author_followed ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
               color: issue.is_author_followed ? 'var(--text-muted)' : 'white',
-              borderColor: issue.is_author_followed ? 'var(--border)' : 'var(--accent)',
+              borderColor: issue.is_author_followed ? 'var(--border)' : 'transparent',
               borderWidth: '1px',
               borderStyle: 'solid',
               padding: '4px',
-              borderRadius: '50%',
+              borderRadius: '6px',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',

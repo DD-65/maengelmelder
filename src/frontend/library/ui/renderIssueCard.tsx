@@ -156,7 +156,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                   viewBox="0 0 24 24" 
                   fill="none" 
                   stroke="currentColor" 
-                  strokeWidth="2.5" 
+                  strokeWidth="2" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   style={{ display: 'block' }}
@@ -383,29 +383,14 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         </span>
         {userId && issue.user_id && issue.user_id !== userId && (
           <button
+            className={`follow-btn-transparent ${issue.is_author_followed ? 'followed' : 'not-followed'}`}
             onClick={(e) => {
               e.stopPropagation();
               handleFollowToggle();
             }}
             title={issue.is_author_followed ? "Entfolgen" : "Folgen"}
             style={{
-              background: issue.is_author_followed ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-              color: issue.is_author_followed ? 'var(--text-muted)' : 'white',
-              borderColor: issue.is_author_followed ? 'var(--border)' : 'transparent',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-              padding: 0,
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 0,
-              transition: 'all 0.15s ease',
-              marginLeft: '6px',
-              flexShrink: 0
+              marginLeft: '6px'
             }}
           >{issue.is_author_followed ? (
               <svg
@@ -415,7 +400,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -431,7 +416,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -541,66 +526,68 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
 
       {/* Container fuer Voting-zeug */}
       <div className="issue-actions">
-
-        {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
-        <button
-          className='kommentareoeffnen'
-          title={commentButtonText}
-          aria-label={commentButtonText}
-          onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}
-          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-        >
-          <CommentIcon className="comment-icon" aria-hidden="true" />
-          <span>{commentCount}</span>
-        </button>
-
-        {/* Button for toggling privacy */}
-        {userEmail === issue.user_email && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
           <button
-            title={isPrivate ? "Öffentlich machen" : "Privat machen"}
-            aria-label={isPrivate ? "Öffentlich machen" : "Privat machen"}
-            onClick={(e) => { e.stopPropagation(); if (issue.id) onTogglePrivacy(issue.id, isPrivate); }}
+            className='kommentareoeffnen'
+            title={commentButtonText}
+            aria-label={commentButtonText}
+            onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
-            <svg style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {isPrivate
-                ? <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></> /* Unlocked icon */
-                : <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></> /* Locked icon */
-              }
-            </svg>
+            <CommentIcon className="comment-icon" aria-hidden="true" />
+            <span>{commentCount}</span>
           </button>
-        )}
-        {/* Button zum Melden */}
-        {userId && (
-          <button
-            title="Mangel melden"
-            aria-label="Mangel melden"
-            onClick={(e) => { e.stopPropagation(); if (issue.id) onReport(issue.id); }}
-          >
-            <svg style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-              <line x1="4" y1="22" x2="4" y2="15"></line>
-            </svg>
-          </button>
-        )}
 
-        {/* Admin/Superadmin-button um Mangel zu loeschen, nur sichtbar fuer Admins und Superadmins */}
-        {(userRole === "admin" || userRole === "superadmin") && (
-          <button
-            title={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
-            aria-label={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
-            onClick={(e) => { e.stopPropagation(); if (issue.id) onDelete(issue.id); }}
-          >
-            <TrashIcon className="trash-icon" aria-hidden="true" />
-          </button>
-        )}
+          {/* Button for toggling privacy */}
+          {userEmail === issue.user_email && (
+            <button
+              title={isPrivate ? "Öffentlich machen" : "Privat machen"}
+              aria-label={isPrivate ? "Öffentlich machen" : "Privat machen"}
+              onClick={(e) => { e.stopPropagation(); if (issue.id) onTogglePrivacy(issue.id, isPrivate); }}
+            >
+              <svg className="privacy-icon" style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {isPrivate
+                  ? <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></> /* Unlocked icon */
+                  : <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></> /* Locked icon */
+                }
+              </svg>
+            </button>
+          )}
+
+          {/* Button zum Melden */}
+          {userId && (
+            <button
+              title="Mangel melden"
+              aria-label="Mangel melden"
+              onClick={(e) => { e.stopPropagation(); if (issue.id) onReport(issue.id); }}
+            >
+              <svg className="report-icon" style={{ verticalAlign: 'middle' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+              </svg>
+            </button>
+          )}
+
+          {/* Admin/Superadmin-button um Mangel zu loeschen, nur sichtbar fuer Admins und Superadmins */}
+          {(userRole === "admin" || userRole === "superadmin") && (
+            <button
+              title={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
+              aria-label={issue.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
+              onClick={(e) => { e.stopPropagation(); if (issue.id) onDelete(issue.id); }}
+            >
+              <TrashIcon className="trash-icon" aria-hidden="true" />
+            </button>
+          )}
+        </div>
 
         {/* Voting & Reactions Group */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <IssueReactions issue={issue} userId={userId} setIssueList={setIssueList} />
           {/* Vote-button ist nur aktiv, wenn man eingeloggt ist, ansonsten disabled */}
           {userId ? (
             <button
-              className={`kommentareoeffnen ${hasVoted ? "voted-button" : ""}`}
+              className={`kommentareoeffnen vote-btn ${hasVoted ? "voted-button" : ""}`}
               title={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
               aria-label={hasVoted ? "Stimme zurückziehen" : "Stimme abgeben"}
               onClick={(e) => { e.stopPropagation(); if (issue.id) onToggleVote(issue.id); }}
@@ -612,7 +599,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           ) : (
             <button
               disabled
-              className="kommentareoeffnen"
+              className="kommentareoeffnen vote-btn"
               title="Einloggen um abzustimmen"
               aria-label="Einloggen um abzustimmen"
               onClick={(e) => e.stopPropagation()}
@@ -623,7 +610,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             </button>
           )}
         </div>
-
       </div>
 
       {commentsOpen === true && (

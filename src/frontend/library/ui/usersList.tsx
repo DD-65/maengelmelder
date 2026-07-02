@@ -103,27 +103,13 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                 </span>
             </div>
             <button
-                className={`management-action-btn ${user.isFollowed ? '' : 'accent-btn'}`}
+                className={`follow-btn-transparent ${user.isFollowed ? 'followed' : 'not-followed'}`}
                 onClick={() => handleFollowToggle(user)}
                 title={user.isFollowed ? "Entfolgen" : "Folgen"}
                 style={{
-                    background: user.isFollowed ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                    color: user.isFollowed ? 'var(--text)' : 'white',
-                    borderColor: user.isFollowed ? 'var(--border)' : 'transparent',
-                    transition: 'all 0.2s ease',
-                    cursor: 'pointer',
-                    padding: 0,
                     width: '28px',
                     height: '28px',
-                    borderRadius: '6px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    lineHeight: 0,
-                    marginLeft: '12px',
-                    borderWidth: '1px',
-                    borderStyle: 'solid',
-                    flexShrink: 0
+                    marginLeft: '12px'
                 }}
             >{user.isFollowed ? (
                   <svg
@@ -133,7 +119,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -149,7 +135,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >

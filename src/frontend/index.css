@@ -1535,10 +1535,128 @@ button.active:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  flex-wrap: nowrap;
   margin-top: 15px;
   border-top: 1px solid var(--border);
   padding-top: 12px;
+}
+
+.issue-actions button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+  padding: 6px 8px !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.issue-actions button:hover:not(:disabled) {
+  background: var(--surface-strong) !important;
+  color: var(--text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.issue-actions button:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.issue-actions .liked-icon-active {
+  fill: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+.issue-actions .voted-button {
+  color: var(--danger) !important;
+}
+
+.issue-actions button:hover > .like-icon {
+  color: var(--danger) !important;
+  fill: transparent !important;
+}
+
+.issue-actions button:hover > .liked-icon-active {
+  fill: var(--danger-2) !important;
+  color: var(--danger-2) !important;
+}
+
+.issue-actions button:hover > .comment-icon {
+  color: rgb(93, 215, 93) !important;
+}
+
+.issue-actions button.kommentareoeffnen:not(.vote-btn):hover {
+  color: rgb(93, 215, 93) !important;
+}
+
+.issue-actions button.vote-btn:hover {
+  color: var(--danger) !important;
+}
+
+.issue-actions button:hover > .privacy-icon {
+  color: var(--accent) !important;
+}
+
+.issue-actions button:hover > .report-icon {
+  color: var(--danger) !important;
+}
+
+.issue-actions button:hover > .trash-icon {
+  color: var(--danger-2) !important;
+  fill: transparent !important;
+}
+
+.issue-actions button:hover > svg {
+  color: var(--text) !important;
+}
+
+.follow-btn-transparent {
+  background: transparent !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.follow-btn-transparent.not-followed {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.follow-btn-transparent.not-followed:hover {
+  background: var(--surface-strong) !important;
+  color: var(--accent-2) !important;
+  border-color: var(--accent-2) !important;
+}
+
+.follow-btn-transparent.followed {
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+}
+
+.follow-btn-transparent.followed:hover {
+  background: var(--surface-strong) !important;
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
 }
 
 .kommentareoeffnen{
@@ -1923,10 +2041,6 @@ button:hover > .modify-icon {
     right: 24px;
   }
 
-  .issue-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
 
   .issue-form {
   margin: 0;

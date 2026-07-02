@@ -46,7 +46,20 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
   }, []);
 
   return (
-    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
+    <div 
+      style={{ 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        background: 'var(--surface-strong)', 
+        border: '1px solid var(--border)', 
+        borderRadius: '16px',
+        height: '30px',
+        padding: reactions.length > 0 ? '0 2px 0 8px' : '0 8px',
+        gap: '4px',
+        boxSizing: 'border-box',
+        verticalAlign: 'middle'
+      }}
+    >
       
       {/* Display Container for the Reactions, only shows the Top 3 */}
       {reactions.length > 0 && (
@@ -56,45 +69,78 @@ export function IssueReactions({ issue, userId, setIssueList }: IssueReactionsPr
           style={{
             display: 'flex',
             gap: '4px',
-            padding: '4px 8px',
-            borderRadius: '20px',
-            background: 'var(--surface-strong)',
-            border: '1px solid var(--border)',
+            padding: '2px 4px',
+            borderRadius: '12px',
+            background: 'transparent',
+            border: 'none',
             alignItems: 'center',
             cursor: 'pointer',
-            lineHeight: '1'
+            lineHeight: '1',
+            color: 'var(--text)'
           }}
         >
           {topReactions.map(r => (
-            <span key={r.emoji} style={{ fontSize: '14px' }}>
+            <span key={r.emoji} style={{ fontSize: '13px' }}>
               {r.emoji}
             </span>
           ))}
         </button>
       )}
 
+      {/* linie zwischen reactions und "+" wenn reacions da sind*/}
+      {reactions.length > 0 && userId && (
+        <div style={{ width: '1px', height: '14px', background: 'var(--border)', margin: '0 2px' }} />
+      )}
+
       {/* Button to React */}
       {userId && (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <button
             title="Reaktion hinzufügen"
             onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
             style={{
-              padding: '4px 10px',
-              borderRadius: '20px',
-              background: '#e0e0e0',
+              padding: '2px 6px',
+              borderRadius: '12px',
+              background: 'transparent',
               border: 'none',
-              color: '#333',
-              fontSize: '16px',
+              color: 'var(--text-muted)',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '4px',
+              lineHeight: '1',
               boxShadow: 'none',
-              lineHeight: '1'
+              transition: 'all 0.15s ease'
             }}
-          > + </button>
+          >
+            {reactions.length === 0 ? (
+              <>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="14" 
+                  height="14" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  style={{ display: 'block', opacity: 0.8 }}
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                  <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" />
+                  <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" />
+                </svg>
+                <span>+</span>
+              </>
+            ) : (
+              <span>+</span>
+            )}
+          </button>
 
           {/* Emoji Picker */}
           {pickerOpen && createPortal(

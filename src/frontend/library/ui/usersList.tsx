@@ -105,20 +105,57 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             <button
                 className={`management-action-btn ${user.isFollowed ? '' : 'accent-btn'}`}
                 onClick={() => handleFollowToggle(user)}
+                title={user.isFollowed ? "Entfolgen" : "Folgen"}
                 style={{
-                    background: user.isFollowed ? 'transparent' : 'var(--accent)',
+                    background: user.isFollowed ? 'transparent' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
                     color: user.isFollowed ? 'var(--text)' : 'white',
-                    borderColor: user.isFollowed ? 'var(--border)' : 'var(--accent)',
-                    fontWeight: 'bold',
+                    borderColor: user.isFollowed ? 'var(--border)' : 'transparent',
                     transition: 'all 0.2s ease',
                     cursor: 'pointer',
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    marginLeft: '12px'
+                    padding: '6px',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '12px',
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
                 }}
             >
-                {user.isFollowed ? "Entfolgen" : "Folgen"}
+                {user.isFollowed ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="16" x2="22" y1="11" y2="11" />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" x2="19" y1="8" y2="14" />
+                    <line x1="16" x2="22" y1="11" y2="11" />
+                  </svg>
+                )}
             </button>
         </div>
     );

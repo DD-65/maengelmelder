@@ -1590,7 +1590,7 @@ button.active:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding-top: 8px;
+  padding-top: 5px;
 
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
@@ -1601,7 +1601,7 @@ button.active:hover {
 
 } 
 .newscard .issue-title{
-  font-size: 18px;
+  font-size: 15px;
   color: var(--accent-2);
   overflow-wrap: anywhere;
 }
@@ -1610,6 +1610,13 @@ button.active:hover {
   font-weight: 600;
   overflow-wrap:break-word;
   margin-bottom: 5px;
+}
+.newscard .meta-line{
+  font-size: 14px;
+}
+.newscard .status-badge{
+  font-size: 10px;
+  margin-bottom: 0;
 }
 .newscard-header {
   display: flex;
@@ -1630,8 +1637,9 @@ button:hover > .news-trash-icon {
   width: 15px;
   height: 12px;
   flex-shrink: 0;
-  margin-right: 2px;
+  /*margin-right: 2px;*/
   padding: 0px;
+
 }
 .newsfeedposting {
   padding: 5px;
@@ -1643,11 +1651,11 @@ button:hover > .news-trash-icon {
 .news-statusContainer > .status-container {
   gap: 10px;
   margin-bottom: 5px;
+  margin-top: 5px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-start;
-  padding-top: 10px;
 }
 
 

@@ -529,7 +529,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Knopf für Öffnen und Schließen der Kommentarspalte */}
           <button
-            className='kommentareoeffnen'
+            className={`kommentareoeffnen ${commentsOpen ? 'comments-active' : ''}`}
             title={commentButtonText}
             aria-label={commentButtonText}
             onClick={(e) => { e.stopPropagation(); setCommentsOpen(!commentsOpen) }}
@@ -643,22 +643,24 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           )}
 
           {/* Kommentare ganz unten im Issue anzeigen */}
-          <ul className='commentList'>
-            {sortedCommentList.map((comment) => (
-              <Kommentar
-                setCommentList={setCommentList}
-                issue={issue}
-                commentId={comment.commentId}
-                userEmail={userEmail}
-                userRole={userRole}
-                key={comment.commentId}
-                commentStatus={comment.status}
-                commentInhalt={comment.kommentar}
-                commentKommentator={comment.userEmail}
-                commentTimestamp={comment.timestamp}
-              />
-            ))}
-          </ul>
+          {sortedCommentList.length > 0 && (
+            <ul className='commentList'>
+              {sortedCommentList.map((comment) => (
+                <Kommentar
+                  setCommentList={setCommentList}
+                  issue={issue}
+                  commentId={comment.commentId}
+                  userEmail={userEmail}
+                  userRole={userRole}
+                  key={comment.commentId}
+                  commentStatus={comment.status}
+                  commentInhalt={comment.kommentar}
+                  commentKommentator={comment.userEmail}
+                  commentTimestamp={comment.timestamp}
+                />
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </li>

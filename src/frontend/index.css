@@ -1543,7 +1543,8 @@ button.active:hover {
 
 .issue-actions button {
   background: transparent !important;
-  border: none !important;
+  border: 1px solid transparent !important;
+  box-sizing: border-box !important;
   box-shadow: none !important;
   color: var(--text-muted) !important;
   padding: 6px 8px !important;
@@ -1556,6 +1557,12 @@ button.active:hover {
   border-radius: 8px;
   font-weight: 700;
   font-size: 12px;
+}
+
+.issue-actions button.comments-active {
+  color: rgb(93, 215, 93) !important;
+  background: var(--surface-strong) !important;
+  border-color: rgb(93, 215, 93) !important;
 }
 
 .issue-actions button:hover:not(:disabled) {
@@ -1829,8 +1836,8 @@ button:hover > .modify-icon {
   margin-top: 20px;
   margin-right: 15px;
   margin-left: 15px;
-  overflow-y: scroll;
-  height: 400px;
+  overflow-y: auto;
+  max-height: 400px;
   padding-inline-start: 0px;
   list-style: none;
 }

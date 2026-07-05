@@ -429,7 +429,7 @@ export default function App() {
           setUserId(data.userId);
           setUserEmail(data.email);
           setUserName(data.username || null);
-          setUserProfilePic(data.profile_picture_url || null);
+          setUserProfilePic(data.profile_pic_url || null);
           setUserRole(data.role || "user");
           setIsRestricted(Boolean(data.isRestricted));
           setEmailVerified(Boolean(data.emailVerified));
@@ -487,7 +487,7 @@ export default function App() {
             setUserId(meData.userId);
             setUserEmail(meData.email);
             setUserName(meData.username || null);
-            setUserProfilePic(meData.profile_picture_url || null);
+            setUserProfilePic(meData.profile_pic_url || null);
             setUserRole(meData.role || "user");
             setIsRestricted(Boolean(meData.isRestricted));
             setEmailVerified(Boolean(meData.emailVerified));
@@ -527,7 +527,7 @@ export default function App() {
         setUserId(data.userId);
         setUserEmail(data.email);
         setUserName(data.username || null);
-        setUserProfilePic(data.profile_picture_url || null);
+        setUserProfilePic(data.profile_pic_url || null);
         setUserRole(data.role || "user");
         setIsRestricted(Boolean(data.isRestricted));
         setRestrictedReportLimitReached(false);

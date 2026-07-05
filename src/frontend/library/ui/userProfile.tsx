@@ -17,6 +17,7 @@ export function UserProfile({ email, onClose, currentUserEmail, onLogout, onProf
   const [editMode, setEditMode] = useState(false);
   const [editUsername, setEditUsername] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const isOwnProfile = email === currentUserEmail;
 
@@ -61,9 +62,10 @@ export function UserProfile({ email, onClose, currentUserEmail, onLogout, onProf
       if (!res.ok) throw new Error(data.error);
       
       toast.success("Profil gespeichert!");
-      setUserData({ ...userData, username: data.username, profile_picture_url: data.profilePictureUrl || userData.profile_picture_url });
+      setUserData({ ...userData, username: data.username, profile_pic_url: data.profilePictureUrl || userData.profile_pic_url });
       setEditMode(false);
-      if (onProfileUpdate) onProfileUpdate(data.username, data.profilePictureUrl || userData.profile_picture_url);
+      setPreviewUrl(null)
+      if (onProfileUpdate) onProfileUpdate(data.username, data.profilePictureUrl || userData.profile_pic_url);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -86,17 +88,34 @@ export function UserProfile({ email, onClose, currentUserEmail, onLogout, onProf
           <div className="modal-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
             
             <div style={{ position: 'relative' }}>
-              {userData.profile_picture_url ? (
-                <img src={userData.profile_picture_url} alt="Profile" style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
+              
+              {(previewUrl || userData.profile_pic_url) ? (
+                <img 
+                  src={previewUrl || userData.profile_pic_url} 
+                  alt="Profile" 
+                  style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} 
+                />
               ) : (
                 <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: getUserColor(userData.email), color: getSecondaryUserColor(userData.email), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', fontWeight: 'bold', border: '2px solid var(--border)' }}>
                   {userData.email.charAt(0).toUpperCase()}
                 </div>
               )}
+
               {isOwnProfile && editMode && (
                 <>
                   <button onClick={() => fileInputRef.current?.click()} style={{ position: 'absolute', bottom: 0, right: 0, padding: '6px', borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', cursor: 'pointer' }}>📸</button>
-                  <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} />
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+                      }
+                    }}
+                  />
                 </>
               )}
             </div>

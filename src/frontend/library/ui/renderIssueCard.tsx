@@ -363,6 +363,8 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 commentInhalt={comment.kommentar}
                 commentKommentator={comment.userEmail}
                 commentTimestamp={comment.timestamp}
+                userUsername={comment.userUsername}
+                userProfilePicUrl={comment.userProfilePicUrl}
               />
             ))}
           </ul>

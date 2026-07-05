@@ -13,13 +13,13 @@ interface KommentarProperties{
     issue: Issue;
     commentId: number;
     userEmail: string;
-    userUsername?: string;
-    userProfilePicUrl?: string;
     userRole: string;
     commentStatus:string;
     commentInhalt:string;
     commentKommentator: string;
     commentTimestamp: string;
+    userUsername?: string | null;
+    userProfilePicUrl?: string | null;
 }
 // const getUserColor = (email = '') => {
 //     const s = email.toLowerCase();
@@ -45,19 +45,19 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
 
                     <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{userUsername || commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
                     {userProfilePicUrl ? (
-                    <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                    <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
-                    )}
+                            <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                        )}
                     <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>
                 </li>
             ):
             (
                     <li className="singleComment" onClick={(e) => { e.stopPropagation(); }}>
                         {userProfilePicUrl ? (
-                        <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                            <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
-                        <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                            <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
                         )}
                         <span className="kommentator">
                             <div style={{ fontFamily: 'monospace', color: 'orange', fontSize: '10px', marginBottom: '-5px', fontWeight: 'bold' }}>

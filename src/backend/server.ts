@@ -330,8 +330,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash, role, username, profile_picture_url, email_verified_at, is_restricted FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; username: string | null; profile_picture_url: string | null; email_verified_at: string | null; is_restricted: number } | undefined;
+      .prepare("SELECT id, email, password_hash, role, username, profile_pic_url, email_verified_at, is_restricted FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; is_restricted: number } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -365,8 +365,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, username, profile_picture_url, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; username: string | null; profile_picture_url: string | null; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
+    .prepare("SELECT id, email, role, username, profile_pic_url, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -451,7 +451,7 @@ app.get("/api/users", requireAuth, (req, res) => {
   try {
     const currentUserId = req.session.userId;
     const stmt = db.prepare(`
-      SELECT id, email, role, username, profile_picture_url,
+      SELECT id, email, role, username, profile_pic_url,
         EXISTS (
           SELECT 1 FROM follows 
           WHERE follower_id = ? AND followed_id = users.id
@@ -536,7 +536,7 @@ const stmt = db.prepare(`
         maengel_kommentare.kommentar,
         users.email AS userEmail, 
         users.username AS username,
-        users.profile_picture_url AS profilePictureUrl,
+        users.profile_pic_url AS profilePicUrl,
         maengel_kommentare.created_at AS timestamp,
         maengel_kommentare.id AS commentId
       FROM maengel_kommentare LEFT JOIN status_changes
@@ -879,7 +879,7 @@ app.patch("/api/auth/profile", requireAuth, profileUpload.single("image"), async
     const finalUsername = username && username.trim() !== "" ? username.trim() : null;
 
     if (profilePicUrl) {
-      db.prepare("UPDATE users SET username = ?, profile_picture_url = ? WHERE id = ?").run(finalUsername, profilePicUrl, userId);
+      db.prepare("UPDATE users SET username = ?, profile_pic_url = ? WHERE id = ?").run(finalUsername, profilePicUrl, userId);
     } else if (username !== undefined) {
       db.prepare("UPDATE users SET username = ? WHERE id = ?").run(finalUsername, userId);
     }
@@ -898,7 +898,7 @@ app.get("/api/users/profile/:email", (req, res) => {
     const currentUserId = req.session.userId || -1; // -1 if not logged in
 
     const user = db.prepare(`
-      SELECT id, email, username, profile_picture_url, role, email_verified_at,
+      SELECT id, email, username, profile_pic_url, role, email_verified_at,
       EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = users.id) AS isFollowed
       FROM users WHERE email = ?
     `).get(currentUserId, targetEmail);

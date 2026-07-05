@@ -4,6 +4,10 @@ import { IssueComment } from "../types/IssueComment";
 import {UserIcon} from '../icons/icons';
 import {getUserColor} from "../utils/getUserColor";   
 import { formatTimestamp, getRelativeTime } from "../utils/timeUtils";
+import { UserProfile } from './userProfile';
+import { useState } from "react";
+
+
 interface KommentarProperties{
     setCommentList: React.Dispatch<React.SetStateAction<IssueComment[]>>
     issue: Issue;
@@ -14,6 +18,8 @@ interface KommentarProperties{
     commentInhalt:string;
     commentKommentator: string;
     commentTimestamp: string;
+    userUsername?: string | null;
+    userProfilePicUrl?: string | null;
 }
 // const getUserColor = (email = '') => {
 //     const s = email.toLowerCase();
@@ -25,8 +31,9 @@ interface KommentarProperties{
 //     return `rgb(${r}, ${g}, ${b})`;
 // };
 
-export function Kommentar({setCommentList, issue, commentId, userEmail, userRole, commentStatus, commentInhalt, commentKommentator, commentTimestamp}: KommentarProperties){
+export function Kommentar({setCommentList, issue, commentId, userEmail, userRole, commentStatus, commentInhalt, commentKommentator, commentTimestamp, userUsername, userProfilePicUrl}: KommentarProperties){
     const{deleteComment}=useDeleteComment(setCommentList);
+    const [profileOpen, setProfileOpen] = useState<string | null>(null);
     
     return(
         <>
@@ -36,22 +43,58 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
                     {(commentStatus) && <span className="status">{commentStatus}</span>}
                     <span className="inhalt">{commentInhalt}</span>
 
-                    <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
-                    <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                    <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{userUsername || commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
+                    {userProfilePicUrl ? (
+                            <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                        )}
                     <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>
                 </li>
             ):
             (
-                <li className="singleComment" onClick={(e)=>{e.stopPropagation();}}>
-                {/*problem hier, ist dass man bei sehr langen Kommentaren ohne Leerzeichen nach rechts scrollen muss, das swiped zur Karte // nicht mehr, swipen wurde für die kommentare deaktiviert*/}
-                <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)}/>
-                <span className="kommentator"><div style={{fontFamily:'monospace', color:'orange', fontSize:'10px', marginBottom:'-5px', fontWeight:'bold'}}>{commentStatus ? 'Admin-Nachricht' : ''}</div> <div style={{textAlign:'left', color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
-                {(commentStatus) && <span className="status">{commentStatus}</span>}
-                <span className="inhalt">{commentInhalt}</span>
-                {(userRole === "superadmin" || userRole === "admin") && !commentStatus && <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>}
-                </li>
-            )
-        }  
+                    <li className="singleComment" onClick={(e) => { e.stopPropagation(); }}>
+                        {userProfilePicUrl ? (
+                            <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                        )}
+                        <span className="kommentator">
+                            <div style={{ fontFamily: 'monospace', color: 'orange', fontSize: '10px', marginBottom: '-5px', fontWeight: 'bold' }}>
+                                {commentStatus ? 'Admin-Nachricht' : ''}
+                            </div> 
+                            
+                            <div 
+                                onClick={(e) => { e.stopPropagation(); setProfileOpen(commentKommentator); }}
+                                title="Nutzerprofil anzeigen"
+                                style={{
+                                    textAlign: 'left', 
+                                    color: getUserColor(commentKommentator),
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    textDecorationColor: 'transparent',
+                                    transition: 'text-decoration-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = getUserColor(commentKommentator)}
+                                onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
+                            >
+                                {userUsername || commentKommentator.split('@')[0]}
+                            </div>
+                            
+                            <div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div>
+                        </span>
+                        {(commentStatus) && <span className="status">{commentStatus}</span>}
+                        <span className="inhalt">{commentInhalt}</span>
+                        {(userRole === "superadmin" || userRole === "admin") && !commentStatus && <button className="kommentarloeschen" onClick={(e) => { e.stopPropagation(); if (issue.id) deleteComment(issue.id, commentId); }}>X</button>}
+                    </li>
+                )
+            }  
+            
+            <UserProfile 
+                email={profileOpen} 
+                onClose={() => setProfileOpen(null)} 
+                currentUserEmail={userEmail}
+            />
         </>
     );
     

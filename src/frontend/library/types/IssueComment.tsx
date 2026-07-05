@@ -4,4 +4,6 @@ export type IssueComment = {
     kommentar: string;
     timestamp: string;
     userEmail:string;
+    userUsername?: string | null;
+    userProfilePicUrl?: string | null;
 }

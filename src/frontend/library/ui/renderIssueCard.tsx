@@ -11,6 +11,7 @@ import { usePostNews } from '../hooks/usePostNews';
 import { useNewsList } from '../hooks/useNewsList';
 import { News } from '../types/News';
 import { IssueReactions } from './IssueReactions';
+import { UserProfile } from './userProfile';
 
 interface IssueCardProperties {
   issue: Issue;
@@ -37,7 +38,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
   const { postComment } = usePostComment(setCommentList);
   const commentCount = commentsOpen || sortedCommentList.length > 0 ? sortedCommentList.length : issue.commentCount || 0;
   const commentButtonText = commentCount === 0 ? "Kommentare" : `${commentCount} ${commentCount === 1 ? "Kommentar" : "Kommentare"}`;
-
+  const [profileOpen, setProfileOpen] = useState<string | null>(null);
 
   const { postNews } = usePostNews(setNewsList);
   const [postAsNews, setPostAsNews] = useState(true);
@@ -374,13 +375,39 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
       )}
 
       {/* Nutzername (email) */}
-      <div className="meta-line issue-author" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          <svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
-          </svg>
-          {issue.user_email || "Unbekannter Nutzer"}
-        </span>
+      <div className="meta-line issue-author" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <span 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (issue.user_email) setProfileOpen(issue.user_email); 
+            }}
+            title="Nutzerprofil anzeigen"
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textDecorationColor: 'transparent',
+              transition: 'text-decoration-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = 'var(--text-muted)'}
+            onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
+          >
+            {issue.user_profile_pic_url ? (
+              <img 
+                src={issue.user_profile_pic_url} 
+                alt="Avatar" 
+                style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
+              </svg>
+            )}
+            
+            {issue.user_username || (issue.user_email ? issue.user_email.split('@')[0] : "Unbekannter Nutzer")}
+          </span>
         {userId && issue.user_id && issue.user_id !== userId && (
           <button
             className={`follow-btn-transparent ${issue.is_author_followed ? 'followed' : 'not-followed'}`}
@@ -643,26 +670,31 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           )}
 
           {/* Kommentare ganz unten im Issue anzeigen */}
-          {sortedCommentList.length > 0 && (
-            <ul className='commentList'>
-              {sortedCommentList.map((comment) => (
-                <Kommentar
-                  setCommentList={setCommentList}
-                  issue={issue}
-                  commentId={comment.commentId}
-                  userEmail={userEmail}
-                  userRole={userRole}
-                  key={comment.commentId}
-                  commentStatus={comment.status}
-                  commentInhalt={comment.kommentar}
-                  commentKommentator={comment.userEmail}
-                  commentTimestamp={comment.timestamp}
-                />
-              ))}
-            </ul>
-          )}
+          <ul className='commentList'>
+            {sortedCommentList.map((comment) => (
+              <Kommentar
+                setCommentList={setCommentList}
+                issue={issue}
+                commentId={comment.commentId}
+                userEmail={userEmail}
+                userRole={userRole}
+                key={comment.commentId}
+                commentStatus={comment.status}
+                commentInhalt={comment.kommentar}
+                commentKommentator={comment.userEmail}
+                commentTimestamp={comment.timestamp}
+                userUsername={comment.userUsername}
+                userProfilePicUrl={comment.userProfilePicUrl}
+              />
+            ))}
+          </ul>
         </div>
       )}
+        <UserProfile 
+          email={profileOpen} 
+          onClose={() => setProfileOpen(null)} 
+          currentUserEmail={userEmail}
+        />
     </li>
   );
 }

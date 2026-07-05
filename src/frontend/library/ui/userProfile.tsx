@@ -56,16 +56,17 @@ export function UserProfile({ email, onClose, currentUserEmail, onLogout, onProf
       formData.append("image", fileInputRef.current.files[0]);
     }
 
-    try {
+   try {
       const res = await fetch("/api/auth/profile", { method: "PATCH", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
       toast.success("Profil gespeichert!");
-      setUserData({ ...userData, username: data.username, profile_pic_url: data.profilePictureUrl || userData.profile_pic_url });
+      
+      setUserData({ ...userData, username: data.username, profile_pic_url: data.profilePicUrl || userData.profile_pic_url });
       setEditMode(false);
       setPreviewUrl(null)
-      if (onProfileUpdate) onProfileUpdate(data.username, data.profilePictureUrl || userData.profile_pic_url);
+      if (onProfileUpdate) onProfileUpdate(data.username, data.profilePicUrl || userData.profile_pic_url);
     } catch (e: any) {
       toast.error(e.message);
     }

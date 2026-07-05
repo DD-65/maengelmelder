@@ -595,6 +595,8 @@ export default function App() {
         setUserId(null);
         setUserEmail("");
         setUserRole("");
+        setUserName(null);
+        setUserProfilePic(null);
         setIsRestricted(false);
         setRestrictedReportLimitReached(false);
         setEmailVerified(false);

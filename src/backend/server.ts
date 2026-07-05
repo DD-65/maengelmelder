@@ -349,6 +349,8 @@ app.post("/api/auth/login", async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
+      username: user.username,
+      profile_pic_url: user.profile_pic_url,
       emailVerified: Boolean(user.email_verified_at),
       isRestricted: Boolean(user.is_restricted),
     });
@@ -377,6 +379,8 @@ app.get("/api/auth/me", (req, res) => {
     userId: user.id,
     email: user.email,
     role: user.role,
+    username: user.username,
+    profile_pic_url: user.profile_pic_url,
     emailVerified: Boolean(user.email_verified_at),
     notificationInterval: user.notificationInterval,
     isRestricted: Boolean(user.isRestricted),
@@ -535,8 +539,8 @@ const stmt = db.prepare(`
         status_changes.new_status AS status,
         maengel_kommentare.kommentar,
         users.email AS userEmail, 
-        users.username AS username,
-        users.profile_pic_url AS profilePicUrl,
+        users.username AS userUsername,
+        users.profile_pic_url AS userProfilePicUrl,
         maengel_kommentare.created_at AS timestamp,
         maengel_kommentare.id AS commentId
       FROM maengel_kommentare LEFT JOIN status_changes
@@ -587,6 +591,8 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
 
     const createdComment = db.prepare(`SELECT mk.kommentar,
                                               users.email AS userEmail, 
+                                              users.username AS userUsername,
+                                              users.profile_pic_url AS userProfilePicUrl,
                                               mk.created_at AS timestamp,
                                               mk.id AS commentId
                                               FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
@@ -884,7 +890,7 @@ app.patch("/api/auth/profile", requireAuth, profileUpload.single("image"), async
       db.prepare("UPDATE users SET username = ? WHERE id = ?").run(finalUsername, userId);
     }
 
-    res.json({ message: "Profil aktualisiert", profilePictureUrl: profilePicUrl, username: finalUsername });
+    res.json({ message: "Profil aktualisiert", profilePicUrl: profilePicUrl, username: finalUsername }); 
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Aktualisieren des Profils" });

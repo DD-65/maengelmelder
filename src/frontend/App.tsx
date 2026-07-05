@@ -857,7 +857,7 @@ export default function App() {
             <input type="checkbox" id="onlyOwnIssues" checked={filterOnlyOwn} onChange={(e) => setFilterOnlyOwn(e.target.checked)}/>
             <span className="issue-filter-slider"></span>
             </label>
-          nur eigene Mängel
+          Nur eigene Mängel
           </span>
           </div>
         )}
@@ -876,7 +876,7 @@ export default function App() {
             <input type="checkbox" id="followedOnlyIssues" checked={filterFollowedOnly} onChange={(e) => setFilterFollowedOnly(e.target.checked)}/>
             <span className="issue-filter-slider"></span>
             </label>
-          nur von gefolgten Accounts
+          Nur von gefolgten Accounts
           </span>
           </div>
 

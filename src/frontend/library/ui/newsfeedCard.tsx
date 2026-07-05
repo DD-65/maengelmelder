@@ -39,11 +39,17 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
         </div>
       )}
 
+      {news.status === null ? (<div></div>):(
+          <span className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>
+          {news.status}
+          </span>
+      )}
+
+
       {/* Admin/Superadmin-button um News zu loeschen, nur sichtbar fuer Admins und Superadmins jetzt oben*/}
       {(userRole === "admin" || userRole === "superadmin") && (
-        //<div className="meta-line " style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap', paddingBottom: '10px' }}>
-          //<hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)'}} />
-          <button style={{height:'25px', width:'50%', padding:'0px', marginRight:'6px'}} onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="news-trash-icon" aria-hidden="true"/> {news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}</button>
+        //{news.status === "Gelöscht" ? "Endgültig löschen" : "Löschen"}
+          <button style={{height:'25px', width:'25px', padding:'0px', marginRight:'6px'}} onClick={(e) => {e.stopPropagation(); if(news.newsId) deleteNews(news.newsId);}}><TrashIcon className="news-trash-icon" aria-hidden="true"/> </button>
         //</div>/* Popup zur Bestätigung könnte hier noch ergänzt werden, damit nicht aus Versehen gelöscht wird. */
       )}
     </div>
@@ -58,18 +64,12 @@ export function NewsfeedCard ({ news, userRole, userId, setNewsList }: NewsfeedC
       </div>
     ):(
       <div className='news-statusContainer'>{/* Status Anzeige */}
-        
-        <div className="status-container">
+
           <h3 className="issue-title" style={{margin:'0px'}}>{news.title}</h3>
-          <span className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>
-          {news.status}
-          </span>
-      
-        </div>
+
         { news.statusComment &&(
-        <span>
-        Begründung für Status: <p style={{fontStyle:'italic', border:'none', background:'none'}} className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>{news.statusComment}</p>
-        </span>)}
+        <p style={{fontStyle:'italic', border:'none', background:'none'}} className={`status-badge status-${news.status?.toLowerCase().replace(/\s/g, "-")}`}>{news.statusComment}</p>
+        )}
         <hr style={{border:'none', borderRadius:'10px', height:'2px', backgroundColor:'#eee', boxShadow:'0 4px 6px -2px rgba(0,0,0,0.5)', marginTop:'5px', marginBottom:'5px'}} />
         </div>
         

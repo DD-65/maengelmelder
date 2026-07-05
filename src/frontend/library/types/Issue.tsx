@@ -18,5 +18,7 @@ export type Issue = {
   is_private?: number | boolean;
   reactions?: { emoji: string; count: number }[];
   user_reaction?: string | null;
+  user_username?: string | null;
+  user_profile_pic_url?: string | null;
 }
 

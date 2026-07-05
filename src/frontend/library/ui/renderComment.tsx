@@ -13,6 +13,8 @@ interface KommentarProperties{
     issue: Issue;
     commentId: number;
     userEmail: string;
+    userUsername?: string;
+    userProfilePicUrl?: string;
     userRole: string;
     commentStatus:string;
     commentInhalt:string;
@@ -29,7 +31,7 @@ interface KommentarProperties{
 //     return `rgb(${r}, ${g}, ${b})`;
 // };
 
-export function Kommentar({setCommentList, issue, commentId, userEmail, userRole, commentStatus, commentInhalt, commentKommentator, commentTimestamp}: KommentarProperties){
+export function Kommentar({setCommentList, issue, commentId, userEmail, userRole, commentStatus, commentInhalt, commentKommentator, commentTimestamp, userUsername, userProfilePicUrl}: KommentarProperties){
     const{deleteComment}=useDeleteComment(setCommentList);
     const [profileOpen, setProfileOpen] = useState<string | null>(null);
     
@@ -41,14 +43,22 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
                     {(commentStatus) && <span className="status">{commentStatus}</span>}
                     <span className="inhalt">{commentInhalt}</span>
 
-                    <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
+                    <span className="kommentator"><div>{userRole === "superadmin" || userRole === "admin" ? 'Admin' : ''}</div> <div style={{color:getUserColor(commentKommentator)}}>{userUsername || commentKommentator.split('@')[0]}</div><div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div></span>
+                    {userProfilePicUrl ? (
+                    <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
                     <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                    )}
                     <button className="kommentarloeschen" onClick={(e)=>{e.stopPropagation(); if(issue.id) deleteComment(issue.id, commentId);}}>X</button>
                 </li>
             ):
             (
                     <li className="singleComment" onClick={(e) => { e.stopPropagation(); }}>
+                        {userProfilePicUrl ? (
+                        <img src={userProfilePicUrl} alt="Avatar" className="kommentator-icon" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
                         <UserIcon className="kommentator-icon" color={getUserColor(commentKommentator)} />
+                        )}
                         <span className="kommentator">
                             <div style={{ fontFamily: 'monospace', color: 'orange', fontSize: '10px', marginBottom: '-5px', fontWeight: 'bold' }}>
                                 {commentStatus ? 'Admin-Nachricht' : ''}
@@ -68,7 +78,7 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
                                 onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = getUserColor(commentKommentator)}
                                 onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
                             >
-                                {commentKommentator.split('@')[0]}
+                                {userUsername || commentKommentator.split('@')[0]}
                             </div>
                             
                             <div className="kommentarzeit" title={formatTimestamp(commentTimestamp)}>{getRelativeTime(commentTimestamp)}</div>
@@ -84,7 +94,6 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
                 email={profileOpen} 
                 onClose={() => setProfileOpen(null)} 
                 currentUserEmail={userEmail}
-                userRole={userRole}
             />
         </>
     );

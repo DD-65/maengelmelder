@@ -123,6 +123,8 @@ export default function App() {
 
   // User Profile
   const [profileOpen, setProfileOpen] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userProfilePic, setUserProfilePic] = useState<string | null>(null);
 
 
   // Suche über das Backend
@@ -426,6 +428,8 @@ export default function App() {
         if (data) {
           setUserId(data.userId);
           setUserEmail(data.email);
+          setUserName(data.username || null);
+          setUserProfilePic(data.profile_picture_url || null);
           setUserRole(data.role || "user");
           setIsRestricted(Boolean(data.isRestricted));
           setEmailVerified(Boolean(data.emailVerified));
@@ -482,6 +486,8 @@ export default function App() {
             if (!meData) return;
             setUserId(meData.userId);
             setUserEmail(meData.email);
+            setUserName(meData.username || null);
+            setUserProfilePic(meData.profile_picture_url || null);
             setUserRole(meData.role || "user");
             setIsRestricted(Boolean(meData.isRestricted));
             setEmailVerified(Boolean(meData.emailVerified));
@@ -520,6 +526,8 @@ export default function App() {
         
         setUserId(data.userId);
         setUserEmail(data.email);
+        setUserName(data.username || null);
+        setUserProfilePic(data.profile_picture_url || null);
         setUserRole(data.role || "user");
         setIsRestricted(Boolean(data.isRestricted));
         setRestrictedReportLimitReached(false);
@@ -1135,56 +1143,27 @@ export default function App() {
 
       <aside className="sidebar-right">
         <div className="sidebar-header" style={{ padding: '0 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {/* Profilbild Platzhalter */}
-            <div style={{
-              width: '38px', 
-              height: '38px', 
-              borderRadius: '50%', 
-              backgroundColor: getUserColor(userEmail), 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: getSecondaryUserColor(userEmail), 
-              fontWeight: 'bold',
-              fontSize: '24px',
-              overflow: 'hidden',
-              border: '1px solid var(--border)',
-              flexShrink: 0
-            }}>
-              {userId ? userEmail?.charAt(0).toUpperCase() : '?'}
-            </div>
-            {/* Name und Rolle */}
+          <div 
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, cursor: userId ? 'pointer' : 'default', padding: '6px', borderRadius: '8px', transition: 'background 0.2s' }}
+            title={userId ? "Mein Profil öffnen" : ""}
+            onClick={() => { if(userId) setProfileOpen(userEmail); }}
+            onMouseEnter={(e) => { if (userId) e.currentTarget.style.background = 'var(--surface-strong)' }}
+            onMouseLeave={(e) => { if (userId) e.currentTarget.style.background = 'transparent' }}
+          >
+            {userProfilePic ? (
+              <img src={userProfilePic} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: getUserColor(userEmail), display: 'flex', alignItems: 'center', justifyContent: 'center', color: getSecondaryUserColor(userEmail), fontWeight: 'bold', fontSize: '20px', border: '1px solid var(--border)', flexShrink: 0 }}>
+                {userId ? userEmail?.charAt(0).toUpperCase() : '?'}
+              </div>
+            )}
+            
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <span 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  if (userId && userEmail) setProfileOpen(userEmail); 
-                }}
-                title={userId ? "Eigenes Profil anzeigen" : ""}
-                style={{ 
-                  fontWeight: '600', 
-                  fontSize: '14px', 
-                  color: 'var(--text-h)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  cursor: userId ? 'pointer' : 'default',
-                  textDecoration: 'underline',
-                  textDecorationColor: 'transparent',
-                  transition: 'text-decoration-color 0.2s'
-                }}
-                onMouseEnter={(e) => { if (userId) e.currentTarget.style.textDecorationColor = 'var(--text-muted)' }}
-                onMouseLeave={(e) => { if (userId) e.currentTarget.style.textDecorationColor = 'transparent' }}
-              >
-                {userId ? userEmail.split('@')[0] : 'Gast'}
+              <span style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-h)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {userId ? (userName || userEmail.split('@')[0]) : 'Gast'}
               </span>
-              <span style={{ 
-                fontSize: '11px', 
-                color: 'var(--text-muted)', 
-                marginTop: '1px' 
-              }}>
-                {userId ? (userRole === "superadmin" ? "Superadmin" : (userRole === "admin" ? "Administrator" : "Nutzer")) : "Nicht angemeldet"}
+              <span style={{ fontSize: '11px', color: 'var(--accent)', marginTop: '1px', fontWeight: 'bold' }}>
+                {userId ? "Mein Profil ➔" : "Nicht angemeldet"}
               </span>
             </div>
           </div>
@@ -1365,9 +1344,8 @@ export default function App() {
         email={profileOpen} 
         onClose={() => setProfileOpen(null)} 
         currentUserEmail={userEmail}
-        userRole={userRole}
-        emailVerified={emailVerified}
         onLogout={() => { setProfileOpen(null); logout(); }}
+        onProfileUpdate={(newName, newPic) => { setUserName(newName); setUserProfilePic(newPic); }}
       />
     </div>
   );

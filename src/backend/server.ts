@@ -9,6 +9,10 @@ import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
 import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
+import multer from "multer";
+import sharp from "sharp";
+import fs from "fs";
+
 
 import { basicAuth } from "./middleware/basicAuth.js";
 import { createIssueRouter, issueUploadDir } from "./issues/issueRoutes.js";
@@ -326,8 +330,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash, role, email_verified_at, is_restricted FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; email_verified_at: string | null; is_restricted: number } | undefined;
+      .prepare("SELECT id, email, password_hash, role, username, profile_picture_url, email_verified_at, is_restricted FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; username: string | null; profile_picture_url: string | null; email_verified_at: string | null; is_restricted: number } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -361,8 +365,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
+    .prepare("SELECT id, email, role, username, profile_picture_url, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; username: string | null; profile_picture_url: string | null; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -447,7 +451,7 @@ app.get("/api/users", requireAuth, (req, res) => {
   try {
     const currentUserId = req.session.userId;
     const stmt = db.prepare(`
-      SELECT id, email, role,
+      SELECT id, email, role, username, profile_picture_url,
         EXISTS (
           SELECT 1 FROM follows 
           WHERE follower_id = ? AND followed_id = users.id
@@ -531,6 +535,8 @@ const stmt = db.prepare(`
         status_changes.new_status AS status,
         maengel_kommentare.kommentar,
         users.email AS userEmail, 
+        users.username AS username,
+        users.profile_picture_url AS profilePictureUrl,
         maengel_kommentare.created_at AS timestamp,
         maengel_kommentare.id AS commentId
       FROM maengel_kommentare LEFT JOIN status_changes
@@ -849,7 +855,60 @@ app.delete("/api/management/hard_delete/:id", requireAuth, requireSuperadmin, (r
 });
 
 
+const profileStorage = multer.memoryStorage();
+const profileUpload = multer({ storage: profileStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
+app.patch("/api/auth/profile", requireAuth, profileUpload.single("image"), async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { username } = req.body;
+    let profilePicUrl = undefined;
+
+    if (username && username.trim() !== "") {
+      const existing = db.prepare("SELECT id FROM users WHERE username = ? AND id != ?").get(username.trim(), userId);
+      if (existing) return res.status(400).json({ error: "Benutzername ist bereits vergeben" });
+    }
+
+    if (req.file) {
+      const fileName = `profile-${userId}-${Date.now()}.jpg`;
+      const filePath = path.join(issueUploadDir, fileName); // Uses existing upload dir
+      await sharp(req.file.buffer).resize(256, 256, { fit: "cover" }).jpeg({ quality: 90 }).toFile(filePath);
+      profilePicUrl = `/uploads/${fileName}`;
+    }
+
+    const finalUsername = username && username.trim() !== "" ? username.trim() : null;
+
+    if (profilePicUrl) {
+      db.prepare("UPDATE users SET username = ?, profile_picture_url = ? WHERE id = ?").run(finalUsername, profilePicUrl, userId);
+    } else if (username !== undefined) {
+      db.prepare("UPDATE users SET username = ? WHERE id = ?").run(finalUsername, userId);
+    }
+
+    res.json({ message: "Profil aktualisiert", profilePictureUrl: profilePicUrl, username: finalUsername });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Aktualisieren des Profils" });
+  }
+});
+
+// ---> NEW: PROFILDATEN FÜR DAS MODAL ABRUFEN <---
+app.get("/api/users/profile/:email", (req, res) => {
+  try {
+    const targetEmail = req.params.email;
+    const currentUserId = req.session.userId || -1; // -1 if not logged in
+
+    const user = db.prepare(`
+      SELECT id, email, username, profile_picture_url, role, email_verified_at,
+      EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = users.id) AS isFollowed
+      FROM users WHERE email = ?
+    `).get(currentUserId, targetEmail);
+
+    if (!user) return res.status(404).json({ error: "Nutzer nicht gefunden" });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Fehler beim Laden des Profils" });
+  }
+});
 
 
 // Vite Integration

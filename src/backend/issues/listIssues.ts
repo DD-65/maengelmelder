@@ -83,6 +83,8 @@ function selectIssues(whereClause: string, whereParams: unknown[], userId: numbe
         WHERE alle_kommentare.mangel_id = maengel.id
       ) AS commentCount,
       users.email AS user_email,
+      users.username AS user_username,
+      users.profile_pic_url AS user_profile_pic_url,
       maengel.user_id,
       CASE
         WHEN ? IS NULL THEN 0

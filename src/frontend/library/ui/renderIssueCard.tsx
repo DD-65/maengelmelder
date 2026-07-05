@@ -133,7 +133,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '4px', 
+              gap: '6px', 
               cursor: 'pointer',
               textDecoration: 'underline',
               textDecorationColor: 'transparent',
@@ -142,10 +142,19 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
             onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = 'var(--text-muted)'}
             onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
           >
-            <svg className="inline-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
-            </svg>
-            {issue.user_email || "Unbekannter Nutzer"}
+            {issue.user_profile_pic_url ? (
+              <img 
+                src={issue.user_profile_pic_url} 
+                alt="Avatar" 
+                style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <svg className="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 12c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5Zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5Z" />
+              </svg>
+            )}
+            
+            {issue.user_username || (issue.user_email ? issue.user_email.split('@')[0] : "Unbekannter Nutzer")}
           </span>
         {userId && issue.user_id && issue.user_id !== userId && (
           <button
@@ -363,7 +372,6 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           email={profileOpen} 
           onClose={() => setProfileOpen(null)} 
           currentUserEmail={userEmail}
-          userRole={userRole}
         />
     </li>
   );

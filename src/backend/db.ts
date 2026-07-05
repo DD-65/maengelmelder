@@ -53,6 +53,24 @@ try {
   // Falls die Spalte schon existiert, ignorieren
 }
 
+try {
+  db.exec("ALTER TABLE users ADD COLUMN username TEXT DEFAULT NULL");
+} catch {
+  // Ignorieren, falls schon vorhanden
+}
+
+try {
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");
+} catch {
+  // Ignorieren, falls schon vorhanden
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN profile_pic_url TEXT DEFAULT NULL");
+} catch {
+  // Ignorieren, falls schon vorhanden
+}
+
 // Tabelle für E-Mail-Verifizierungstokens
 db.exec(`
   CREATE TABLE IF NOT EXISTS email_verification_tokens (

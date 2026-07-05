@@ -10,6 +10,8 @@ interface UserListItem {
     id: number;
     email: string;
     role: string;
+    username: string | null;
+    profile_pic_url: string | null;
     isFollowed: number; // SQLite returns 0 or 1
     followsMe: number;  // SQLite returns 0 or 1
 }
@@ -52,7 +54,7 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             if (!res.ok) {
                 throw new Error(data.error || "Fehler beim Aktualisieren des Follow-Status");
             }
-            toast.success(user.isFollowed ? `Entfolgt: ${user.email}` : `Gefolgt: ${user.email}`);
+            toast.success(user.isFollowed ? `Entfolgt: ${user.username || user.email}` : `Gefolgt: ${user.username || user.email}`);
             
             // local update to avoid full reload
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isFollowed: u.isFollowed ? 0 : 1 } : u));
@@ -68,21 +70,37 @@ export function UsersList({ setViewMode }: UsersListProperties) {
     const renderUserCard = (user: UserListItem) => (
         <div key={user.id} className="management-user-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--accent-soft)',
-                    color: 'var(--accent)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    flexShrink: 0
-                }}>
-                    {user.email.charAt(0).toUpperCase()}
-                </div>
+                {user.profile_pic_url ? (
+                    <img 
+                        src={user.profile_pic_url} 
+                        alt="Profilbild" 
+                        style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1px solid var(--border)',
+                            flexShrink: 0
+                        }}
+                    />
+                ) : (
+                    <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--accent-soft)',
+                        color: 'var(--accent)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        flexShrink: 0
+                    }}>
+                        {user.email.charAt(0).toUpperCase()}
+                    </div>
+                )}
+
                 <span 
                     className="management-user-email" 
                     onClick={(e) => { e.stopPropagation(); setProfileOpen(user.email); }}
@@ -94,12 +112,21 @@ export function UsersList({ setViewMode }: UsersListProperties) {
                         cursor: 'pointer',
                         textDecoration: 'underline',
                         textDecorationColor: 'transparent',
-                        transition: 'text-decoration-color 0.2s'
+                        transition: 'text-decoration-color 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.textDecorationColor = 'var(--text-muted)'}
                     onMouseLeave={(e) => e.currentTarget.style.textDecorationColor = 'transparent'}
                 >
-                    {user.email}
+                    <span style={{ fontWeight: 'bold' }}>
+                        {user.username || user.email.split('@')[0]}
+                    </span>
+                    {user.username && (
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-2px' }}>
+                            {user.email}
+                        </span>
+                    )}
                 </span>
                 {user.followsMe === 1 && (
                     <span style={{

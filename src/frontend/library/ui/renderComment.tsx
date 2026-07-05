@@ -80,7 +80,12 @@ export function Kommentar({setCommentList, issue, commentId, userEmail, userRole
                 )
             }  
             
-            <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
+            <UserProfile 
+                email={profileOpen} 
+                onClose={() => setProfileOpen(null)} 
+                currentUserEmail={userEmail}
+                userRole={userRole}
+            />
         </>
     );
     

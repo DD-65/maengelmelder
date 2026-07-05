@@ -203,7 +203,10 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             <button onClick={() => setViewMode('list')} className="back-button" style={{ marginTop: '20px' }}>
                 Zurück zur Übersicht
             </button>
-            <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
+            <UserProfile 
+                email={profileOpen} 
+                onClose={() => setProfileOpen(null)} 
+            />
         </div>
     );
 }

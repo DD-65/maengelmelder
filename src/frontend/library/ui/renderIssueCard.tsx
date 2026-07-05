@@ -359,7 +359,12 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           </ul>
         </div>
       )}
-      <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
+        <UserProfile 
+          email={profileOpen} 
+          onClose={() => setProfileOpen(null)} 
+          currentUserEmail={userEmail}
+          userRole={userRole}
+        />
     </li>
   );
 }

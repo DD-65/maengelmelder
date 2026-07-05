@@ -284,7 +284,10 @@ export function Management({ userRole, setViewMode }: ManagementProperties) {
                     </div>
                 </div>
             )}
-            <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
+            <UserProfile 
+                email={profileOpen} 
+                onClose={() => setProfileOpen(null)} 
+            />
         </div>
     );
 }

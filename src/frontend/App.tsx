@@ -874,113 +874,58 @@ export default function App() {
       </div>
       );
 
-      const accountContent = (
+      const accountContent = !userId ? (
       <div className="sidebar-content">
         <div style={sidebarCardStyle}>
           <h3 style={sidebarHeaderStyle}>
-            {/*User-Icon Platzhalter*/}
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
             Account
           </h3>
-          {/* Buttons für Login/Logout/Register, Anzeige der email mit der man eingeloggt ist*/}
-          {userId ? (
-            <>
-              {/* Wenn man eingeloggt ist: logout und einstellungen*/}
-              <p className="auth-status" style={{ marginBottom: '15px', lineHeight: '1.5' }}>
-                <strong>{userEmail}</strong><br />
-                <span style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                  <div className={`verification-badge ${emailVerified ? "is-verified" : "is-unverified"}`}>
-                    {emailVerified ? "Verifiziert" : "Nicht verifiziert"}
-                  </div>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    padding: '4px 10px',
-                    border: '2px solid var(--border)',
-                    borderRadius: '999px', 
-                    backgroundColor: 'var(--surface)',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
-                    color: 'var(--text-muted)',
-                    width: 'max-content'
-                  }}>
-                    {userRole === "superadmin" ? <p style={{ color: 'orange' }}>Superadmin</p> : (userRole === "admin" ? "Admin" : "User")}
-                  </div>
-                </span>
-              </p>
-
-              <button className='logout-button' onClick={logout} style={{ width: '100%' }}>Logout</button>
-            </>
+          
+          {!authView ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p className="login-hint" style={{ margin: '0 0 5px', fontSize: '14px' }}>Bitte einloggen, um einen Mangel zu melden.</p>
+              <button onClick={() => setAuthView("login")}>Login</button>
+              <button onClick={() => setAuthView("register")}>Registrieren</button>
+            </div>
           ) : (
-            <>
-              {/* Wenn man nicht eingeloggt ist: login und register */}
-              {!authView ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <p className="login-hint" style={{ margin: '0 0 5px', fontSize: '14px' }}>Bitte einloggen, um einen Mangel zu melden.</p>
-                  <button onClick={() => setAuthView("login")}>Login</button>
-                  <button onClick={() => setAuthView("register")}>Registrieren</button>
-                </div>
-              ) : (
-                <form
-                  onSubmit={authView === "login" ? login : register}
-                  style={{ width: '100%', margin: '0', display: 'flex', flexDirection: 'column', gap: '12px' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
-                    <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none', border: 'none', minWidth: 'auto' }}>X</button>
-                  </div>
+            <form
+              onSubmit={authView === "login" ? login : register}
+              style={{ width: '100%', margin: '0', display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
+                <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none', border: 'none', minWidth: 'auto' }}>X</button>
+              </div>
 
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={authEmail}
-                    onChange={(event) => setAuthEmail(event.target.value)}
-                  />
+              <input
+                type="email"
+                placeholder="Email"
+                value={authEmail}
+                onChange={(event) => setAuthEmail(event.target.value)}
+              />
 
-                  <input
-                    type="password"
-                    placeholder="Passwort"
-                    value={authPassword}
-                    onChange={(event) => setAuthPassword(event.target.value)}
-                  />
+              <input
+                type="password"
+                placeholder="Passwort"
+                value={authPassword}
+                onChange={(event) => setAuthPassword(event.target.value)}
+              />
 
-                  {/* Removed Feature: Register as Admin via Admin-Code */}
-                  {/* {authView === "register" && (
-                    <div className="admin-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-                      <input
-                        type="checkbox"
-                        id="registerAsAdmin"
-                        checked={registerAsAdmin}
-                        onChange={(e) => setRegisterAsAdmin(e.target.checked)}
-                      />
-                      <label htmlFor="registerAsAdmin" style={{ fontSize: '14px' }}>als Admin registrieren</label>
-                    </div>
-                  )}
+              {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
+              {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
 
-                  {authView === "register" && registerAsAdmin && (
-                    <input
-                      type="password"
-                      placeholder="Admin-Code"
-                      value={adminCode}
-                      onChange={(event) => setAdminCode(event.target.value)}
-                    />
-                  )} */}
-
-                  {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
-                  {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
-
-                  <button type="submit" style={{ marginTop: '8px' }}>
-                    {authView === "login" ? "Einloggen" : "Registrieren"}
-                  </button>
-                </form>
-              )}
-            </>
+              <button type="submit" style={{ marginTop: '8px' }}>
+                {authView === "login" ? "Einloggen" : "Registrieren"}
+              </button>
+            </form>
           )}
+        </div>
       </div>
-    </div>
-    );
+      ) : null;
 
       // UI
       return (
@@ -1019,6 +964,20 @@ export default function App() {
                 <div className="mobile-menu-settings">
                    <SettingsButton setSettingsOpen={setSettingsOpen} />
                    <span>Einstellungen</span>
+                  {userId && (
+                     <button 
+                       className='logout-button' 
+                       onClick={logout} 
+                       title="Logout"
+                       style={{ marginLeft: 'auto', width: '32px', height: '32px', padding: '0', display: 'grid', placeItems: 'center', borderRadius: '8px' }}
+                     >
+                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                         <polyline points="16 17 21 12 16 7"></polyline>
+                         <line x1="21" y1="12" x2="9" y2="12"></line>
+                       </svg>
+                     </button>
+                   )}
                 </div>
                 <div className="menu-divider" />
                 {filterContent}
@@ -1229,7 +1188,21 @@ export default function App() {
               </span>
             </div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {userId && (
+              <button 
+                className='logout-button' 
+                onClick={logout} 
+                title="Logout"
+                style={{ width: '32px', height: '32px', padding: '0', display: 'grid', placeItems: 'center', borderRadius: '8px' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </button>
+            )}
             <SettingsButton setSettingsOpen={setSettingsOpen} />
           </div>
         </div>
@@ -1388,7 +1361,14 @@ export default function App() {
           </div>
         </div>
       )}
-      <UserProfile email={profileOpen} onClose={() => setProfileOpen(null)} />
+      <UserProfile 
+        email={profileOpen} 
+        onClose={() => setProfileOpen(null)} 
+        currentUserEmail={userEmail}
+        userRole={userRole}
+        emailVerified={emailVerified}
+        onLogout={() => { setProfileOpen(null); logout(); }}
+      />
     </div>
   );
 }

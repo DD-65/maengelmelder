@@ -508,19 +508,20 @@ app.get("/api/statistics/me", requireAuth, (req, res) => {
   }
 });
 
-app.get("/api/leaderboard", requireAuth, (req, res) => {
+app.get("/api/leaderboard", (req, res) => {
   try {
-    const userId = req.session.userId as number;
+    const userId = (req.session.userId as number) || -1;
     const category: LeaderboardCategory = 
       req.query.category === "followers" ? "followers" : 
       req.query.category === "reportedSolved" ? "reportedSolved" : "reported";
       
-    const currentUserSettings = db
-      .prepare("SELECT show_on_leaderboard FROM users WHERE id = ?")
-      .get(userId) as { show_on_leaderboard: number } | undefined;
-
-    if (!currentUserSettings) {
-      return res.status(401).json({ error: "Nicht angemeldet" });
+    let currentUserOptedIn = false;
+    
+    if (userId !== -1) {
+      const currentUserSettings = db
+        .prepare("SELECT show_on_leaderboard FROM users WHERE id = ?")
+        .get(userId) as { show_on_leaderboard: number } | undefined;
+      currentUserOptedIn = Boolean(currentUserSettings?.show_on_leaderboard);
     }
 
     let scoreQuery = "";
@@ -538,7 +539,7 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
         WHERE users.show_on_leaderboard = 1
         GROUP BY users.id
       `;
-      queryParams = [userId];
+      queryParams = [userId]; 
     } else {
       const eventType = category === "reportedSolved" ? "issue_solved" : "issue_created";
       const scoreUserColumn = category === "reportedSolved" ? "user_id" : "actor_user_id";
@@ -555,7 +556,7 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
         WHERE users.show_on_leaderboard = 1
         GROUP BY users.id
       `;
-      queryParams = [eventType, userId];
+      queryParams = [eventType, userId]; 
     }
 
     const rows = db.prepare(`
@@ -586,7 +587,7 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
       category,
       top,
       currentUserEntry,
-      currentUserOptedIn: Boolean(currentUserSettings.show_on_leaderboard),
+      currentUserOptedIn,
     });
   } catch (error) {
     console.error(error);

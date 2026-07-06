@@ -46,7 +46,7 @@ type StatusChangeToNotify = {
   title: string;
 };
 
-type LeaderboardCategory = "reported" | "reportedSolved";
+type LeaderboardCategory = "reported" | "reportedSolved" | "followers";
 
 type LeaderboardRow = {
   place: number;
@@ -511,9 +511,10 @@ app.get("/api/statistics/me", requireAuth, (req, res) => {
 app.get("/api/leaderboard", requireAuth, (req, res) => {
   try {
     const userId = req.session.userId as number;
-    const category: LeaderboardCategory = req.query.category === "reportedSolved" ? "reportedSolved" : "reported";
-    const eventType = category === "reportedSolved" ? "issue_solved" : "issue_created";
-    const scoreUserColumn = category === "reportedSolved" ? "user_id" : "actor_user_id";
+    const category: LeaderboardCategory = 
+      req.query.category === "followers" ? "followers" : 
+      req.query.category === "reportedSolved" ? "reportedSolved" : "reported";
+      
     const currentUserSettings = db
       .prepare("SELECT show_on_leaderboard FROM users WHERE id = ?")
       .get(userId) as { show_on_leaderboard: number } | undefined;
@@ -522,8 +523,26 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
       return res.status(401).json({ error: "Nicht angemeldet" });
     }
 
-    const rows = db.prepare(`
-      WITH scores AS (
+    let scoreQuery = "";
+    let queryParams: any[] = [];
+
+    if (category === "followers") {
+      scoreQuery = `
+        SELECT
+          users.id AS userId,
+          users.email,
+          users.username,
+          COUNT(follows.follower_id) AS score
+        FROM users
+        LEFT JOIN follows ON follows.followed_id = users.id
+        WHERE users.show_on_leaderboard = 1
+        GROUP BY users.id
+      `;
+      queryParams = [userId];
+    } else {
+      const eventType = category === "reportedSolved" ? "issue_solved" : "issue_created";
+      const scoreUserColumn = category === "reportedSolved" ? "user_id" : "actor_user_id";
+      scoreQuery = `
         SELECT
           users.id AS userId,
           users.email,
@@ -535,6 +554,13 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
           AND statistics_events.event_type = ?
         WHERE users.show_on_leaderboard = 1
         GROUP BY users.id
+      `;
+      queryParams = [eventType, userId];
+    }
+
+    const rows = db.prepare(`
+      WITH scores AS (
+        ${scoreQuery}
       ),
       ranked AS (
         SELECT
@@ -551,7 +577,7 @@ app.get("/api/leaderboard", requireAuth, (req, res) => {
       FROM ranked
       WHERE place <= 4 OR userId = ?
       ORDER BY place ASC
-    `).all(eventType, userId) as LeaderboardRow[];
+    `).all(...queryParams) as LeaderboardRow[];
 
     const top = rows.filter((row) => row.place <= 4);
     const currentUserEntry = rows.find((row) => row.userId === userId) ?? null;
@@ -1044,6 +1070,8 @@ app.get("/api/users/profile/:email", (req, res) => {
         users.role,
         users.email_verified_at,
         users.show_on_leaderboard AS showOnLeaderboard,
+        (SELECT COUNT(*) FROM follows WHERE followed_id = users.id) AS followersCount,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = users.id) AS followingCount,
         EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = users.id) AS isFollowed,
         COALESCE(SUM(CASE WHEN statistics_events.event_type = 'issue_created' THEN 1 ELSE 0 END), 0) AS issuesReported,
         COALESCE(SUM(CASE WHEN statistics_events.event_type = 'issue_liked' THEN 1 ELSE 0 END), 0) AS likesGiven,

@@ -26,6 +26,8 @@ type UserProfileData = {
   likesGiven?: number | string;
   commentsWritten?: number | string;
   reactionsGiven?: number | string;
+  followersCount?: number;
+  followingCount?: number;
 };
 
 type ProfileUpdateResponse = {
@@ -40,7 +42,7 @@ type ProfileState = {
 };
 
 type ProfileView = "profile" | "leaderboard";
-type LeaderboardCategory = "reported" | "reportedSolved";
+type LeaderboardCategory = "reported" | "reportedSolved" | "followers";
 
 type LeaderboardEntry = {
   place: number;
@@ -59,7 +61,8 @@ type LeaderboardData = {
 
 const leaderboardLabels: Record<LeaderboardCategory, string> = {
   reported: "Gemeldete Mängel",
-  reportedSolved: "Gemeldet & behoben",
+  reportedSolved: "Behobene Mängel",
+  followers: "Follower",
 };
 
 function formatCount(count: number, singular: string, plural: string) {
@@ -273,12 +276,12 @@ export function UserProfile({
               </div>
             )}
 
-            {isLeaderboardLoading ? (
+            {!leaderboardData && isLeaderboardLoading ? (
               <p className="meta-line">Bestenliste wird geladen...</p>
             ) : !leaderboardData ? (
               <p className="error-text">Bestenliste konnte nicht geladen werden.</p>
             ) : (
-              <>
+              <div style={{ opacity: isLeaderboardLoading ? 0.5 : 1, transition: 'opacity 0.2s ease-in-out' }}>
                 <ol className="leaderboard-list">
                   {leaderboardData.top.map(renderLeaderboardEntry)}
                 </ol>
@@ -295,7 +298,7 @@ export function UserProfile({
                 {!leaderboardData.currentUserOptedIn && (
                   <p className="leaderboard-note">Du erscheinst aktuell nicht auf Bestenlisten.</p>
                 )}
-              </>
+              </div>
             )}
           </div>
         ) : (
@@ -303,7 +306,7 @@ export function UserProfile({
             <div style={{ position: 'relative' }}>
               {(previewUrl || userData.profile_pic_url) ? (
                 <img
-                  src={previewUrl || userData.profile_pic_url}
+                  src={previewUrl ?? userData.profile_pic_url ?? undefined}
                   alt="Profile"
                   style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }}
                 />
@@ -347,6 +350,17 @@ export function UserProfile({
               <div className={`verification-badge ${userData.email_verified_at ? "is-verified" : "is-unverified"}`}>{userData.email_verified_at ? "Verifiziert" : "Nicht verifiziert"}</div>
               <div style={{ fontSize: '11px', padding: '4px 10px', border: '2px solid var(--border)', borderRadius: '999px', backgroundColor: 'var(--surface)', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 {userData.role === "superadmin" ? <span style={{ color: 'orange' }}>Superadmin</span> : (userData.role === "admin" ? "Admin" : "User")}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '40px', margin: '20px 0 10px 0', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-h)' }}>{userData.followersCount || 0}</div>
+                <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 'bold', color: 'var(--text-muted)' }}>Follower</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-h)' }}>{userData.followingCount || 0}</div>
+                <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 'bold', color: 'var(--text-muted)' }}>Folgt</div>
               </div>
             </div>
 

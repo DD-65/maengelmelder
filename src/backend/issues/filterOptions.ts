@@ -13,12 +13,26 @@ export type IssueFilterOptionsResponse = {
   kategorien: string[];
   status: string[];
   locations: string[];
+  followedUsers: string[];
 };
 
 function sortValues(values: Set<string>) {
   return Array.from(values).sort((a, b) => a.localeCompare(b, "de"));
 }
 
+// alle Accounts, denen der aktuelle Nutzer folgt, als Dropdown-Werte (Username, sonst E-Mail)
+function getFollowedUserOptions(userId: number | null) {
+  if (!userId) return [];
+
+  const rows = db.prepare(`
+    SELECT COALESCE(users.username, users.email) AS label
+    FROM follows
+    JOIN users ON users.id = follows.followed_id
+    WHERE follows.follower_id = ?
+  `).all(userId) as { label: string }[];
+
+  return sortValues(new Set(rows.map(row => row.label)));
+}
 
 // liefert alle Filterwerte, nicht nur die Werte der aktuellen Seite
 export function getIssueFilterOptions(userId: number | null, query: Request["query"]): IssueFilterOptionsResponse {
@@ -30,6 +44,7 @@ export function getIssueFilterOptions(userId: number | null, query: Request["que
       includeStatus: false,
       includeLocation: false,
       includeOnlyOwn: true,
+      includeByFollowedUser: false,
     },
   });
 
@@ -38,6 +53,7 @@ export function getIssueFilterOptions(userId: number | null, query: Request["que
       kategorien: [],
       status: [],
       locations: [],
+      followedUsers: [],
     };
   }
 
@@ -73,5 +89,6 @@ export function getIssueFilterOptions(userId: number | null, query: Request["que
     kategorien: sortValues(kategorien),
     status: sortValues(status),
     locations: sortValues(locations),
+    followedUsers: getFollowedUserOptions(userId),
   };
 }

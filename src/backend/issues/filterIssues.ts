@@ -13,6 +13,7 @@ export type IssueFilterOptions = {
   includeLocation?: boolean;
   includeOnlyOwn?: boolean;
   includeFollowedOnly?: boolean;
+  includeByFollowedUser?: boolean;
 };
 
 function getSingleQueryValue(value: QueryValue) {
@@ -39,9 +40,11 @@ export function buildIssueFilter(query: Request["query"], userId: number | null,
   const includeLocation = options.includeLocation ?? true;
   const includeOnlyOwn = options.includeOnlyOwn ?? true;
   const includeFollowedOnly = options.includeFollowedOnly ?? true;
+  const includeByFollowedUser = options.includeByFollowedUser ?? true;
   const kategorie = getCleanQueryString(query, "kategorie");
   const status = getCleanQueryString(query, "status");
   const location = getCleanQueryString(query, "location");
+  const followedUser = getCleanQueryString(query, "followedUser");
   const onlyOwn = query.onlyOwn === "true";
   const followedOnly = query.followedOnly === "true";
 
@@ -74,6 +77,18 @@ export function buildIssueFilter(query: Request["query"], userId: number | null,
     params.push(userId ?? -1);
   }
 
+  // Mängel eines bestimmten gefolgten Accounts (Wert kommt als Username bzw. E-Mail aus dem Dropdown)
+  if (includeByFollowedUser && followedUser) {
+    clauses.push(`maengel.user_id IN (
+      SELECT follows.followed_id
+      FROM follows
+      JOIN users followed_users ON followed_users.id = follows.followed_id
+      WHERE follows.follower_id = ?
+        AND COALESCE(followed_users.username, followed_users.email) = ?
+    )`);
+    params.push(userId ?? -1, followedUser);
+  }
+  
   return {
     whereClause: clauses.join(" AND "),
     params,

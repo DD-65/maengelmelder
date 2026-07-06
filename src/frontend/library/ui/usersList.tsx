@@ -4,6 +4,9 @@ import { UserProfile } from './userProfile';
 
 interface UsersListProperties {
     setViewMode: (val: 'list' | 'map' | 'management' | 'users') => void;
+    currentUserEmail?: string | null;
+    currentUserShowOnLeaderboard?: boolean;
+    onLeaderboardPreferenceChange?: (showOnLeaderboard: boolean) => boolean | Promise<boolean>;
 }
 
 interface UserListItem {
@@ -16,7 +19,7 @@ interface UserListItem {
     followsMe: number;  // SQLite returns 0 or 1
 }
 
-export function UsersList({ setViewMode }: UsersListProperties) {
+export function UsersList({ setViewMode, currentUserEmail, currentUserShowOnLeaderboard, onLeaderboardPreferenceChange }: UsersListProperties) {
     const [users, setUsers] = useState<UserListItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -258,6 +261,9 @@ export function UsersList({ setViewMode }: UsersListProperties) {
             <UserProfile 
                 email={profileOpen} 
                 onClose={() => setProfileOpen(null)} 
+                currentUserEmail={currentUserEmail}
+                currentUserShowOnLeaderboard={currentUserShowOnLeaderboard}
+                onLeaderboardPreferenceChange={onLeaderboardPreferenceChange}
             />
         </div>
     );

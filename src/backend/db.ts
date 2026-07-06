@@ -21,6 +21,7 @@ db.exec(`
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'superadmin')),
     is_restricted INTEGER NOT NULL DEFAULT 0,
+    show_on_leaderboard INTEGER NOT NULL DEFAULT 1,
     email_verified_at TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -67,6 +68,12 @@ try {
 
 try {
   db.exec("ALTER TABLE users ADD COLUMN profile_pic_url TEXT DEFAULT NULL");
+} catch {
+  // Ignorieren, falls schon vorhanden
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN show_on_leaderboard INTEGER NOT NULL DEFAULT 1");
 } catch {
   // Ignorieren, falls schon vorhanden
 }
@@ -317,6 +324,123 @@ db.exec(`
     UNIQUE(user_id, mangel_id, emoji),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (mangel_id) REFERENCES maengel(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS statistics_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    actor_user_id INTEGER,
+    event_type TEXT NOT NULL CHECK (
+      event_type IN (
+        'issue_created',
+        'issue_solved',
+        'issue_liked',
+        'comment_created',
+        'reaction_created'
+      )
+    ),
+    entity_type TEXT NOT NULL CHECK (
+      entity_type IN ('issue', 'comment', 'reaction')
+    ),
+    entity_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+  )
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_statistics_events_user_event
+  ON statistics_events(user_id, event_type)
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_statistics_events_actor_event
+  ON statistics_events(actor_user_id, event_type)
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_statistics_events_event_created
+  ON statistics_events(event_type, created_at)
+`);
+
+// bisherige stats einmal in events eintragen
+db.exec(`
+  INSERT INTO statistics_events (user_id, actor_user_id, event_type, entity_type, entity_id, created_at)
+  SELECT maengel.user_id, maengel.user_id, 'issue_created', 'issue', maengel.id, maengel.created_at
+  FROM maengel
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM statistics_events
+    WHERE event_type = 'issue_created'
+      AND entity_type = 'issue'
+      AND entity_id = maengel.id
+  )
+`);
+
+// bisherige stats einmal in events eintragen: schon behobene Mängel
+db.exec(`
+  INSERT INTO statistics_events (user_id, actor_user_id, event_type, entity_type, entity_id, created_at)
+  SELECT maengel.user_id, NULL, 'issue_solved', 'issue', maengel.id, maengel.created_at
+  FROM maengel
+  WHERE maengel.status = 'Behoben'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM statistics_events
+      WHERE event_type = 'issue_solved'
+        AND entity_type = 'issue'
+        AND entity_id = maengel.id
+    )
+`);
+
+// bisherige stats einmal in events eintragen: Likes
+db.exec(`
+  INSERT INTO statistics_events (user_id, actor_user_id, event_type, entity_type, entity_id, created_at)
+  SELECT maengel.user_id, mangel_votes.user_id, 'issue_liked', 'issue', mangel_votes.mangel_id, mangel_votes.created_at
+  FROM mangel_votes
+  JOIN maengel ON maengel.id = mangel_votes.mangel_id
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM statistics_events
+    WHERE actor_user_id = mangel_votes.user_id
+      AND event_type = 'issue_liked'
+      AND entity_type = 'issue'
+      AND entity_id = mangel_votes.mangel_id
+  )
+`);
+
+// bisherige stats einmal in events eintragen: Kommentare
+db.exec(`
+  INSERT INTO statistics_events (user_id, actor_user_id, event_type, entity_type, entity_id, created_at)
+  SELECT maengel.user_id, maengel_kommentare.user_id, 'comment_created', 'comment', maengel_kommentare.id, maengel_kommentare.created_at
+  FROM maengel_kommentare
+  JOIN maengel ON maengel.id = maengel_kommentare.mangel_id
+  LEFT JOIN status_changes ON status_changes.new_statusComment_id = maengel_kommentare.id
+  WHERE status_changes.id IS NULL
+    AND NOT EXISTS (
+      SELECT 1
+      FROM statistics_events
+      WHERE event_type = 'comment_created'
+        AND entity_type = 'comment'
+        AND entity_id = maengel_kommentare.id
+    )
+`);
+
+// bisherige stats einmal in events eintragen: Reactions
+db.exec(`
+  INSERT INTO statistics_events (user_id, actor_user_id, event_type, entity_type, entity_id, created_at)
+  SELECT maengel.user_id, mangel_reactions.user_id, 'reaction_created', 'issue', mangel_reactions.mangel_id, mangel_reactions.created_at
+  FROM mangel_reactions
+  JOIN maengel ON maengel.id = mangel_reactions.mangel_id
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM statistics_events
+    WHERE actor_user_id = mangel_reactions.user_id
+      AND event_type = 'reaction_created'
+      AND entity_type = 'issue'
+      AND entity_id = mangel_reactions.mangel_id
   )
 `);
 

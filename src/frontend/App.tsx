@@ -70,6 +70,8 @@ function buildIssueQueryParams(options: LoadIssuesOptions) {
   if (options.status) params.set("status", options.status);
   if (options.location) params.set("location", options.location);
   if (options.onlyOwn) params.set("onlyOwn", "true");
+  if (options.followedOnly) params.set("followedOnly", "true");
+  if (options.followedUser) params.set("followedUser", options.followedUser);
   if (options.sort) params.set("sort", options.sort);
   if (options.direction) params.set("direction", options.direction);
 
@@ -210,6 +212,10 @@ export default function App() {
       if (currentFilter === "Status") {
         filterOptions.status = currentFilterValue;
       }
+
+      if (currentFilter === "Gefolgte Accounts") {
+        filterOptions.followedUser = currentFilterValue;
+      }
     }
 
     if (onlyOwnOverride) {
@@ -289,8 +295,15 @@ export default function App() {
       Kategorie: data.kategorien,
       Ort: data.locations,
       Status: data.status,
+      "Gefolgte Accounts": data.followedUsers,
     } as FilterOptionValues;
   }, [filterOnlyOwn, isArchiveMode, normalizedSearchQuery]);
+
+  // Filterwerte neu laden, z.B. nachdem einem Account gefolgt/entfolgt wurde
+  const refreshFilterOptions = useCallback(async () => {
+    const options = await fetchIssueFilterOptions();
+    if (options) setBackendFilterOptions(options);
+  }, [fetchIssueFilterOptions]);
 
   // Kartenzusammenfassung vom Backend holen, damit Marker alle Treffer zählen
   const fetchIssueMapSummary = useCallback(async () => {
@@ -1404,6 +1417,7 @@ export default function App() {
         onLogout={() => { setProfileOpen(null); logout(); }}
         onProfileUpdate={(newName, newPic) => { setUserName(newName); setUserProfilePic(newPic); }}
         onLeaderboardPreferenceChange={updateLeaderboardPreference}
+        onFollowChange={refreshFilterOptions}
       />
     </div>
   );

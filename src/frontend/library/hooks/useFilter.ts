@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Issue } from "../types/Issue";
 
-export type FilterOptionValues = Partial<Record<"Kategorie" | "Ort" | "Status" | "User", string[]>>;
+export type FilterOptionValues = Partial<Record<"Kategorie" | "Ort" | "Status" | "User" | "Gefolgte Accounts", string[]>>;
 
 export function useFilter(unfilteredIssueList: Issue[], userEmail: string, isArchiveMode: boolean = false, backendFilterOptions: FilterOptionValues = {}) {
     // Variablen fuer Filter und Filterwerte + Funktionen um diese zu setten
@@ -13,7 +13,8 @@ export function useFilter(unfilteredIssueList: Issue[], userEmail: string, isArc
         "Ort",
         //"User", war nicht gefordert, dann eben nicht.
         "Status",
-        
+        // gefolgte Accounts gibt es nur mit Login
+        ...(userEmail ? ["Gefolgte Accounts"] : []),
     ];
     
     //tatsächliche Filterung der Issues basierend auf dem aktuellen Filter und Filterwert
@@ -32,6 +33,7 @@ export function useFilter(unfilteredIssueList: Issue[], userEmail: string, isArc
         Status: backendFilterOptions.Status ?? (isArchiveMode
             ? ["Behoben", "Gelöscht"]
             : ["Gemeldet", "Akzeptiert", "Abgelehnt", "In Bearbeitung"]),
+        "Gefolgte Accounts": backendFilterOptions["Gefolgte Accounts"] ?? [],
     };
     
 
@@ -59,6 +61,7 @@ export function useFilter(unfilteredIssueList: Issue[], userEmail: string, isArc
     if (currentFilter === "Ort") return issue.location?.startsWith(currentFilterValue) ?? false;
     if (currentFilter === "User") return issue.user_email === currentFilterValue;
     if (currentFilter === "Status") return issue.status === currentFilterValue;
+    if (currentFilter === "Gefolgte Accounts") return (issue.user_username ?? issue.user_email) === currentFilterValue;
     return true;
   }
 

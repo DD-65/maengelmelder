@@ -11,6 +11,7 @@ interface UserProfileProps {
   onLogout?: () => void;
   onProfileUpdate?: (newUsername: string | null, newPicUrl: string | null) => void;
   onLeaderboardPreferenceChange?: (showOnLeaderboard: boolean) => boolean | Promise<boolean>;
+  onFollowChange?: () => void;
 }
 
 type UserProfileData = {
@@ -82,6 +83,7 @@ export function UserProfile({
   onLogout,
   onProfileUpdate,
   onLeaderboardPreferenceChange,
+  onFollowChange,
 }: UserProfileProps) {
   const [profileState, setProfileState] = useState<ProfileState>({ email: null, data: null });
   const [profileView, setProfileView] = useState<ProfileView>("profile");
@@ -151,6 +153,7 @@ export function UserProfile({
           data: { ...current.data, isFollowed: current.data.isFollowed ? 0 : 1 },
         } : current);
         toast.success(userData.isFollowed ? "Entfolgt!" : "Gefolgt!");
+        onFollowChange?.();
       }
     } catch {
       toast.error("Fehler beim Folgen");

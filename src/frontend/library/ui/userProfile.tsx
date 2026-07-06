@@ -43,7 +43,7 @@ type ProfileState = {
 };
 
 type ProfileView = "profile" | "leaderboard";
-type LeaderboardCategory = "reported" | "reportedSolved" | "followers";
+type LeaderboardCategory = "reported" | "reportedSolved" | "followers"| "likes";
 
 type LeaderboardEntry = {
   place: number;
@@ -64,6 +64,7 @@ const leaderboardLabels: Record<LeaderboardCategory, string> = {
   reported: "Gemeldete Mängel",
   reportedSolved: "Behobene Mängel",
   followers: "Follower",
+  likes: "Likes",
 };
 
 function formatCount(count: number, singular: string, plural: string) {

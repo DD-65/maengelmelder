@@ -46,7 +46,7 @@ type StatusChangeToNotify = {
   title: string;
 };
 
-type LeaderboardCategory = "reported" | "reportedSolved" | "followers";
+type LeaderboardCategory = "reported" | "reportedSolved" | "followers"| "likes";
 
 type LeaderboardRow = {
   place: number;
@@ -513,7 +513,8 @@ app.get("/api/leaderboard", (req, res) => {
     const userId = (req.session.userId as number) || -1;
     const category: LeaderboardCategory = 
       req.query.category === "followers" ? "followers" : 
-      req.query.category === "reportedSolved" ? "reportedSolved" : "reported";
+      req.query.category === "reportedSolved" ? "reportedSolved" : 
+      req.query.category === "likes" ? "likes" : "reported";
       
     let currentUserOptedIn = false;
     
@@ -541,8 +542,17 @@ app.get("/api/leaderboard", (req, res) => {
       `;
       queryParams = [userId]; 
     } else {
-      const eventType = category === "reportedSolved" ? "issue_solved" : "issue_created";
-      const scoreUserColumn = category === "reportedSolved" ? "user_id" : "actor_user_id";
+      let eventType = "issue_created";
+      let scoreUserColumn = "actor_user_id";
+
+      if (category === "reportedSolved") {
+        eventType = "issue_solved";
+        scoreUserColumn = "user_id";
+      } else if (category === "likes") {
+        eventType = "issue_liked";
+        scoreUserColumn = "user_id";
+      }
+
       scoreQuery = `
         SELECT
           users.id AS userId,

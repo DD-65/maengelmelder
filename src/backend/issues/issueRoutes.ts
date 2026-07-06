@@ -11,6 +11,7 @@ import { getIssueFilterOptions } from "./filterOptions.js";
 import { listIssues } from "./listIssues.js";
 import { getIssueMapSummary } from "./mapSummary.js";
 import { filterMiddleware } from '../middleware/textFilter.js';
+import { hasActorStatisticsEvent, hasStatisticsEvent, recordStatisticsEvent } from "../statisticsEvents.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,23 +120,41 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         return res.status(404).json({ error: "Mangel nicht gefunden" });
       }
 
-      // Löschen wird als Archivierung gespeichert, nicht als echter Status
-      if (status === "Gelöscht") {
-        db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
-      } else {
-        db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
-      }
+      const updateStatusTransaction = db.transaction(() => {
+        // Löschen wird als Archivierung gespeichert, nicht als echter Status
+        if (status === "Gelöscht") {
+          db.prepare("UPDATE maengel SET is_deleted = 1 WHERE id = ?").run(mangelId);
+        } else {
+          db.prepare("UPDATE maengel SET status = ?, is_deleted = 0 WHERE id = ?").run(status, mangelId);
+        }
 
-      // Statuskommentar speichern und am Mangel verknüpfen
-      const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment ?? null, userId, mangelId);
-      const kommentarId = kommentar.lastInsertRowid;
-      db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarId, mangelId);
+        // Statuskommentar speichern und am Mangel verknüpfen
+        const kommentar = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(statusComment ?? null, userId, mangelId);
+        const kommentarId = kommentar.lastInsertRowid;
+        db.prepare("UPDATE maengel SET statusComment_id = ? WHERE id = ?").run(kommentarId, mangelId);
 
-      // Statuswechsel für spätere Sammelmails merken
-      db.prepare(`
-        INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment_id, new_statusComment_id)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment_id, kommentarId);
+        // Statuswechsel für spätere Sammelmails merken
+        db.prepare(`
+          INSERT INTO status_changes (mangel_id, old_status, new_status, old_statusComment_id, new_statusComment_id)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(mangelId, oldMangelData.status, status, oldMangelData.statusComment_id, kommentarId);
+
+        if (
+          status === "Behoben" &&
+          oldMangelData.status !== "Behoben" &&
+          !hasStatisticsEvent("issue_solved", "issue", mangelId)
+        ) {
+          recordStatisticsEvent({
+            userId: oldMangelData.user_id ?? null,
+            actorUserId: userId ?? null,
+            eventType: "issue_solved",
+            entityType: "issue",
+            entityId: mangelId,
+          });
+        }
+      });
+
+      updateStatusTransaction();
 
       const recipient = db.prepare(`
         SELECT email, email_verified_at, notification_interval
@@ -232,26 +251,40 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
       }
 
       // neuen Mangel mit dem eingeloggten Nutzer verknüpfen
-      const userId = req.session.userId;
-      const stmt = db.prepare(`
-        INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url, is_private)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      const userId = req.session.userId as number;
+      const createIssueTransaction = db.transaction(() => {
+        const stmt = db.prepare(`
+          INSERT INTO maengel (user_id, title, description, location, kategorie, image_url, thumbnail_url, is_private)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
-      const result = stmt.run(
-        userId,
-        title.trim(),
-        description ?? null,
-        location ?? null,
-        normalizedKategorie ?? null,
-        imageUrl ?? null,
-        thumbnailUrl ?? null,
-        isPrivateInt
-      );
+        const result = stmt.run(
+          userId,
+          title.trim(),
+          description ?? null,
+          location ?? null,
+          normalizedKategorie ?? null,
+          imageUrl ?? null,
+          thumbnailUrl ?? null,
+          isPrivateInt
+        );
+        const issueId = Number(result.lastInsertRowid);
+
+        recordStatisticsEvent({
+          userId,
+          actorUserId: userId,
+          eventType: "issue_created",
+          entityType: "issue",
+          entityId: issueId,
+        });
+
+        return issueId;
+      });
+      const issueId = createIssueTransaction();
 
       res.status(201).json({
         message: "Mangel gespeichert!",
-        id: result.lastInsertRowid
+        id: issueId
       });
     } catch (error) {
       console.error(error);
@@ -317,8 +350,8 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
 
     // nicht für gelöschte IDs voten
     const mangel = db
-      .prepare("SELECT id FROM maengel WHERE id = ?")
-      .get(mangelId) as { id: number } | undefined;
+      .prepare("SELECT id, user_id FROM maengel WHERE id = ?")
+      .get(mangelId) as { id: number; user_id: number | null } | undefined;
 
     if (!mangel) {
       return res.status(404).json({ error: "Zu bewertender Mangel nicht gefunden" });
@@ -365,6 +398,16 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
           SET votes = votes + 1
           WHERE id = ?
         `).run(transactionMangelId);
+
+          if (!hasActorStatisticsEvent(transactionUserId, "issue_liked", "issue", transactionMangelId)) {
+            recordStatisticsEvent({
+              userId: mangel.user_id ?? null,
+              actorUserId: transactionUserId,
+              eventType: "issue_liked",
+              entityType: "issue",
+              entityId: transactionMangelId,
+            });
+          }
         });
 
         voteTransaction(userId, mangelId);
@@ -547,6 +590,18 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
         if (txEmoji) {
           db.prepare("INSERT INTO mangel_reactions (user_id, mangel_id, emoji) VALUES (?, ?, ?)")
             .run(txUserId, txMangelId, txEmoji);
+          const issueOwner = db.prepare("SELECT user_id FROM maengel WHERE id = ?")
+            .get(txMangelId) as { user_id: number | null } | undefined;
+
+          if (!hasActorStatisticsEvent(txUserId, "reaction_created", "issue", txMangelId)) {
+            recordStatisticsEvent({
+              userId: issueOwner?.user_id ?? null,
+              actorUserId: txUserId,
+              eventType: "reaction_created",
+              entityType: "issue",
+              entityId: txMangelId,
+            });
+          }
         }
       });
 

@@ -186,6 +186,7 @@ export default function App() {
 
   // State für das gespeicherte Benachrichtigungs-Intervall
   const [notificationInterval, setNotificationInterval] = useState<number>(0);
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [themePreference, setThemePreference] = useState<ThemePreference>(() => {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "system";
@@ -336,9 +337,41 @@ export default function App() {
       // Toast Notification
       toast.success("Benachrichtigungs-Intervall aktualisiert!");
     } catch {
-      setSettingsError("Netzwerkfehler beim Speichern der Einstellungen");
+      setSettingsError("Fehler beim Speichern der Einstellungen");
       // Toast Notification
-      toast.error("🫪 Netzwerkfehler beim Speichern der Einstellungen");
+      toast.error("🫪 Fehler beim Speichern der Einstellungen");
+    }
+  };
+
+  const updateLeaderboardPreference = async (nextValue: boolean) => {
+    const previousValue = showOnLeaderboard;
+    setShowOnLeaderboard(nextValue);
+    setSettingsError("");
+    setSettingsMessage("");
+
+    try {
+      const res = await fetch("/api/auth/settings/leaderboard", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showOnLeaderboard: nextValue }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setShowOnLeaderboard(previousValue);
+        setSettingsError(data.error || "Fehler beim Speichern der Bestenlisten-Einstellung");
+        toast.error(`🫪 ${data.error || "Fehler beim Speichern der Bestenlisten-Einstellung"}`);
+        return false;
+      }
+
+      setSettingsMessage("Bestenlisten-Einstellung aktualisiert!");
+      return true;
+    } catch {
+      setShowOnLeaderboard(previousValue);
+      setSettingsError("Fehler beim Speichern der Bestenlisten-Einstellung");
+      toast.error("🫪 Fehler beim Speichern der Bestenlisten-Einstellung");
+      return false;
     }
   };
 
@@ -421,6 +454,7 @@ export default function App() {
           setIsRestricted(false);
           setEmailVerified(false);
           setNotificationInterval(0);
+          setShowOnLeaderboard(true);
           return null;
         }
       })
@@ -434,6 +468,7 @@ export default function App() {
           setIsRestricted(Boolean(data.isRestricted));
           setEmailVerified(Boolean(data.emailVerified));
           setNotificationInterval(data.notificationInterval ?? 0);
+          setShowOnLeaderboard(Boolean(data.showOnLeaderboard ?? true));
           loadIssues({
             archiv: isArchiveMode,
             page: 1,
@@ -452,6 +487,7 @@ export default function App() {
         setIsRestricted(false);
         setEmailVerified(false);
         setNotificationInterval(0);
+        setShowOnLeaderboard(true);
       });
   }, []);
 
@@ -491,6 +527,7 @@ export default function App() {
             setUserRole(meData.role || "user");
             setIsRestricted(Boolean(meData.isRestricted));
             setEmailVerified(Boolean(meData.emailVerified));
+            setShowOnLeaderboard(Boolean(meData.showOnLeaderboard ?? true));
           });
       })
       .catch(() => {
@@ -532,6 +569,7 @@ export default function App() {
         setIsRestricted(Boolean(data.isRestricted));
         setRestrictedReportLimitReached(false);
         setEmailVerified(Boolean(data.emailVerified));
+        setShowOnLeaderboard(Boolean(data.showOnLeaderboard ?? true));
         setAuthEmail("");
         setAuthPassword("");
         setAuthView(null);
@@ -600,6 +638,7 @@ export default function App() {
         setIsRestricted(false);
         setRestrictedReportLimitReached(false);
         setEmailVerified(false);
+        setShowOnLeaderboard(true);
         setFilterOnlyOwn(false);
         setIssueList([]);
         toast.success("Erfolgreich ausgeloggt");
@@ -1106,7 +1145,12 @@ export default function App() {
               )}
             </div>
           ) : viewMode === 'users' ? (
-            <UsersList setViewMode={setViewMode} />
+            <UsersList
+              setViewMode={setViewMode}
+              currentUserEmail={userEmail}
+              currentUserShowOnLeaderboard={showOnLeaderboard}
+              onLeaderboardPreferenceChange={updateLeaderboardPreference}
+            />
           ) : viewMode === 'management' ? (
             <Suspense fallback={<p className="meta-line issue-loading">Ansicht wird geladen...</p>}>
               <Management
@@ -1282,6 +1326,16 @@ export default function App() {
                     </select>
                   </label>
 
+                  <div className="settings-field settings-switch-field">
+                    <span>Auf Bestenlisten erscheinen</span>
+                    <input
+                      className="native-toggle"
+                      type="checkbox"
+                      checked={showOnLeaderboard}
+                      onChange={(event) => updateLeaderboardPreference(event.target.checked)}
+                    />
+                  </div>
+
                   {!emailVerified && (
                     <button className="verify-button" type="button" onClick={resendVerificationEmail}>
                       Verifizierungs-E-Mail erneut senden
@@ -1346,8 +1400,10 @@ export default function App() {
         email={profileOpen} 
         onClose={() => setProfileOpen(null)} 
         currentUserEmail={userEmail}
+        currentUserShowOnLeaderboard={showOnLeaderboard}
         onLogout={() => { setProfileOpen(null); logout(); }}
         onProfileUpdate={(newName, newPic) => { setUserName(newName); setUserProfilePic(newPic); }}
+        onLeaderboardPreferenceChange={updateLeaderboardPreference}
       />
     </div>
   );

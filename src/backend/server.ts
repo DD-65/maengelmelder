@@ -11,8 +11,7 @@ import db from "./db.js";
 import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
 import multer from "multer";
 import sharp from "sharp";
-import fs from "fs";
-
+import { recordStatisticsEvent } from "./statisticsEvents.js";
 
 import { basicAuth } from "./middleware/basicAuth.js";
 import { createIssueRouter, issueUploadDir } from "./issues/issueRoutes.js";
@@ -45,6 +44,16 @@ type StatusChangeToNotify = {
   id: number;
   new_status: string;
   title: string;
+};
+
+type LeaderboardCategory = "reported" | "reportedSolved";
+
+type LeaderboardRow = {
+  place: number;
+  userId: number;
+  email: string;
+  username: string | null;
+  score: number;
 };
 
 app.use(cors());
@@ -330,8 +339,8 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = db
-      .prepare("SELECT id, email, password_hash, role, username, profile_pic_url, email_verified_at, is_restricted FROM users WHERE email = ?")
-      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; is_restricted: number } | undefined;
+      .prepare("SELECT id, email, password_hash, role, username, profile_pic_url, email_verified_at, is_restricted, show_on_leaderboard FROM users WHERE email = ?")
+      .get(normalizedEmail) as { id: number; email: string; password_hash: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; is_restricted: number; show_on_leaderboard: number } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: "Ungültige Anmeldedaten" });
@@ -353,6 +362,7 @@ app.post("/api/auth/login", async (req, res) => {
       profile_pic_url: user.profile_pic_url,
       emailVerified: Boolean(user.email_verified_at),
       isRestricted: Boolean(user.is_restricted),
+      showOnLeaderboard: Boolean(user.show_on_leaderboard),
     });
   } catch (error) {
     console.error(error);
@@ -367,8 +377,8 @@ app.get("/api/auth/me", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, role, username, profile_pic_url, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted FROM users WHERE id = ?")
-    .get(req.session.userId) as { id: number; email: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; notificationInterval: number; isRestricted: number } | undefined;
+    .prepare("SELECT id, email, role, username, profile_pic_url, email_verified_at, notification_interval AS notificationInterval, is_restricted AS isRestricted, show_on_leaderboard AS showOnLeaderboard FROM users WHERE id = ?")
+    .get(req.session.userId) as { id: number; email: string; role: string; username: string | null; profile_pic_url: string | null; email_verified_at: string | null; notificationInterval: number; isRestricted: number; showOnLeaderboard: number } | undefined;
 
   if (!user) {
     req.session.destroy(() => {});
@@ -384,6 +394,7 @@ app.get("/api/auth/me", (req, res) => {
     emailVerified: Boolean(user.email_verified_at),
     notificationInterval: user.notificationInterval,
     isRestricted: Boolean(user.isRestricted),
+    showOnLeaderboard: Boolean(user.showOnLeaderboard),
   });
 });
 
@@ -447,6 +458,113 @@ app.patch("/api/auth/settings/notifications", requireAuth, (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler beim Speichern der Einstellungen" });
+  }
+});
+
+app.patch("/api/auth/settings/leaderboard", requireAuth, (req, res) => {
+  try {
+    const { showOnLeaderboard } = req.body;
+    const userId = req.session.userId;
+
+    if (typeof showOnLeaderboard !== "boolean") {
+      return res.status(400).json({ error: "Ungültige Bestenlisten-Einstellung" });
+    }
+
+    db.prepare("UPDATE users SET show_on_leaderboard = ? WHERE id = ?")
+      .run(showOnLeaderboard ? 1 : 0, userId);
+
+    res.json({
+      message: "Bestenlisten-Einstellung erfolgreich gespeichert",
+      showOnLeaderboard,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Speichern der Bestenlisten-Einstellung" });
+  }
+});
+
+app.get("/api/statistics/me", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const row = db.prepare(`
+      SELECT
+        COALESCE(SUM(CASE WHEN event_type = 'issue_created' THEN 1 ELSE 0 END), 0) AS issuesReported,
+        COALESCE(SUM(CASE WHEN event_type = 'issue_liked' THEN 1 ELSE 0 END), 0) AS likesGiven,
+        COALESCE(SUM(CASE WHEN event_type = 'comment_created' THEN 1 ELSE 0 END), 0) AS commentsWritten,
+        COALESCE(SUM(CASE WHEN event_type = 'reaction_created' THEN 1 ELSE 0 END), 0) AS reactionsGiven
+      FROM statistics_events
+      WHERE actor_user_id = ?
+    `).get(userId) as {
+      issuesReported: number;
+      likesGiven: number;
+      commentsWritten: number;
+      reactionsGiven: number;
+    };
+
+    res.json(row);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Laden der Statistiken" });
+  }
+});
+
+app.get("/api/leaderboard", requireAuth, (req, res) => {
+  try {
+    const userId = req.session.userId as number;
+    const category: LeaderboardCategory = req.query.category === "reportedSolved" ? "reportedSolved" : "reported";
+    const eventType = category === "reportedSolved" ? "issue_solved" : "issue_created";
+    const scoreUserColumn = category === "reportedSolved" ? "user_id" : "actor_user_id";
+    const currentUserSettings = db
+      .prepare("SELECT show_on_leaderboard FROM users WHERE id = ?")
+      .get(userId) as { show_on_leaderboard: number } | undefined;
+
+    if (!currentUserSettings) {
+      return res.status(401).json({ error: "Nicht angemeldet" });
+    }
+
+    const rows = db.prepare(`
+      WITH scores AS (
+        SELECT
+          users.id AS userId,
+          users.email,
+          users.username,
+          COUNT(statistics_events.id) AS score
+        FROM users
+        LEFT JOIN statistics_events
+          ON statistics_events.${scoreUserColumn} = users.id
+          AND statistics_events.event_type = ?
+        WHERE users.show_on_leaderboard = 1
+        GROUP BY users.id
+      ),
+      ranked AS (
+        SELECT
+          userId,
+          email,
+          username,
+          score,
+          ROW_NUMBER() OVER (
+            ORDER BY score DESC, lower(COALESCE(NULLIF(username, ''), email)) ASC, userId ASC
+          ) AS place
+        FROM scores
+      )
+      SELECT place, userId, email, username, score
+      FROM ranked
+      WHERE place <= 4 OR userId = ?
+      ORDER BY place ASC
+    `).all(eventType, userId) as LeaderboardRow[];
+
+    const top = rows.filter((row) => row.place <= 4);
+    const currentUserEntry = rows.find((row) => row.userId === userId) ?? null;
+
+    res.json({
+      category,
+      top,
+      currentUserEntry,
+      currentUserOptedIn: Boolean(currentUserSettings.show_on_leaderboard),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fehler beim Laden der Bestenliste" });
   }
 });
 
@@ -587,7 +705,21 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
       return res.status(404).json({ error: "Kommentar kann keinem existierenden Mangel zugeordnet werden"})}
 
     // Update durchführen
-    const result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
+    const createCommentTransaction = db.transaction(() => {
+      const result = db.prepare("INSERT INTO maengel_kommentare (kommentar, user_id, mangel_id) VALUES (?, ?, ?)").run(comment, userId, mangelId);
+      const commentId = Number(result.lastInsertRowid);
+
+      recordStatisticsEvent({
+        userId: mangelData.user_id ?? null,
+        actorUserId: userId ?? null,
+        eventType: "comment_created",
+        entityType: "comment",
+        entityId: commentId,
+      });
+
+      return commentId;
+    });
+    const commentId = createCommentTransaction();
 
     const createdComment = db.prepare(`SELECT mk.kommentar,
                                               users.email AS userEmail, 
@@ -595,7 +727,7 @@ app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
                                               users.profile_pic_url AS userProfilePicUrl,
                                               mk.created_at AS timestamp,
                                               mk.id AS commentId
-                                              FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(result.lastInsertRowid);
+                                              FROM maengel_kommentare mk JOIN users ON mk.user_id=users.id WHERE mk.id = ?`).get(commentId);
     res.status(200).json(createdComment);
 
   }catch (error) {
@@ -904,14 +1036,28 @@ app.get("/api/users/profile/:email", (req, res) => {
     const currentUserId = req.session.userId || -1; // -1 if not logged in
 
     const user = db.prepare(`
-      SELECT id, email, username, profile_pic_url, role, email_verified_at,
-      EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = users.id) AS isFollowed
-      FROM users WHERE email = ?
+      SELECT
+        users.id,
+        users.email,
+        users.username,
+        users.profile_pic_url,
+        users.role,
+        users.email_verified_at,
+        users.show_on_leaderboard AS showOnLeaderboard,
+        EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = users.id) AS isFollowed,
+        COALESCE(SUM(CASE WHEN statistics_events.event_type = 'issue_created' THEN 1 ELSE 0 END), 0) AS issuesReported,
+        COALESCE(SUM(CASE WHEN statistics_events.event_type = 'issue_liked' THEN 1 ELSE 0 END), 0) AS likesGiven,
+        COALESCE(SUM(CASE WHEN statistics_events.event_type = 'comment_created' THEN 1 ELSE 0 END), 0) AS commentsWritten,
+        COALESCE(SUM(CASE WHEN statistics_events.event_type = 'reaction_created' THEN 1 ELSE 0 END), 0) AS reactionsGiven
+      FROM users
+      LEFT JOIN statistics_events ON statistics_events.actor_user_id = users.id
+      WHERE users.email = ?
+      GROUP BY users.id
     `).get(currentUserId, targetEmail);
 
     if (!user) return res.status(404).json({ error: "Nutzer nicht gefunden" });
     res.json(user);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Fehler beim Laden des Profils" });
   }
 });
@@ -1009,4 +1155,3 @@ setInterval(() => {
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);
 });
-

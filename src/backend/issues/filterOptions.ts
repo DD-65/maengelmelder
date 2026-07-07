@@ -20,7 +20,7 @@ function sortValues(values: Set<string>) {
   return Array.from(values).sort((a, b) => a.localeCompare(b, "de"));
 }
 
-// alle Accounts, denen der aktuelle Nutzer folgt, als Dropdown-Werte (Username, sonst E-Mail)
+// alle User, denen der Nutzer folgt(Username, sonst E-Mail)
 function getFollowedUserOptions(userId: number | null) {
   if (!userId) return [];
 

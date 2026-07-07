@@ -213,7 +213,7 @@ export default function App() {
         filterOptions.status = currentFilterValue;
       }
 
-      if (currentFilter === "Gefolgte Accounts") {
+      if (currentFilter === "Gefolgte User") {
         filterOptions.followedUser = currentFilterValue;
       }
     }
@@ -295,7 +295,7 @@ export default function App() {
       Kategorie: data.kategorien,
       Ort: data.locations,
       Status: data.status,
-      "Gefolgte Accounts": data.followedUsers,
+      "Gefolgte User": data.followedUsers,
     } as FilterOptionValues;
   }, [filterOnlyOwn, isArchiveMode, normalizedSearchQuery]);
 

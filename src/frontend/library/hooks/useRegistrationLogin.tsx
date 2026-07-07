@@ -5,9 +5,11 @@ export function useRegistrationLogin(){
     const [userRole, setUserRole] = useState("");
     const [isRestricted, setIsRestricted] = useState(false);
     const [emailVerified, setEmailVerified] = useState(false);
-    const [authView, setAuthView] = useState<"login" | "register" | null>(null);
+    const [authView, setAuthView] = useState<"login" | "register" | "forgotPassword" | "resetPassword" | null>(null);
     const [authEmail, setAuthEmail] = useState("");
     const [authPassword, setAuthPassword] = useState("");
+    const [authPasswordConfirm, setAuthPasswordConfirm] = useState("");
+    const [resetToken, setResetToken] = useState("");
     // const [registerAsAdmin, setRegisterAsAdmin] = useState(false); wird zukünftig von superadmin rolle gesetzt
     // const [adminCode, setAdminCode] = useState("");
     const [authError, setAuthError] = useState("");
@@ -19,7 +21,7 @@ export function useRegistrationLogin(){
 
     
     return{userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, isRestricted, setIsRestricted, emailVerified, setEmailVerified,
-        authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword,
+        authView, setAuthView, authEmail, setAuthEmail,authPassword, setAuthPassword, authPasswordConfirm, setAuthPasswordConfirm, resetToken, setResetToken,
         // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
         authError, setAuthError, authMessage, setAuthMessage,
         voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError

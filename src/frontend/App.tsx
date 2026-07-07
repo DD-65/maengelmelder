@@ -114,7 +114,7 @@ export default function App() {
 
   // Ansichten für Registrierung und Login
   const { userId, setUserId, userEmail, setUserEmail, userRole, setUserRole, isRestricted, setIsRestricted, emailVerified, setEmailVerified,
-    authView, setAuthView, authEmail, setAuthEmail, authPassword, setAuthPassword,
+    authView, setAuthView, authEmail, setAuthEmail, authPassword, setAuthPassword, authPasswordConfirm, setAuthPasswordConfirm, resetToken, setResetToken,
     // registerAsAdmin, setRegisterAsAdmin, adminCode, setAdminCode, 
     authError, setAuthError, authMessage, setAuthMessage,
     voteError, setVoteError, settingsOpen, setSettingsOpen, settingsMessage, setSettingsMessage, settingsError, setSettingsError
@@ -549,6 +549,19 @@ export default function App() {
         toast.error("🫪 E-Mail-Verifizierung fehlgeschlagen");
       });
     }, []);
+
+  // Passwort vergessen aus der E-Mail verarbeiten
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (window.location.pathname !== "/reset-password" || !token) return;
+
+    window.history.replaceState({}, "", "/");
+    setResetToken(token);
+    setAuthView("resetPassword");
+    }, []);
+
     
     // login handler
     const login = async (event: React.FormEvent) => {
@@ -631,7 +644,74 @@ export default function App() {
         toast.error("🫪 Netzwerkfehler bei der Registrierung");
       }
     };
-    
+
+    // Passwort vergessen handler
+    const forgotPassword = async (event: React.FormEvent) => {
+      event.preventDefault();
+      setAuthError("");
+      setAuthMessage("");
+
+      try {
+        const res = await fetch("/api/auth/request-password-reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: authEmail,
+          }),
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setAuthError(data.error || "Email zur Passwortzurücksetzung konnte nicht gesendet werden");
+          toast.error(`🫪 ${data.error || "Email zur Passwortzurücksetzung konnte nicht gesendet werden"}`);
+          return;
+        }
+        setAuthMessage(data.message || "Email zur Passwortzurücksetzung wurde gesendet");
+        toast.success(data.message || "Email zur Passwortzurücksetzung wurde gesendet");
+      } catch {
+        setAuthError("Netzwerkfehler beim Senden der Passwortzurücksetzungs-E-Mail");
+        toast.error("🫪 Netzwerkfehler beim Senden der Passwortzurücksetzungs-E-Mail");
+      }
+    };
+
+        // Passwort zurücksetzen handler
+    const resetPassword = async (event: React.FormEvent) => {
+      event.preventDefault();
+      setAuthError("");
+      setAuthMessage("");
+
+      try {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newPassword1: authPassword,
+            newPassword2: authPasswordConfirm,
+            mailToken: resetToken
+          }),
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setAuthError(data.error || "Passwort konnte nicht zurückgesetzt werden");
+          toast.error(`🫪 ${data.error || "Passwort konnte nicht zurückgesetzt werden"}`);
+          return;
+        }
+        setAuthMessage(data.message || "Passwort erfolgreich zurückgesetzt. Bitte logge dich ein.");
+        toast.success(data.message || "Passwort erfolgreich zurückgesetzt. Bitte logge dich ein.");
+        setAuthPassword("");
+        setAuthPasswordConfirm("");
+        setResetToken("");
+        setAuthView("login");
+      } catch {
+        setAuthError("Netzwerkfehler beim Zurücksetzen des Passworts");
+        toast.error("🫪 Netzwerkfehler beim Zurücksetzen des Passworts");
+      }
+    };
+
+
     // logout handler
     const logout = async () => {
       try {
@@ -952,37 +1032,65 @@ export default function App() {
               <p className="login-hint" style={{ margin: '0 0 5px', fontSize: '14px' }}>Bitte einloggen, um einen Mangel zu melden.</p>
               <button onClick={() => setAuthView("login")}>Login</button>
               <button onClick={() => setAuthView("register")}>Registrieren</button>
+              {/* <button onClick={() => setAuthView("resetPassword")}>Passwort zurücksetzen</button> */}
             </div>
           ) : (
             <form
-              onSubmit={authView === "login" ? login : register}
+              onSubmit={authView === "login" ? login : authView === "register" ? register : authView === "forgotPassword" ? forgotPassword : resetPassword}
               style={{ width: '100%', margin: '0', display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : "Registrieren"}</h2>
+                <h2 style={{ fontSize: '18px', margin: '0', color: 'var(--text-h)' }}>{authView === "login" ? "Login" : authView === "register" ? "Registrieren" : authView === "forgotPassword" ? "Passwort vergessen?" : "Passwort zurücksetzen"}</h2>
                 <button type="button" onClick={() => setAuthView(null)} style={{ background: 'transparent', color: 'var(--text)', padding: '0', boxShadow: 'none', border: 'none', minWidth: 'auto' }}>X</button>
               </div>
 
-              <input
-                type="email"
-                placeholder="Email"
-                value={authEmail}
-                onChange={(event) => setAuthEmail(event.target.value)}
-              />
+              {authView !== "resetPassword" && (
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={authEmail}
+                  onChange={(event) => setAuthEmail(event.target.value)}
+                />
+              )}
 
-              <input
-                type="password"
-                placeholder="Passwort"
-                value={authPassword}
-                onChange={(event) => setAuthPassword(event.target.value)}
-              />
+              {(authView !== "forgotPassword" && authView !== "resetPassword") && (
+                <input
+                  type="password"
+                  placeholder="Passwort"
+                  value={authPassword}
+                  onChange={(event) => setAuthPassword(event.target.value)}
+                />
+              )}
+
+              {authView === "resetPassword" && (
+                  <input
+                  type="password"
+                  placeholder="Neues Passwort"
+                  value={authPassword}
+                  onChange={(event) => setAuthPassword(event.target.value)}
+                  />
+              )}
+
+              {authView === "resetPassword" && (
+                  <input
+                  type="password"
+                  placeholder="Passwort bestätigen"
+                  value={authPasswordConfirm}
+                  onChange={(event) => setAuthPasswordConfirm(event.target.value)}
+                  />
+              )}
 
               {authError && <p className="error-text" style={{ margin: '0' }}>{authError}</p>}
               {authMessage && <p className="success-text" style={{ margin: '0' }}>{authMessage}</p>}
 
               <button type="submit" style={{ marginTop: '8px' }}>
-                {authView === "login" ? "Einloggen" : "Registrieren"}
+                {authView === "login" ? "Einloggen" : authView === "register" ? "Registrieren" : "Passwort zurücksetzen"}
               </button>
+              {authView === "login" && (
+                <button type="button" onClick={() => setAuthView("forgotPassword")} style={{ marginTop: '4px', background: 'transparent', color: 'var(--accent)', boxShadow: 'none', border: 'none' }}>
+                  Passwort vergessen?
+                </button>
+              )}
             </form>
           )}
         </div>

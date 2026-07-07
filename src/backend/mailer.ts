@@ -6,6 +6,11 @@ type VerificationMailInput = {
   verifyUrl: string;
 };
 
+type PasswordResetMailInput = {
+  to: string;
+  resetPasswordUrl: string;
+};
+
 function requiredEnv(name: string) {
   const value = process.env[name];
   if (!value) {
@@ -51,6 +56,29 @@ export async function sendVerificationEmail({ to, verifyUrl }: VerificationMailI
       <p>Bitte bestätige deine E-Mail-Adresse für den Mängelmelder.</p>
       <p><a href="${verifyUrl}">E-Mail-Adresse bestätigen</a></p>
       <p>Falls du dich nicht registriert hast, kannst du diese E-Mail ignorieren.</p>
+    `,
+  });
+}
+
+export async function sendPasswordResetEmail({ to, resetPasswordUrl }: PasswordResetMailInput) {
+  const transporter = createTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: "Mängelmelder: Passwort für Mängelmelder zurücksetzen",
+    text: [
+      "Für deinen Mängelmelder-Account wurde eine Passwort-Änderung angefordert. Falls du das warst, klicke bitte auf den folgenden Link, um dein Passwort zurückzusetzen:",
+      "",
+      `Link: ${resetPasswordUrl}`,
+      "",
+      "Falls du das nicht warst, kannst du diese E-Mail ignorieren. Dein Passwort bleibt unverändert.",
+    ].join("\n"),
+    html: `
+      <p>Für deinen Mängelmelder-Account wurde eine Passwort-Änderung angefordert. Falls du das warst, klicke bitte auf den folgenden Link, um dein Passwort zurückzusetzen:</p>
+      <p><a href="${resetPasswordUrl}">Passwort zurücksetzen</a></p>
+      <p>Falls du das nicht warst, kannst du diese E-Mail ignorieren. Dein Passwort bleibt unverändert.</p>
     `,
   });
 }

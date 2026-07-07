@@ -8,7 +8,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
 import db from "./db.js";
-import { sendVerificationEmail, sendStatusUpdateEmail } from "./mailer.js";
+import { sendVerificationEmail, sendStatusUpdateEmail, sendPasswordResetEmail } from "./mailer.js";
 import multer from "multer";
 import sharp from "sharp";
 import { recordStatisticsEvent } from "./statisticsEvents.js";
@@ -142,6 +142,47 @@ function canSendVerificationMail(userId: number) {
   return Date.now() - new Date(lastToken.created_at).getTime() >= emailVerificationResendDelayMs;
 }
 
+function createPasswordResetToken(userId: number) {
+  const now = new Date();
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashEmailVerificationToken(rawToken);
+  const expiresAt = new Date(now.getTime() + emailTokenTtlMinutes * 60 * 1000).toISOString();
+
+  const result = db.prepare(`
+    INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(userId, tokenHash, expiresAt, now.toISOString());
+
+  return {
+    id: Number(result.lastInsertRowid),
+    rawToken,
+  };
+}
+
+function markOtherPasswordResetTokensUsed(userId: number, currentTokenId: number) {
+  db.prepare(`
+    UPDATE password_reset_tokens
+    SET used_at = ?
+    WHERE user_id = ?
+      AND id <> ?
+      AND used_at IS NULL
+  `).run(new Date().toISOString(), userId, currentTokenId);
+}
+
+function canSendPasswordResetMail(userId: number) {
+  const lastToken = db.prepare(`
+    SELECT created_at
+    FROM password_reset_tokens
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(userId) as { created_at: string } | undefined;
+
+  if (!lastToken) return true;
+
+  return Date.now() - new Date(lastToken.created_at).getTime() >= emailVerificationResendDelayMs;
+}
+
 // -- Login & Registrierung zeugs
 
 // registrieren
@@ -209,6 +250,90 @@ app.post("/api/auth/register", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Fehler bei der Registrierung" });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { newPassword1, newPassword2, mailToken } = req.body;
+
+    if (!newPassword1 || !newPassword2 || typeof mailToken !== "string" || !mailToken) {
+      return res.status(400).json({ error: "Zurücksetzen des Passworts fehlgeschlagen. Fordere bitte einen neuen Link über \"Passwort zurücksetzen\" an." });
+    }
+    if (newPassword1 !== newPassword2) {
+      return res.status(400).json({ error: "Dein neues Passwort und das Bestätigungspasswort stimmen nicht überein." });
+    }
+
+    // passwortlänge (mindestens 8 Zeichen laut neuen Regeln)
+    if (newPassword1.length < 8) {
+      return res.status(400).json({ error: "Das neue Passwort muss mindestens 8 Zeichen lang sein" });
+    }
+
+    // token-validierung: gehashten token in der db nachschlagen (analog zu verify-email)
+    const tokenHash = hashEmailVerificationToken(mailToken);
+    const tokenRow = db.prepare(`
+      SELECT id, user_id, expires_at, used_at
+      FROM password_reset_tokens
+      WHERE token_hash = ?
+    `).get(tokenHash) as {
+      id: number;
+      user_id: number;
+      expires_at: string;
+      used_at: string | null;
+    } | undefined;
+
+    if (!tokenRow || tokenRow.used_at) {
+      return res.status(400).json({ error: "Der Link zum Zurücksetzen ist ungültig. Fordere bitte einen neuen Link über \"Passwort zurücksetzen\" an." });
+    }
+
+    if (new Date(tokenRow.expires_at).getTime() < Date.now()) {
+      db.prepare("UPDATE password_reset_tokens SET used_at = ? WHERE id = ?")
+        .run(new Date().toISOString(), tokenRow.id);
+      return res.status(400).json({ error: "Der Link zum Zurücksetzen ist abgelaufen. Fordere bitte einen neuen Link über \"Passwort zurücksetzen\" an." });
+    }
+
+    // neues passwort hashen (salt länge 12) und speichern, danach alle offenen reset-tokens des users invalidieren
+    const newPasswordHash = await bcrypt.hash(newPassword1, 12);
+    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(newPasswordHash, tokenRow.user_id);
+    db.prepare("UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL")
+      .run(new Date().toISOString(), tokenRow.user_id);
+
+    res.status(200).json({ message: "Passwort erfolgreich zurückgesetzt. Du kannst dich jetzt mit deinem neuen Passwort einloggen." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fataler Fehler beim Zurücksetzen des Passworts" });
+  }
+});
+
+app.post("/api/auth/request-password-reset", async (req, res) => {
+  try {
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+
+    if (!email || !emailPattern.test(email)) {
+      return res.status(400).json({ error: "Ungültiges Email-Format" });
+    }
+
+    // immer die gleiche antwort, egal ob die email registriert ist (verhindert account-enumeration)
+    const genericMessage = "Falls ein Konto mit dieser Email-Adresse existiert, wurde ein Link zum Zurücksetzen des Passworts gesendet.";
+
+    const user = db.prepare("SELECT id, email FROM users WHERE email = ?").get(email) as { id: number; email: string } | undefined;
+
+    // resend-delay wie bei der email-verifizierung, gegen mail-spam
+    if (!user || !canSendPasswordResetMail(user.id)) {
+      return res.status(200).json({ message: genericMessage });
+    }
+
+    const token = createPasswordResetToken(user.id);
+    await sendPasswordResetEmail({
+      to: user.email,
+      resetPasswordUrl: `${getAppBaseUrl(req)}/reset-password?token=${encodeURIComponent(token.rawToken)}`,
+    });
+    markOtherPasswordResetTokensUsed(user.id, token.id);
+
+    return res.status(200).json({ message: genericMessage });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Fataler Fehler beim Anfordern des Passwort-Zurücksetzen-Links" });
   }
 });
 

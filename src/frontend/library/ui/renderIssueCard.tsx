@@ -489,7 +489,11 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
           {/* Symbol wenn Bild vorhanden ist und Karte nicht ausgeklappt */}
           {!isExpanded && (issue.thumbnail_url || issue.image_url) && (
             <span
-              title="Bild vorhanden"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(true);
+              }}
+              title="Bild vorhanden - Zum Ausklappen klicken"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -497,7 +501,8 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 borderRadius: '4px',
                 background: 'var(--surface-strong)',
                 border: '1px solid var(--border)',
-                color: 'var(--text-muted)'
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

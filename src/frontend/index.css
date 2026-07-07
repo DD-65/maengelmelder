@@ -229,7 +229,7 @@ p {
 }
 
 button {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   border: none;
   color: white;
   padding: 10px 14px;
@@ -238,7 +238,7 @@ button {
   font-weight: 800;
   font-size: 12px;
   box-shadow: var(--shadow-sm);
-  white-space: nowrap
+  white-space: nowrap;
   /* transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; */
 }
 
@@ -303,11 +303,11 @@ select:focus {
 
 
 .logout-button {
-  background-image: linear-gradient(to right, #D31027 0%, #EA384D 51%, #D31027 100%);
+  background: #d31027;
 }
 
 .logout-button:hover {
-  background-position: right center;
+  background: #ea384d;
   color: #fff;
   text-decoration: none;
 }

@@ -14,6 +14,7 @@ import sharp from "sharp";
 import { recordStatisticsEvent } from "./statisticsEvents.js";
 
 import { basicAuth } from "./middleware/basicAuth.js";
+import { filterMiddleware } from './middleware/textFilter.js';
 import { createIssueRouter, issueUploadDir } from "./issues/issueRoutes.js";
 
 
@@ -839,7 +840,7 @@ const stmt = db.prepare(`
   }
 });
 // Kommentar schreiben (jede*r)
-app.patch("/api/mangel/:id/comment", requireAuth, (req, res) => {
+app.patch("/api/mangel/:id/comment",  filterMiddleware, requireAuth, (req, res) => {
   try {
     const userId = req.session.userId;
     const mangelId = Number(req.params.id);
@@ -956,7 +957,7 @@ app.get("/api/newsfeed/", (req, res) => {
   }
 });
 // News hinzufügen
-app.patch("/api/newsfeed/add/", requireAuth, (req, res) => {
+app.patch("/api/newsfeed/add/", filterMiddleware, requireAuth, (req, res) => {
   try {
     const userId = req.session.userId;
     const { comment, mangelId } = req.body;
@@ -1158,7 +1159,7 @@ app.delete("/api/management/hard_delete/:id", requireAuth, requireSuperadmin, (r
 const profileStorage = multer.memoryStorage();
 const profileUpload = multer({ storage: profileStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-app.patch("/api/auth/profile", requireAuth, profileUpload.single("image"), async (req, res) => {
+app.patch("/api/auth/profile", requireAuth, filterMiddleware, profileUpload.single("image"), async (req, res) => {
   try {
     const userId = req.session.userId;
     const { username } = req.body;

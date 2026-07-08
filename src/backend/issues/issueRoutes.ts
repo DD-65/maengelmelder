@@ -335,7 +335,7 @@ export function createIssueRouter({ requireAuth }: CreateIssueRouterOptions) {
   });
 
   // voten (braucht login)
-  router.patch("/api/mangel/:id/vote", requireAuth, (req, res) => {
+  router.patch("/api/mangel/:id/vote", requireAuth, filterMiddleware, (req, res) => {
     // gevotet wird immer für nur einen Mangel aus der URL
     const userId = req.session.userId;
     const mangelId = Number(req.params.id);

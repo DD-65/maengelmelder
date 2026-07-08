@@ -1,0 +1,42 @@
+stages:
+  - validate
+  - deploy
+
+default:
+  before_script:
+    - if [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh" && nvm use; fi
+
+build:
+  stage: validate
+  tags:
+    - production
+  script:
+    - npm ci
+    - npm run build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+
+lint:
+  stage: validate
+  tags:
+    - production
+  allow_failure: true
+  script:
+    - npm ci
+    - npm run lint
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+
+deploy_production:
+  stage: deploy
+  tags:
+    - production
+  resource_group: production
+  environment:
+    name: production
+  script:
+    - bash scripts/deploy-production.sh
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

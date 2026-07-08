@@ -1,0 +1,15 @@
+[Unit]
+Description=Maengelmelder
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/d_cairoli23/maengelmelder
+Environment=NODE_ENV=production
+EnvironmentFile=/home/d_cairoli23/maengelmelder/.env
+ExecStart=/home/d_cairoli23/.nvm/versions/node/v22.22.2/bin/node dist/backend/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

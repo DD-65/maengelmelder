@@ -12,8 +12,10 @@ if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
 fi
 
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    set +u
   . "$HOME/.nvm/nvm.sh"
   nvm use --silent
+  set -u
 fi
 
 if [ ! -d .git ]; then

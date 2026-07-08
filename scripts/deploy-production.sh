@@ -11,13 +11,6 @@ if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
   export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 fi
 
-if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    set +u
-  . "$HOME/.nvm/nvm.sh"
-  nvm use --silent
-  set -u
-fi
-
 if [ ! -d .git ]; then
   echo "Deployment directory is not a git checkout: $APP_DIR" >&2
   exit 1
@@ -25,6 +18,13 @@ fi
 
 git fetch origin "$DEPLOY_BRANCH"
 git reset --hard "origin/$DEPLOY_BRANCH"
+
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+  set +u
+  . "$HOME/.nvm/nvm.sh"
+  nvm use --silent
+  set -u
+fi
 
 if [ -f database/app.db ]; then
   mkdir -p database/backups

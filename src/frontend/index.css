@@ -463,6 +463,10 @@ code {
   -ms-overflow-style: none; /* IE und Edge */
 }
 
+.issue-display-area.has-no-searchbar {
+  padding-top: 24px;
+}
+
 .issue-display-area::-webkit-scrollbar {
   display: none; /* Chrome, Safari und Opera */
 }
@@ -671,6 +675,12 @@ code {
   align-items: center;
 }
 
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .search-bar input {
   width: 100%;
   box-sizing: border-box;
@@ -692,6 +702,7 @@ code {
   box-shadow: none;
   font-size: 16px;
   line-height: 1;
+  cursor: pointer;
 }
 
 .search-clear-button:hover:not(:disabled) {
@@ -2270,6 +2281,10 @@ button:hover > .modify-icon {
 
   .issue-display-area {
     padding: 0 10px 20px;
+  }
+
+  .issue-display-area.has-no-searchbar {
+    padding-top: 16px;
   }
 
   .floating-add-btn {

@@ -1188,16 +1188,18 @@ export default function App() {
                 setIsManagementMode={setIsManagementMode}
               />
             </div>
-            <div className="header-search">
-                          {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
-              <Searchbar
-                query={query}
-                setQuery={setQuery}
-                searchView={searchView}
-                setSearchView={setSearchView}
-                issuesToDisplay={issuesToDisplay}
-              />
-            </div>
+            {viewMode === 'list' && (
+              <div className="header-search">
+                {/* Suchleiste  "kürzer" naja nicht wirklich, aber netter anzuschauen*/}
+                <Searchbar
+                  query={query}
+                  setQuery={setQuery}
+                  searchView={searchView}
+                  setSearchView={setSearchView}
+                  issuesToDisplay={issuesToDisplay}
+                />
+              </div>
+            )}
           </header>
 
         {verificationMessage && (
@@ -1207,7 +1209,7 @@ export default function App() {
         )}
 
         <div
-          className={`issue-display-area ${viewMode === 'list' ? 'with-scroll-fade' : ''} ${canScrollTop ? 'can-scroll-top' : ''} ${canScrollBottom ? 'can-scroll-bottom' : ''}`}
+          className={`issue-display-area ${viewMode === 'list' ? 'with-scroll-fade' : 'has-no-searchbar'} ${canScrollTop ? 'can-scroll-top' : ''} ${canScrollBottom ? 'can-scroll-bottom' : ''}`}
           ref={scrollAreaRef}
           onScroll={checkScroll}
         >

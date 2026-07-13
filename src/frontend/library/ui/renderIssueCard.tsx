@@ -186,7 +186,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                     toast.success("Status aktualisiert");
                     setNewStatusComment('');
                     setIsAdminFormOpen(false);
-                    if (newStatus !== 'Gelöscht' && postAsNews) {
+                    if (newStatus === 'Behoben' && postAsNews) {
                       await postNews(issue.id, null);
                     }
                   } catch (error) {
@@ -262,7 +262,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 }}
               />
 
-              {newStatus !== 'Gelöscht' && (
+              {newStatus === 'Behoben' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <input
                     type="checkbox"

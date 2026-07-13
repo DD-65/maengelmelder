@@ -186,7 +186,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                     toast.success("Status aktualisiert");
                     setNewStatusComment('');
                     setIsAdminFormOpen(false);
-                    if (newStatus === 'Behoben' && postAsNews) {
+                    if (newStatus !== 'Gelöscht' && postAsNews) {
                       await postNews(issue.id, null);
                     }
                   } catch (error) {
@@ -262,7 +262,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                 }}
               />
 
-              {newStatus === 'Behoben' && (
+              {newStatus !== 'Gelöscht' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <input
                     type="checkbox"
@@ -271,7 +271,7 @@ export function IssueCard({ issue, userRole, userId, userEmail, isRestricted, on
                     onChange={(e) => setPostAsNews(e.target.checked)}
                     style={{ cursor: 'pointer', margin: 0 }}
                   />
-                  <label htmlFor="postAsNewsInline" style={{ fontSize: '11px', color: 'var(--text)', cursor: 'pointer', userSelect: 'none' }}>In News posten</label>
+                  <label htmlFor="postAsNewsInline" style={{ fontSize: '11px', color: 'var(--text)', cursor: 'pointer', userSelect: 'none' }}>Im Newsfeed anzeigen</label>
                 </div>
               )}
 

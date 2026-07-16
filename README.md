@@ -1,6 +1,6 @@
 # Mängelmelder
 
-Eine Plattform zum Melden und Verwalten von Mängeln auf den Campi der RPTU (Kaiserslautern und Landau).
+Eine **(inoffizielle!)** Plattform zum Melden und Verwalten von Mängeln auf den Campi der RPTU (Kaiserslautern und Landau), entstanden im Projekt Agile Methoden 2.
 
 Mit dem Mängelmelder können Studierende und Beschäftigte beispielsweise beschädigtes Mobiliar, WLAN-Ausfälle, defekte Steckdosen oder Schlaglöcher melden. Die Meldungen werden auf einer Karte und in einer durchsuchbaren Liste dargestellt, können kommentiert und bewertet sowie über einen rollenbasierten Verwaltungsbereich bearbeitet werden.
 
